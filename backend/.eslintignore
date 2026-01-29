@@ -1,0 +1,6 @@
+# Ignore docs and generated files to reduce lint noise
+docs/**
+dist/**
+node_modules/**
+.prisma/**
+*.md

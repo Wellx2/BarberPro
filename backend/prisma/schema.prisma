@@ -1,0 +1,714 @@
+// Prisma schema para Backend_Barberpro
+// Gera todas as entidades, enums, relacionamentos e constraints conforme o escopo LGPD, multi-tenancy e segurança
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== ENUMS =====
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  BARBER
+  CLIENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  CANCELLED_BY_BARBER
+}
+
+enum InvoiceStatus {
+  PAID
+  PENDING
+  CANCELLED
+}
+
+enum InvoiceType {
+  PLAN
+  SERVICE
+  PRODUCT
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  CASH
+}
+
+enum BlockedType {
+  DAY
+  TIME
+  RANGE
+}
+
+enum BlockedBy {
+  BARBER
+  ADMIN
+}
+
+enum ServiceDisabledType {
+  DAY
+  PERIOD
+  RECURRING_DAY
+}
+
+enum ProductStockMovementType {
+  INCREASE
+  DECREASE
+  LOSS
+}
+
+// Enums para Sistema Financeiro
+
+enum OrderStatus {
+  OPEN           // Comanda aberta
+  IN_PROGRESS    // Em atendimento
+  COMPLETED      // Finalizada
+  CANCELLED      // Cancelada
+}
+
+enum OrderItemType {
+  SERVICE        // Serviço
+  PRODUCT        // Produto
+  EXTRA          // Item extra (bebida, etc)
+}
+
+enum ExpenseType {
+  RENT           // Aluguel
+  UTILITIES      // Água, luz, internet
+  SALARIES       // Salários fixos
+  COMMISSIONS    // Comissões
+  PRODUCTS       // Compra de produtos
+  MAINTENANCE    // Manutenção
+  MARKETING      // Marketing
+  TAXES          // Impostos
+  OTHER          // Outros
+}
+
+enum CommissionType {
+  PERCENTAGE     // Porcentagem sobre serviço/produto
+  FIXED          // Valor fixo por serviço
+  TIERED         // Escalonado por metas
+}
+
+enum BarberWorkModel {
+  CHAIR_RENT     // Aluga a cadeira (paga valor fixo mensal)
+  SALARY         // Salário fixo mensal
+  SALARY_COMMISSION // Salário + comissão
+  COMMISSION_ONLY   // Apenas comissão
+}
+
+// ===== MODELS =====
+
+model Barbershop {
+  id                  String      @id @default(uuid())
+  name                String
+  cnpj                String?    @unique
+  phone               String
+  address             String?
+  logo                String?
+  openingTime         String     @default("09:00")
+  closingTime         String     @default("20:00")
+  intervalMinutes     Int        @default(30)
+  loyaltyEnabled      Boolean    @default(true)
+  subscriptionEnabled Boolean    @default(true)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  users        User[]
+  barbers      Barber[]
+  services     Service[]
+  products     Product[]
+  clients      Client[]
+  appointments Appointment[]
+  blockedTimes BlockedTime[]
+  invoices     Invoice[]
+  serviceDisabledPeriods ServiceDisabledPeriod[]
+  stockMovements ProductStockMovement[]
+  favoritedBy FavoriteBarbershop[]
+  serviceOrders ServiceOrder[]
+  barberCommissions BarberCommission[]
+  expenses Expense[]
+  dailyCashFlow DailyCashFlow[]
+  analytics ServiceProductAnalytics[]
+
+  @@map("barbershops")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  name           String
+  email          String?   @unique
+  phone          String?
+  passwordHash   String
+  role           UserRole  @default(CLIENT)
+  shopId         String?
+  planId         String?
+  credits        Int?      @default(0)
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  refreshToken   String?
+
+  shop           Barbershop? @relation(fields: [shopId], references: [id])
+  plan           Plan?       @relation(fields: [planId], references: [id])
+  stockMovements ProductStockMovement[]
+
+  @@map("users")
+}
+
+model Barber {
+  id              String    @id @default(uuid())
+  shopId          String
+  name            String
+  nickname        String?
+  description     String?
+  specialties     String[]
+  rating          Float     @default(0)
+  avatar          String?
+  experienceYears Int?
+  services        String[]  @default([])
+  active          Boolean   @default(true)
+  
+  // ===== Configurações de Trabalho e Remuneração =====
+  workModel       BarberWorkModel @default(COMMISSION_ONLY)
+  monthlySalary   Float?      // Salário fixo mensal (para SALARY ou SALARY_COMMISSION)
+  chairRentalFee  Float?      // Valor de aluguel da cadeira (para CHAIR_RENT)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  appointments Appointment[]
+  blockedTimes BlockedTime[]
+  reviews      Review[]
+  serviceOrders ServiceOrder[]
+  commissions  BarberCommission[]
+
+  @@index([shopId])
+  @@map("barbers")
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  shopId      String
+  name        String
+  duration    Int
+  price       Float
+  category    String
+  description String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  appointments AppointmentService[]
+  disabledPeriods ServiceDisabledPeriod[]
+  orderItems  OrderItem[]
+  commissions BarberCommission[]
+  analytics   ServiceProductAnalytics[]
+
+  @@index([shopId])
+  @@map("services")
+}
+
+model ServiceDisabledPeriod {
+  id          String   @id @default(uuid())
+  serviceId   String
+  shopId      String
+  type        ServiceDisabledType
+  date        DateTime? // Para DAY ou RECURRING_DAY
+  startDate   DateTime? // Para PERIOD
+  endDate     DateTime? // Para PERIOD
+  reason      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  service     Service   @relation(fields: [serviceId], references: [id])
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+
+  @@index([serviceId])
+  @@index([shopId])
+  @@map("service_disabled_periods")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  shopId      String
+  name        String
+  price       Float
+  stock       Int
+  category    String?
+  description String?
+  image       String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  appointments AppointmentProduct[]
+  stockMovements ProductStockMovement[]
+  orderItems  OrderItem[]
+  analytics   ServiceProductAnalytics[]
+  commissions BarberCommission[]
+
+  @@index([shopId])
+  @@map("products")
+}
+
+model Client {
+  id          String    @id @default(uuid())
+  shopId      String
+  name        String
+  nickname    String?
+  birthDate   DateTime?
+  phone       String
+  cpf         String?   @unique
+  email       String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  appointments Appointment[] @relation("ClientAppointments")
+  invoices     Invoice[]
+  reviews      Review[]
+  addresses    Address[]
+  favorites    FavoriteBarbershop[]
+  serviceOrders ServiceOrder[]
+
+  @@index([shopId])
+  @@map("clients")
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  clientId    String
+  cep         String
+  street      String
+  number      String
+  complement  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      Client   @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@map("addresses")
+}
+
+model FavoriteBarbershop {
+  id          String   @id @default(uuid())
+  clientId    String
+  barbershopId String
+  createdAt   DateTime @default(now())
+
+  client      Client      @relation(fields: [clientId], references: [id])
+  barbershop  Barbershop  @relation(fields: [barbershopId], references: [id])
+
+  @@unique([clientId, barbershopId])
+  @@index([clientId])
+  @@index([barbershopId])
+  @@map("favorite_barbershops")
+}
+
+model Appointment {
+  id          String    @id @default(uuid())
+  shopId      String
+  clientId    String
+  barberId    String
+  date        DateTime
+  status      AppointmentStatus @default(SCHEDULED)
+  totalPrice  Float
+  cancelReason String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  client      Client     @relation("ClientAppointments", fields: [clientId], references: [id])
+  barber      Barber     @relation(fields: [barberId], references: [id])
+  services    AppointmentService[]
+  products    AppointmentProduct[]
+  review      Review?
+  serviceOrder ServiceOrder?
+
+  @@index([shopId, barberId, date])
+  @@index([clientId])
+  @@map("appointments")
+}
+
+model AppointmentService {
+  id            String     @id @default(uuid())
+  appointmentId String
+  serviceId     String
+
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  service       Service     @relation(fields: [serviceId], references: [id])
+
+  @@unique([appointmentId, serviceId])
+  @@map("appointment_services")
+}
+
+model AppointmentProduct {
+  id            String     @id @default(uuid())
+  appointmentId String
+  productId     String
+  name          String
+  price         Float
+  quantity      Int
+
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  product       Product     @relation(fields: [productId], references: [id])
+
+  @@unique([appointmentId, productId])
+  @@map("appointment_products")
+}
+
+model BlockedTime {
+  id          String     @id @default(uuid())
+  shopId      String
+  barberId    String
+  date        DateTime
+  endDate     DateTime?
+  type        BlockedType
+  startTime   String?
+  endTime     String?
+  reason      String?
+  blockedBy   BlockedBy  @default(BARBER)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  barber      Barber     @relation(fields: [barberId], references: [id])
+
+  @@index([shopId, barberId, date])
+  @@map("blocked_times")
+}
+
+model Plan {
+  id          String    @id @default(uuid())
+  name        String
+  price       Float
+  benefits    String[]
+  discount    Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  invoices    Invoice[]
+
+  @@map("plans")
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  shopId      String
+  clientId    String
+  planId      String?
+  amount      Float
+  status      InvoiceStatus @default(PENDING)
+  type        InvoiceType
+  paymentMethod PaymentMethod?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  shop        Barbershop    @relation(fields: [shopId], references: [id])
+  client      Client        @relation(fields: [clientId], references: [id], map: "invoice_client_fkey")
+  plan        Plan?         @relation(fields: [planId], references: [id])
+
+  @@index([shopId])
+  @@index([clientId])
+  @@map("invoices")
+}
+
+model Review {
+  id            String     @id @default(uuid())
+  appointmentId String?    @unique
+  barberId      String?
+  clientId      String?
+  rating        Int
+  comment       String
+  date          DateTime   @default(now())
+
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  barber        Barber?      @relation(fields: [barberId], references: [id])
+  client        Client?      @relation(fields: [clientId], references: [id], map: "review_client_fkey")
+
+  @@index([barberId])
+  @@index([clientId])
+  @@map("reviews")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  action      String
+  entity      String
+  entityId    String
+  userId      String?
+  shopId      String?
+  timestamp   DateTime  @default(now())
+  details     String?
+
+  @@index([shopId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model ProductStockMovement {
+  id          String    @id @default(uuid())
+  productId   String
+  shopId      String
+  type        ProductStockMovementType
+  quantity    Int
+  reason      String?
+  createdAt   DateTime  @default(now())
+  userId      String?
+
+  product     Product   @relation(fields: [productId], references: [id])
+  shop        Barbershop @relation(fields: [shopId], references: [id])
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([shopId])
+  @@index([userId])
+  @@map("product_stock_movements")
+}
+
+// ===== SISTEMA FINANCEIRO =====
+
+// Comanda / Ordem de Serviço
+model ServiceOrder {
+  id              String        @id @default(uuid())
+  shopId          String
+  clientId        String
+  barberId        String
+  appointmentId   String?       @unique  // Vinculado ao agendamento (se houver)
+  orderNumber     Int           // Número sequencial da comanda
+  status          OrderStatus   @default(OPEN)
+  
+  // Valores
+  subtotal        Float         @default(0)     // Subtotal dos itens
+  discount        Float         @default(0)     // Desconto aplicado
+  total           Float         @default(0)     // Total final
+  
+  // Pagamento
+  paymentMethod   PaymentMethod?
+  paidAt          DateTime?
+  
+  // Observações
+  notes           String?
+  
+  // Datas
+  startedAt       DateTime      @default(now()) // Quando iniciou atendimento
+  completedAt     DateTime?                      // Quando finalizou
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relações
+  shop            Barbershop    @relation(fields: [shopId], references: [id])
+  client          Client        @relation(fields: [clientId], references: [id])
+  barber          Barber        @relation(fields: [barberId], references: [id])
+  appointment     Appointment?  @relation(fields: [appointmentId], references: [id])
+  items           OrderItem[]
+  
+  @@unique([shopId, orderNumber])
+  @@index([shopId, createdAt])
+  @@index([clientId])
+  @@index([barberId])
+  @@index([status])
+  @@map("service_orders")
+}
+
+// Itens da Comanda
+model OrderItem {
+  id              String        @id @default(uuid())
+  orderId         String
+  type            OrderItemType
+  
+  // Referências (um dos três será preenchido)
+  serviceId       String?
+  productId       String?
+  
+  // Dados do item (snapshot no momento da venda)
+  name            String
+  description     String?
+  quantity        Int           @default(1)
+  unitPrice       Float
+  total           Float         // quantity * unitPrice
+  
+  // Comissão do barbeiro neste item
+  commissionRate  Float?        // Percentual de comissão
+  commissionValue Float?        // Valor da comissão
+  
+  createdAt       DateTime      @default(now())
+  
+  // Relações
+  order           ServiceOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service         Service?      @relation(fields: [serviceId], references: [id])
+  product         Product?      @relation(fields: [productId], references: [id])
+  
+  @@index([orderId])
+  @@index([serviceId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// Configuração de Comissões por Barbeiro
+model BarberCommission {
+  id              String         @id @default(uuid())
+  shopId          String
+  barberId        String
+  serviceId       String?        // null = regra padrão para todos os serviços
+  productId       String?        // null = regra padrão para todos os produtos
+  
+  // Tipo de comissão
+  type            CommissionType @default(PERCENTAGE)
+  value           Float          // Porcentagem (ex: 40 para 40%) ou valor fixo
+  
+  // Para comissão escalonada (TIERED)
+  minTarget       Float?         // Meta mínima mensal
+  maxTarget       Float?         // Meta máxima mensal
+  
+  // Controle de aplicação
+  applyOnServices Boolean        @default(true)   // Aplica em serviços
+  applyOnProducts Boolean        @default(false)  // Aplica em produtos (ativável/desativável)
+  
+  active          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  // Relações
+  shop            Barbershop     @relation(fields: [shopId], references: [id])
+  barber          Barber         @relation(fields: [barberId], references: [id])
+  service         Service?       @relation(fields: [serviceId], references: [id])
+  product         Product?       @relation(fields: [productId], references: [id])
+  
+  @@index([shopId])
+  @@index([barberId])
+  @@index([serviceId])
+  @@index([productId])
+  @@map("barber_commissions")
+}
+
+// Custos Operacionais
+model Expense {
+  id              String        @id @default(uuid())
+  shopId          String
+  type            ExpenseType
+  category        String        // Subcategoria customizável
+  
+  description     String
+  amount          Float
+  
+  // Recorrência
+  isRecurring     Boolean       @default(false)
+  recurrenceDay   Int?          // Dia do mês (1-31)
+  
+  // Datas
+  dueDate         DateTime
+  paidDate        DateTime?
+  
+  // Controle
+  isPaid          Boolean       @default(false)
+  paymentMethod   PaymentMethod?
+  notes           String?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relações
+  shop            Barbershop    @relation(fields: [shopId], references: [id])
+  
+  @@index([shopId, dueDate])
+  @@index([type])
+  @@index([isPaid])
+  @@map("expenses")
+}
+
+// Caixa Diário (Snapshot do dia)
+model DailyCashFlow {
+  id                    String        @id @default(uuid())
+  shopId                String
+  date                  DateTime      @db.Date
+  
+  // Receitas
+  totalRevenue          Float         @default(0)  // Faturamento bruto
+  servicesRevenue       Float         @default(0)  // Receita de serviços
+  productsRevenue       Float         @default(0)  // Receita de produtos
+  
+  // Descontos
+  totalDiscounts        Float         @default(0)
+  
+  // Custos
+  totalExpenses         Float         @default(0)  // Despesas do dia
+  totalCommissions      Float         @default(0)  // Comissões pagas
+  
+  // Resultado
+  netRevenue            Float         @default(0)  // Receita - Descontos
+  profit                Float         @default(0)  // Lucro (Receita - Despesas - Comissões)
+  
+  // Estatísticas
+  totalOrders           Int           @default(0)
+  totalAppointments     Int           @default(0)
+  averageTicket         Float         @default(0)
+  
+  // Pagamentos
+  cashPayments          Float         @default(0)
+  cardPayments          Float         @default(0)
+  pixPayments           Float         @default(0)
+  
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  
+  // Relações
+  shop                  Barbershop    @relation(fields: [shopId], references: [id])
+  
+  @@unique([shopId, date])
+  @@index([shopId, date])
+  @@map("daily_cash_flow")
+}
+
+// Relatório de Performance de Serviços/Produtos
+model ServiceProductAnalytics {
+  id              String        @id @default(uuid())
+  shopId          String
+  
+  // Referência
+  serviceId       String?
+  productId       String?
+  
+  // Período
+  periodStart     DateTime      @db.Date
+  periodEnd       DateTime      @db.Date
+  
+  // Métricas
+  totalSold       Int           @default(0)
+  totalRevenue    Float         @default(0)
+  totalCost       Float?        // Custo (para produtos)
+  totalProfit     Float?        // Lucro
+  
+  // Ranking
+  ranking         Int?          // Posição no ranking do período
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relações
+  shop            Barbershop    @relation(fields: [shopId], references: [id])
+  service         Service?      @relation(fields: [serviceId], references: [id])
+  product         Product?      @relation(fields: [productId], references: [id])
+  
+  @@unique([shopId, serviceId, productId, periodStart, periodEnd])
+  @@index([shopId, periodStart, periodEnd])
+  @@map("service_product_analytics")
+}
