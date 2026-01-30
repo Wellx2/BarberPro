@@ -19,6 +19,13 @@ enum UserRole {
   CLIENT
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  FACEBOOK
+  APPLE
+}
+
 enum AppointmentStatus {
   SCHEDULED
   COMPLETED
@@ -146,24 +153,31 @@ model Barbershop {
 }
 
 model User {
-  id             String    @id @default(uuid())
+  id             String        @id @default(uuid())
   name           String
-  email          String?   @unique
+  email          String?       @unique
   phone          String?
-  passwordHash   String
-  role           UserRole  @default(CLIENT)
+  passwordHash   String?       // Opcional para OAuth users
+  role           UserRole      @default(CLIENT)
   shopId         String?
   planId         String?
-  credits        Int?      @default(0)
-  active         Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  credits        Int?          @default(0)
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   refreshToken   String?
+  
+  // Campos OAuth
+  provider       AuthProvider  @default(LOCAL)
+  providerId     String?       // ID do usuário no provedor (Google, Facebook, etc)
+  avatar         String?       // URL da foto do perfil OAuth
+  emailVerified  Boolean       @default(false)
 
   shop           Barbershop? @relation(fields: [shopId], references: [id])
   plan           Plan?       @relation(fields: [planId], references: [id])
   stockMovements ProductStockMovement[]
 
+  @@unique([provider, providerId]) // Garante unicidade por provedor
   @@map("users")
 }
 

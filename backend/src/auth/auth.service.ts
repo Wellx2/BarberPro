@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { RegisterShopDto } from './dto/register-shop.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { UserRole } from '@prisma/client';
+import { UserRole, AuthProvider } from '@prisma/client';
 
 const BCRYPT_SALT = 12;
 
@@ -74,6 +74,12 @@ export class AuthService {
       where: { email: dto.email },
     });
     if (!user || !user.active) throw new UnauthorizedException('Credenciais inválidas');
+    
+    // Verificar se usuário usa OAuth e não tem senha
+    if (user.provider !== AuthProvider.LOCAL || !user.passwordHash) {
+      throw new UnauthorizedException('Por favor, use o login com Google para acessar sua conta');
+    }
+    
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Credenciais inválidas');
     const { accessToken, refreshToken } = await this.generateTokens(user);
@@ -128,6 +134,67 @@ export class AuthService {
 
   private async saveRefreshToken(userId: string, refreshToken: string) {
     // Armazena hash do refresh token
+
+  // ===== MÉTODOS OAUTH GOOGLE =====
+
+  async googleLogin(googleUser: any) {
+    // Buscar usuário existente pelo Google ID ou email
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { provider: AuthProvider.GOOGLE, providerId: googleUser.providerId },
+          { email: googleUser.email },
+        ],
+      },
+      include: { shop: true },
+    });
+
+    if (user) {
+      // Atualizar informações do usuário existente
+      if (user.provider !== AuthProvider.GOOGLE) {
+        // Usuário já existe com login local, migrar para OAuth
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            provider: AuthProvider.GOOGLE,
+            providerId: googleUser.providerId,
+            avatar: googleUser.avatar || user.avatar,
+            emailVerified: true,
+          },
+          include: { shop: true },
+        });
+      }
+    } else {
+      // Criar novo usuário CLIENT (sem vinculação a shop)
+      user = await this.prisma.user.create({
+        data: {
+          name: googleUser.name,
+          email: googleUser.email,
+          provider: AuthProvider.GOOGLE,
+          providerId: googleUser.providerId,
+          avatar: googleUser.avatar,
+          emailVerified: true,
+          role: UserRole.CLIENT,
+          active: true,
+        },
+        include: { shop: true },
+      });
+    }
+
+    // Gerar tokens JWT
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+    await this.saveRefreshToken(user.id, refreshToken);
+
+    return {
+      user: {
+        ...user,
+        passwordHash: undefined,
+        refreshToken: undefined,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
     const hash = await bcrypt.hash(refreshToken, BCRYPT_SALT);
     await this.prisma.user.update({
       where: { id: userId },

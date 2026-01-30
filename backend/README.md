@@ -9,6 +9,7 @@
 - **PostgreSQL** 16.x (Banco de dados)
 - **Prisma** 5.x (ORM + Migrations)
 - **JWT** (Autenticação)
+- **OAuth 2.0** (Google Sign In)
 - **Swagger** (Documentação da API)
 
 ## 📋 Pré-requisitos
@@ -51,10 +52,12 @@ Configure no `.env`:
 - `JWT_SECRET` e `JWT_REFRESH_SECRET`: Use os secrets gerados acima
 - `DATABASE_URL`: Atualize com a senha do PostgreSQL
 - `FRONTEND_URL`: URL do frontend para CORS
+- `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: Para autenticação OAuth (opcional)
 
 ⚠️ **NUNCA commite o arquivo `.env` no Git!** Verifique que está no `.gitignore`.
 
 📖 Veja [SECURITY.md](SECURITY.md) para mais detalhes sobre segurança.
+📖 Veja [docs/OAUTH_README.md](docs/OAUTH_README.md) para configurar login com Google.
 
 ### 4. Inicie o PostgreSQL via Docker
 
@@ -151,12 +154,18 @@ POST /api/auth/register-shop
   "phone": "11999999999"
 }
 
-# Login
+# Login tradicional (email/senha)
 POST /api/auth/login
 {
   "email": "joao@example.com",
   "password": "senha123"
 }
+
+# Login com Google OAuth (redireciona para Google)
+GET /api/auth/google
+
+# Callback OAuth (processa e redireciona para frontend com tokens)
+GET /api/auth/google/callback
 
 # Refresh token
 POST /api/auth/refresh
@@ -164,6 +173,8 @@ POST /api/auth/refresh
   "refreshToken": "..."
 }
 ```
+
+📖 **Configurar OAuth:** Veja [docs/OAUTH_README.md](docs/OAUTH_README.md) e [docs/GOOGLE_OAUTH_SETUP.md](docs/GOOGLE_OAUTH_SETUP.md)
 
 ### Agendamentos
 
