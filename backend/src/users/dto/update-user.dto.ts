@@ -38,4 +38,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  globalPushEnabled?: boolean;
 }

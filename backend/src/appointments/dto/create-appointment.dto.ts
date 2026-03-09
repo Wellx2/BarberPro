@@ -8,6 +8,7 @@ import {
   ValidateNested,
   IsNumber,
   Min,
+  IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -24,15 +25,15 @@ class AppointmentProductDto {
 }
 
 export class CreateAppointmentDto {
-  @ApiProperty({ description: 'ID do cliente' })
+  @ApiPropertyOptional({ description: 'ID do cliente (obrigatório para ADMIN/SUPER_ADMIN)' })
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  clientId: string;
+  clientId?: string;
 
-  @ApiProperty({ description: 'ID do barbeiro' })
+  @ApiPropertyOptional({ description: 'ID do barbeiro (obrigatório para ADMIN/SUPER_ADMIN)' })
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  barberId: string;
+  barberId?: string;
 
   @ApiProperty({ description: 'IDs dos serviços', type: [String] })
   @IsArray()
@@ -45,10 +46,19 @@ export class CreateAppointmentDto {
   @IsNotEmpty()
   date: string;
 
+  @ApiPropertyOptional({ description: 'Observações do agendamento' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
   @ApiPropertyOptional({ description: 'Produtos adicionais', type: [AppointmentProductDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AppointmentProductDto)
   products?: AppointmentProductDto[];
+
+  @ApiPropertyOptional({ description: 'Habilita lembrete para este agendamento', default: true })
+  @IsOptional()
+  reminderEnabled?: boolean;
 }

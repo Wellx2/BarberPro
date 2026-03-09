@@ -2,12 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { SanitizeResponseInterceptor } from './common/interceptors/sanitize-response.interceptor';
+import { TenantInterceptor } from './common/tenant/tenant.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Aumentar limite de payload para aceitar imagens em base64
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   // Segurança
   app.use(helmet());
@@ -16,6 +22,9 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Authorization'],
   });
 
   // Prefixo global
@@ -33,8 +42,11 @@ async function bootstrap() {
   // Exception filter global
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Interceptor para remover campos sensíveis
-  app.useGlobalInterceptors(new SanitizeResponseInterceptor());
+  // Interceptores globais (Response Sanitize & Tenant Isolation Context)
+  app.useGlobalInterceptors(
+    new SanitizeResponseInterceptor(),
+    new TenantInterceptor()
+  );
 
   // Swagger
   const config = new DocumentBuilder()
@@ -57,6 +69,12 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+  // Rota raiz da API - redireciona para documentação
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.get('/api', (req, res) => {
+    res.redirect('/api/docs');
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

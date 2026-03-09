@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -8,6 +13,17 @@ import { RemoveServiceDto } from './dto/remove-service.dto';
 @Injectable()
 export class ServicesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Método público para buscar serviços por shopId (sem autenticação)
+  async findByShop(shopId: string) {
+    return this.prisma.service.findMany({
+      where: {
+        shopId,
+        deletedAt: null, // Filtrar serviços não deletados
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
 
   async create(requester: any, dto: CreateServiceDto) {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
@@ -19,6 +35,7 @@ export class ServicesService {
         price: dto.price,
         category: dto.category,
         description: dto.description,
+        image: dto.image,
         active: dto.active ?? true,
       },
     });
@@ -26,12 +43,12 @@ export class ServicesService {
     return service;
   }
 
-  async findAll(requester: any, active?: boolean) {
+  async findAll(requester: any) {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
     return this.prisma.service.findMany({
       where: {
         shopId: requester.shopId,
-        ...(active !== undefined ? { active } : {}),
+        deletedAt: null, // Filtrar serviços não deletados
       },
       orderBy: { name: 'asc' },
     });
@@ -39,7 +56,7 @@ export class ServicesService {
 
   async findOne(requester: any, id: string) {
     const service = await this.prisma.service.findUnique({ where: { id } });
-    if (!service || service.shopId !== requester.shopId)
+    if (!service || service.shopId !== requester.shopId || service.deletedAt !== null)
       throw new NotFoundException('Serviço não encontrado');
     return service;
   }
@@ -77,27 +94,14 @@ export class ServicesService {
 
   async remove(requester: any, id: string, dto: RemoveServiceDto) {
     const service = await this.prisma.service.findUnique({ where: { id } });
-    if (!service || service.shopId !== requester.shopId)
+    if (!service || service.shopId !== requester.shopId || service.deletedAt !== null)
       throw new NotFoundException('Serviço não encontrado');
-    // Verifica vínculos com barbeiros, agendamentos, etc
-    const hasAppointments = await this.prisma.appointmentService.findFirst({
-      where: { serviceId: id },
+    
+    // Soft delete com timestamp (sempre)
+    await this.prisma.service.update({ 
+      where: { id }, 
+      data: { deletedAt: new Date() } 
     });
-    if (hasAppointments) {
-      // Soft delete: marca como inativo
-      await this.prisma.service.update({ where: { id }, data: { active: false } });
-      await this.logAction(
-        'REMOVE',
-        id,
-        requester.id,
-        requester.shopId,
-        dto.reason + ' (soft delete: serviço vinculado a agendamentos)',
-      );
-      return { message: 'Serviço desativado (soft delete, pois há vínculos)' };
-    }
-    // Se não houver vínculos, pode remover fisicamente
-    await this.prisma.serviceDisabledPeriod.deleteMany({ where: { serviceId: id } });
-    await this.prisma.service.delete({ where: { id } });
     await this.logAction('REMOVE', id, requester.id, requester.shopId, dto.reason);
     return { message: 'Serviço removido com sucesso' };
   }
@@ -110,6 +114,49 @@ export class ServicesService {
       where: { serviceId: id },
       orderBy: { startDate: 'asc' },
     });
+  }
+
+  // Métodos de Destaque (Featured)
+  async findFeatured(requester: any) {
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+
+    return this.prisma.service.findMany({
+      where: {
+        shopId: requester.shopId,
+        featured: true,
+        deletedAt: null, // Filtrar serviços não deletados
+      },
+      take: 3,
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async toggleFeatured(requester: any, id: string) {
+    const service = await this.findOne(requester, id);
+
+    // Limitar a 3 destaques
+    const featuredCount = await this.prisma.service.count({
+      where: { shopId: requester.shopId, featured: true, deletedAt: null },
+    });
+
+    if (!service.featured && featuredCount >= 3) {
+      throw new BadRequestException('Limite de 3 serviços em destaque atingido (máximo por loja)');
+    }
+
+    const updated = await this.prisma.service.update({
+      where: { id },
+      data: { featured: !service.featured },
+    });
+
+    await this.logAction(
+      'TOGGLE_FEATURED',
+      id,
+      requester.id,
+      requester.shopId,
+      `Destaque ${updated.featured ? 'ativado' : 'desativado'}`,
+    );
+
+    return updated;
   }
 
   private async logAction(

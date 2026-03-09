@@ -8,7 +8,7 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
  */
 @Injectable()
 export class ExpensesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Cria nova despesa
@@ -18,11 +18,13 @@ export class ExpensesService {
       throw new ForbiddenException('Usuário não vinculado a uma barbearia');
     }
 
+    const shopId: string = requester.shopId;
+
     const expense = await this.prisma.expense.create({
       data: {
-        shopId: requester.shopId,
+        shopId,
         ...dto,
-      },
+      } as any,
     });
 
     // Log de auditoria

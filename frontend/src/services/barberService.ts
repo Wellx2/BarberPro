@@ -1,0 +1,99 @@
+﻿/**
+ * Serviço de Barbeiros
+ */
+
+import { api } from './api';
+
+export interface Barber {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  image?: string;
+  avatar?: string;
+  bio?: string;
+  specialties?: string[];
+  rating?: number;
+  reviewCount?: number;
+  barbershopId: string;
+  active: boolean;
+}
+
+export const barberService = {
+  /**
+   * Lista barbeiros por barbearia
+   */
+  async list(barbershopId?: string): Promise<Barber[]> {
+    try {
+      // Backend filtra automaticamente por shopId do usuário logado (TenantGuard)
+      const response = await api.get<Barber[]>('/barbers');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar barbeiros:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Lista barbeiros públicos de uma barbearia (sem autenticação)
+   * Retorna TODOS os barbeiros ativos da loja
+   * 
+   * Backend: GET /barbers/public/shop/:shopId
+   */
+  async listPublic(shopId: string): Promise<Barber[]> {
+    try {
+      const response = await api.get<Barber[]>(`/barbers/public/shop/${shopId}`);
+      return response.data.filter((b: any) => b.active !== false);
+    } catch (error: any) {
+      console.error('âŒ barberService.listPublic: Erro', error);
+      throw error; // Re-throw para permitir fallback no componente
+    }
+  },
+
+  /**
+   * Busca barbeiro por ID
+   */
+  async getById(id: string): Promise<Barber> {
+    const response = await api.get<Barber>(`/barbers/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Cria novo barbeiro (requer autenticação ADMIN)
+   */
+  async create(data: Omit<Barber, 'id'>): Promise<Barber> {
+    const response = await api.post<Barber>('/barbers', data);
+    return response.data;
+  },
+
+  /**
+   * Atualiza barbeiro (requer autenticação)
+   */
+  async update(id: string, data: Partial<Barber>): Promise<Barber> {
+    const response = await api.patch<Barber>(`/barbers/${id}`, data);
+    return response.data;
+  },
+
+  /**
+   * Remove barbeiro (requer autenticação ADMIN)
+   */
+  async remove(id: string): Promise<void> {
+    await api.delete(`/barbers/${id}`);
+  },
+
+  /**
+   * Ativa/Desativa barbeiro (requer autenticação ADMIN)
+   */
+  async toggleActive(id: string): Promise<Barber> {
+    const response = await api.patch<Barber>(`/barbers/${id}/toggle-active`);
+    return response.data;
+  },
+
+  /**
+   * Busca horários disponíveis de um barbeiro
+   */
+  async getAvailableSlots(barberId: string, date: string): Promise<string[]> {
+    const response = await api.get<string[]>(`/barbers/${barberId}/available-slots?date=${date}`);
+    return response.data;
+  },
+};

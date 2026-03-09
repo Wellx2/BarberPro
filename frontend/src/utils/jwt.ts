@@ -1,0 +1,114 @@
+﻿/**
+ * Utilitários para decodificar e debugar JWT
+ */
+
+export interface JWTPayload {
+  sub?: string;          // userId
+  email?: string;
+  role?: string;
+  shopId?: string;       // CRÍTICO: backend precisa deste campo
+  barbershopId?: string; // Possível nome alternativo
+  iat?: number;          // Issued at
+  exp?: number;          // Expiration
+  [key: string]: any;    // Outros campos possíveis
+}
+
+/**
+ * Decodifica um JWT sem validar assinatura (apenas para debug)
+ */
+export function decodeJWT(token: string): JWTPayload | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('âŒ Token JWT inválido: não tem 3 partes');
+      return null;
+    }
+
+    // Decodifica a parte do payload (segunda parte)
+    const payload = parts[1];
+    const decoded = atob(payload);
+    const parsed = JSON.parse(decoded);
+
+    return parsed as JWTPayload;
+  } catch (error) {
+    console.error('âŒ Erro ao decodificar JWT:', error);
+    return null;
+  }
+}
+
+/**
+ * Verifica se o JWT tem os campos necessários para criar appointments
+ */
+export function validateJWTForAppointments(token: string): {
+  valid: boolean;
+  payload: JWTPayload | null;
+  errors: string[];
+} {
+  const payload = decodeJWT(token);
+  const errors: string[] = [];
+
+  if (!payload) {
+    return {
+      valid: false,
+      payload: null,
+      errors: ['Token inválido ou não decodificável']
+    };
+  }
+
+  // Verificações críticas
+  if (!payload.sub && !payload.userId) {
+    errors.push('âŒ Token não contém userId (sub)');
+  }
+
+  if (!payload.shopId && !payload.barbershopId) {
+    errors.push('âŒ Token não contém shopId - Backend não conseguirá inferir a barbearia!');
+  }
+
+  if (!payload.role) {
+    errors.push('âš ï¸ Token não contém role');
+  }
+
+  return {
+    valid: errors.length === 0,
+    payload,
+    errors
+  };
+}
+
+/**
+ * Debug completo do JWT atual
+ */
+export function debugCurrentJWT(): void {
+  const token = localStorage.getItem('accessToken');
+  
+  console.group('ðŸ” DEBUG JWT');
+  
+  if (!token) {
+    console.error('âŒ Nenhum token encontrado no localStorage');
+    console.groupEnd();
+    return;
+  }
+
+  
+  const validation = validateJWTForAppointments(token);
+  
+  
+  if (validation.errors.length > 0) {
+    console.group('âš ï¸ Problemas encontrados:');
+    validation.errors.forEach(error => console.error(error));
+    console.groupEnd();
+  }
+
+  if (validation.payload) {
+    console.group('Campos importantes:');
+    console.log('Role:', validation.payload.role);
+    console.log('ShopId:', validation.payload.shopId);
+    console.log('Expira:', validation.payload.exp
+      ? new Date(validation.payload.exp * 1000).toLocaleString()
+      : 'N/A'
+    );
+    console.groupEnd();
+  }
+
+  console.groupEnd();
+}

@@ -8,7 +8,11 @@ import {
   IsNumber,
   Min,
   Max,
+  IsEmail,
+  IsEnum,
+  IsDateString,
 } from 'class-validator';
+import { TeamMemberRole } from '@prisma/client';
 
 export class CreateBarberDto {
   @IsNotEmpty()
@@ -20,8 +24,20 @@ export class CreateBarberDto {
   nickname?: string;
 
   @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
 
   @IsArray()
   @ArrayMinSize(1)
@@ -29,7 +45,7 @@ export class CreateBarberDto {
   specialties: string[];
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   avatar?: string;
 
   @IsOptional()
@@ -42,4 +58,22 @@ export class CreateBarberDto {
   @IsArray()
   @IsString({ each: true })
   services?: string[];
+
+  @IsOptional()
+  @IsEnum(TeamMemberRole)
+  role?: TeamMemberRole;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  commissionRate?: number;
+
+  @IsOptional()
+  @IsDateString()
+  birthDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  hireDate?: string;
 }

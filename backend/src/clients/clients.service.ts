@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class ClientsService {
@@ -10,9 +11,37 @@ export class ClientsService {
   async create(requester: any, dto: CreateClientDto) {
     // ADMIN/BARBER só podem criar clientes do próprio shop
     if (requester.shopId == null) throw new ForbiddenException('Sem barbearia vinculada');
+
+    let linkedUserId: string | undefined;
+    if (dto.email || dto.phone) {
+      const candidateUser = await this.prisma.user.findFirst({
+        where: {
+          shopId: requester.shopId,
+          role: UserRole.CLIENT,
+          OR: [
+            ...(dto.email ? [{ email: dto.email }] : []),
+            ...(dto.phone ? [{ phone: dto.phone }] : []),
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (candidateUser) {
+        const alreadyLinked = await this.prisma.client.findFirst({
+          where: { userId: candidateUser.id },
+          select: { id: true },
+        });
+
+        if (!alreadyLinked) {
+          linkedUserId = candidateUser.id;
+        }
+      }
+    }
+
     const client = await this.prisma.client.create({
       data: {
         shopId: requester.shopId,
+        userId: linkedUserId,
         name: dto.name,
         nickname: dto.nickname,
         birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,

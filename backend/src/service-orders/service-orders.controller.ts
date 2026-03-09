@@ -17,8 +17,9 @@ import { CompleteServiceOrderDto } from './dto/complete-service-order.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
+import { ModuleAccessGuard, RequireModule } from '../common/guards/module-access.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole, OrderStatus } from '@prisma/client';
+import { UserRole, OrderStatus, ModuleType } from '@prisma/client';
 
 /**
  * Controller para Comandas/Ordens de Serviço
@@ -30,7 +31,8 @@ import { UserRole, OrderStatus } from '@prisma/client';
  * - Histórico completo de atendimentos
  */
 @Controller('service-orders')
-@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard, ModuleAccessGuard)
+@RequireModule(ModuleType.CAIXA)
 export class ServiceOrdersController {
   constructor(private readonly serviceOrdersService: ServiceOrdersService) {}
 

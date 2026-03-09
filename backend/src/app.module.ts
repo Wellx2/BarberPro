@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -22,6 +23,16 @@ import { ServiceOrdersModule } from './service-orders/service-orders.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { FinancialReportsModule } from './financial-reports/financial-reports.module';
 import { CommissionsModule } from './commissions/commissions.module';
+// Módulo de controle de acesso
+import { BarbershopModulesModule } from './barbershop-modules/barbershop-modules.module';
+// Módulo de FAQ
+import { FaqModule } from './faq/faq.module';
+// Módulo Financial (Analytics e Cashier)
+import { FinancialModule } from './financial/financial.module';
+// Módulo Agenda Locks
+import { AgendaLocksModule } from './agenda-locks/agenda-locks.module';
+// Módulo de Insumos
+import { SupplyItemsModule } from './supply-items/supply-items.module';
 
 @Module({
   imports: [
@@ -35,6 +46,9 @@ import { CommissionsModule } from './commissions/commissions.module';
       ttl: 60000,
       limit: 100,
     }),
+
+    // Cron jobs
+    ScheduleModule.forRoot(),
 
     // Prisma
     PrismaModule,
@@ -58,6 +72,21 @@ import { CommissionsModule } from './commissions/commissions.module';
     ExpensesModule,
     FinancialReportsModule,
     CommissionsModule,
+
+    // Módulo de Controle de Acesso
+    BarbershopModulesModule,
+
+    // Módulo de FAQ
+    FaqModule,
+
+    // Módulo Financial (Analytics e Cashier)
+    FinancialModule,
+
+    // Módulo Agenda Locks
+    AgendaLocksModule,
+
+    // Módulo de Insumos da Barbearia
+    SupplyItemsModule,
   ],
   providers: [
     {
@@ -66,4 +95,4 @@ import { CommissionsModule } from './commissions/commissions.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

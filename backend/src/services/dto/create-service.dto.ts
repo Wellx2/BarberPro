@@ -12,6 +12,7 @@ export class CreateServiceDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @Min(0)
   price: number;
 
   @IsNotEmpty()
@@ -21,6 +22,10 @@ export class CreateServiceDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
 
   @IsOptional()
   @IsBoolean()

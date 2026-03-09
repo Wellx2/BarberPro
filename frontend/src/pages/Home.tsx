@@ -1,0 +1,416 @@
+﻿import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { Star, Calendar, MapPin, ChevronDown, MessageSquare, Scissors, Award, ArrowRight } from 'lucide-react';
+import { useShop } from '../context/ShopContext';
+import { useAuth } from '../context/AuthContext';
+import { ShopSelector } from '../components/ShopSelector';
+import { PlansSection } from '../components/PlansSection';
+import { SectionHeader } from '../components/SectionHeader';
+import { ServiceGrid } from '../components/ServiceGrid';
+import { ProductGrid } from '../components/ProductGrid';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { Container } from '../components/layout/Container';
+import { Grid } from '../components/layout/Grid';
+import { Button, Card } from '../components/ui';
+import { barbershopService } from '../services/barbershopService';
+import { api } from '../services/api';
+import { Service, Product } from '../types';
+
+export const Home: React.FC = () => {
+  const { shop, fetchError, retryFetch } = useShop();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [services, setServices] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [barbers, setBarbers] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const lastLoadedShopId = React.useRef<string | null>(null);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    // ✅ PROTEÇÃO 1: Se ShopContext tem erro, não tentar carregar nada
+    if (fetchError) {
+      setLoading(false);
+      return;
+    }
+
+    // ✅ PROTEÇÃO 2: Aguardar shop.id válido
+    if (!shop.id || shop.id.startsWith('shop-')) {
+      setLoading(false);
+      return;
+    }
+
+    // ✅ PROTEÇÃO 3: Evitar recarregar para o mesmo shop SE já tem dados
+    if (lastLoadedShopId.current === shop.id && services.length > 0) {
+      return;
+    }
+
+    lastLoadedShopId.current = shop.id;
+    setReviews([]); // Limpar reviews ao trocar de shop
+
+    const loadPreview = async () => {
+      // ✅ PROTEÇÃO 4: Cancelar requisições anteriores
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      setLoading(true);
+
+      try {
+        // Buscar preview com top 3 de cada categoria (endpoint público)
+        const preview = await barbershopService.getPreview(shop.id);
+        // ✅ PROTEÇÃO 5: Verificar se foi abortado
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
+
+        setServices(preview.services || []);
+        setProducts(preview.products || []);
+        setBarbers(preview.barbers || []);
+
+        // Buscar avaliações públicas dos barbeiros desta loja
+        const barberIds = (preview.barbers || []).map((b: any) => b.id);
+        if (barberIds.length > 0) {
+          try {
+            const reviewsRes = await api.get<any[]>('/reviews');
+            const shopReviews = reviewsRes.data.filter((r: any) => barberIds.includes(r.barberId));
+            setReviews(shopReviews.slice(0, 6));
+          } catch {
+            setReviews([]);
+          }
+        } else {
+          setReviews([]);
+        }
+      } catch (error) {
+        console.error('❌ Home: Erro ao carregar preview:', error);
+        setServices([]);
+        setProducts([]);
+        setBarbers([]);
+        setReviews([]);
+      } finally {
+        setLoading(false);
+        abortControllerRef.current = null;
+      }
+    };
+
+    loadPreview();
+
+    // ✅ Cleanup: Abortar requisição ao desmontar
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [shop.id, fetchError]);
+
+  const modulesEnabled = shop.settings.modulesEnabled || {
+    clientPlans: true,
+    products: true,
+    reviews: true,
+    cashier: true,
+    financial: true,
+    reports: true
+  };
+  const subscriptionsActive = modulesEnabled.clientPlans !== false;
+  const showProducts = modulesEnabled.products !== false;
+  const showReviews = modulesEnabled.reviews !== false;
+  const showBarbers = shop.settings.showBarbers !== false;
+
+  // Função auxiliar para verificar login antes de navegar
+  const navigateWithAuth = (path: string) => {
+    if (isAuthenticated) {
+      navigate(path);
+    } else {
+      navigate('/login', { state: { from: path } });
+    }
+  };
+
+  const handleBook = (serviceId?: string) => {
+    const state = serviceId ? { preSelectedServiceId: serviceId } : {};
+    if (isAuthenticated) navigate('/book', { state });
+    else navigate('/login', { state: { from: '/book', ...state } });
+  };
+
+  // Removing invasive fetchError block. Handled by Layout banner and Skeletons now.
+
+  return (
+    <div className="flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300">
+
+      {/* 1. Hero Section */}
+      <section className="relative bg-gray-900 text-white h-[85vh] flex items-center overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80'} alt={shop.name} className="w-full h-full object-cover opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
+        </div>
+
+        <button
+          onClick={() => setShowLocationModal(true)}
+          className="absolute top-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-4 rounded-[20px] bg-gray-800/80 backdrop-blur-xl border border-gray-700/60 text-white hover:bg-gray-700/80 transition-all shadow-2xl group"
+        >
+          <div className="flex items-center gap-2 md:gap-3">
+            <MapPin size={18} className="text-amber-500 shrink-0" />
+            <div className="hidden md:flex flex-col items-start gap-0.5">
+              <span className="text-[10px] font-black uppercase text-amber-500 tracking-widest">Unidade Selecionada</span>
+              <span className="text-base font-black uppercase tracking-tight text-white">{shop.name}</span>
+            </div>
+            <span className="md:hidden text-sm font-black uppercase tracking-tight text-white">{shop.name}</span>
+          </div>
+          <ChevronDown size={18} className="text-gray-400 group-hover:text-amber-500 transition-colors ml-0 md:ml-2 shrink-0" />
+        </button>
+
+        <div className="relative max-w-7xl mx-auto px-4 text-center w-full animate-fade-in">
+          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 uppercase leading-none">
+            Estilo &<br /><span className="text-amber-500">Tradição</span>
+          </h1>
+          <p className="text-base md:text-xl text-gray-300 max-w-xl mx-auto mb-12 font-medium">
+            Excelência no atendimento para a unidade {shop.name}.
+          </p>
+          <div className="flex justify-center">
+            <PrimaryButton onClick={() => handleBook()}>
+              Agendar Agora
+            </PrimaryButton>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Services Section (Destaques da Unidade) */}
+      <section className="py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-100 dark:border-gray-800">
+        <Container size="xl">
+          <SectionHeader
+            title="Nossos Serviços"
+            subtitle="Destaques da Unidade"
+          />
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+              <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando preview...</p>
+            </div>
+          ) : services.length > 0 ? (
+            <>
+              <ServiceGrid
+                services={services}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                showSearch={true}
+                maxItems={3}
+              />
+
+              <div className="text-center mt-16">
+                <button
+                  onClick={() => navigateWithAuth('/services')}
+                  className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-600 font-bold uppercase text-sm tracking-wider transition-colors group"
+                >
+                  Ver Catálogo Completo
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400">Nenhum serviço disponível no momento.</p>
+            </div>
+          )}
+        </Container>
+      </section>
+
+      {/* 3. Products Preview (Nossa Loja) */}
+      {showProducts && (
+        <section className="py-24 bg-white dark:bg-gray-900 border-y border-gray-100 dark:border-gray-800">
+          <Container size="xl">
+            <SectionHeader title="Nossa Loja" />
+
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando preview...</p>
+              </div>
+            ) : products.length > 0 ? (
+              <>
+                <ProductGrid
+                  products={products}
+                  subscriptionsActive={subscriptionsActive}
+                  userHasPlan={!!user?.planId}
+                  onAddToCart={() => navigate('/products')}
+                  onViewDetails={() => navigate('/products')}
+                  maxItems={3}
+                />
+                <div className="text-center mt-12">
+                  <button
+                    onClick={() => navigateWithAuth('/products')}
+                    className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-600 font-bold uppercase text-sm tracking-wider transition-colors group"
+                  >
+                    Ver Loja
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400">Nenhum produto disponível no momento.</p>
+              </div>
+            )}
+          </Container>
+        </section>
+      )}
+
+      {/* 4. Team Section (Nossos Profissionais) */}
+      {showBarbers && (
+        <section className="py-16 bg-gray-50 dark:bg-gray-900/50">
+          <Container size="xl">
+            <SectionHeader
+              title="Nossos Profissionais"
+              subtitle="Expertise em cada detalhe"
+            />
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando profissionais...</p>
+              </div>
+            ) : barbers.length > 0 ? (
+              <>
+                <Grid
+                  cols={barbers.length === 1 ? 1 : 2}
+                  gap="lg"
+                  className={barbers.length === 1 ? 'max-w-3xl mx-auto' : ''}
+                >
+                  {barbers.map(barber => (
+                    <Card key={barber.id} hover className="flex flex-col md:flex-row overflow-hidden !p-0">
+                      <div className="relative w-full md:w-48 h-64 md:h-full flex-shrink-0">
+                        <img
+                          src={barber.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(barber.name) + '&background=f59e0b&color=fff&size=512'}
+                          alt={barber.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-4 left-4 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-black">
+                          {barber.role === 'BARBER' ? 'BARBEIRO' : barber.role === 'HAIRDRESSER' ? 'CABELEIREIRO' : 'PROFISSIONAL'}
+                        </div>
+                      </div>
+                      <div className="flex-1 p-6">
+                        <h3 className="text-2xl font-black uppercase dark:text-white mb-1">{barber.name}</h3>
+                        {barber.nickname && (
+                          <p className="text-sm text-amber-500 font-bold mb-2">({barber.nickname})</p>
+                        )}
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 italic line-clamp-2">
+                          {barber.description || 'Profissional experiente dedicado à excelência no atendimento.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {barber.specialties?.map((spec: string, idx: number) => (
+                            <span key={idx} className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
+                              {spec}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-6 mb-6">
+                          <div className="flex items-center gap-2">
+                            <Star size={16} className="text-amber-500" fill="currentColor" />
+                            <span className="font-bold dark:text-white">{barber.rating?.toFixed(1) || '5.0'}</span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={() => handleBook()}
+                          fullWidth
+                          icon={<Calendar size={16} />}
+                        >
+                          Agendar Horário
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </Grid>
+
+                <div className="text-center mt-12">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    {isAuthenticated
+                      ? 'Conheça todos os nossos profissionais'
+                      : 'Conheça todos os nossos profissionais'}
+                  </p>
+                  <button
+                    onClick={() => navigateWithAuth('/services')}
+                    className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-500 font-bold text-sm transition-colors"
+                  >
+                    {isAuthenticated ? 'Ver Todos os Profissionais' : 'Ver Todos os Profissionais'}
+                    <ArrowRight size={18} strokeWidth={3} />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400">Nenhum profissional disponível no momento.</p>
+              </div>
+            )}
+          </Container>
+        </section>
+      )}
+
+      {/* 5. Testimonials (Avaliações) */}
+      {showReviews && (
+        <section className="py-16 bg-white dark:bg-gray-900">
+          <Container size="xl">
+            <SectionHeader
+              title="O que dizem os clientes"
+              icon={<MessageSquare size={32} />}
+            />
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-amber-500 border-t-transparent"></div>
+              </div>
+            ) : reviews.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                {reviews.map((review: any) => (
+                  <div key={review.id} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-1 mb-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={16}
+                          className={i < review.rating ? 'text-amber-500 fill-current' : 'text-gray-300'}
+                        />
+                      ))}
+                      <span className="ml-2 text-sm font-bold text-amber-500">{review.rating.toFixed(1)}</span>
+                    </div>
+                    {review.comment && (
+                      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 italic">
+                        "{review.comment}"
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                        {(review.client?.name || 'C').charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold dark:text-white">{review.client?.name || 'Cliente'}</p>
+                        {review.barber && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">com {review.barber.name}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">Ainda não há avaliações disponíveis.</p>
+              </div>
+            )}
+          </Container>
+        </section>
+      )}
+
+      {/* 6. Subscription (Assinatura) */}
+      {subscriptionsActive && <PlansSection />}
+
+      {showLocationModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/95 backdrop-blur-md">
+          <ShopSelector onClose={() => setShowLocationModal(false)} />
+        </div>
+      )}
+    </div>
+  );
+};

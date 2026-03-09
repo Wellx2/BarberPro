@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BarberPro" />
     <title>BarberPro - Premium Barbershop System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -57,9 +62,46 @@
   <link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
-    <div id="root"></div>
-    <!-- O index.tsx é o ponto de entrada ES6 -->
-    <script type="module" src="index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
+    <div id="root">
+      <div id="initial-loader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #111827; color: white; font-family: sans-serif;">
+        <div style="width: 40px; height: 40px; border: 4px solid #f59e0b; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 16px; color: #9ca3af; font-family: 'Inter', sans-serif;" id="loader-text">Carregando BarberPro...</p>
+        <div id="loader-error" style="display: none; text-align: center; max-width: 400px; margin-top: 20px; padding: 20px;">
+          <h2 style="color: #ef4444; font-size: 1.5rem; margin-bottom: 8px; font-weight: bold;">Falha na Conexão</h2>
+          <p style="color: #9ca3af; margin-bottom: 24px; font-size: 0.9rem;">Não foi possível inicializar o aplicativo. Problema ao carregar arquivos, verifique sua conexão com a internet ou se o sistema está offline.</p>
+          <button onclick="window.location.reload()" style="background-color: #f59e0b; color: #111827; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background-color 0.2s;">
+            Tentar Novamente
+          </button>
+        </div>
+        <style>
+          @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+        <script>
+          // O timeout avisa se demorou pra carregar react
+          window.fallbackTimer = setTimeout(() => {
+            if (document.getElementById('initial-loader')) {
+              document.getElementById('loader-error').style.display = 'block';
+              document.getElementById('loader-text').style.display = 'none';
+              const spinner = document.querySelector('#initial-loader div');
+              if(spinner) spinner.style.display = 'none';
+            }
+          }, 8000);
+
+          // Pega erro de falha no import de modulo pelo chrome devtools
+          window.addEventListener('error', function(e) {
+            if (e.target.tagName === 'SCRIPT' || (e.message && e.message.includes('fetch'))) {
+               if (document.getElementById('initial-loader')) {
+                 document.getElementById('loader-error').style.display = 'block';
+                 document.getElementById('loader-text').style.display = 'none';
+                 const spinner = document.querySelector('#initial-loader div');
+                 if(spinner) spinner.style.display = 'none';
+               }
+            }
+          }, true);
+        </script>
+      </div>
+    </div>
+    <!-- O src/index.tsx é o ponto de entrada ES6 -->
+    <script type="module" src="/src/index.tsx"></script>
 </body>
 </html>

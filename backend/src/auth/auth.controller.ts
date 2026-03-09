@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Put,
   Req,
   Res,
   UseGuards,
@@ -13,6 +14,9 @@ import { AuthService } from './auth.service';
 import { RegisterShopDto } from './dto/register-shop.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -21,7 +25,7 @@ import { Response } from 'express';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register-shop')
   @HttpCode(HttpStatus.CREATED)
@@ -48,6 +52,19 @@ export class AuthController {
     return this.authService.logout(req.user.id);
   }
 
+  // Endpoint de debug para verificar se token está válido
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Verificar token e retornar usuário atual' })
+  @ApiResponse({ status: 200, description: 'Token válido' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou expirado' })
+  async me(@Req() req) {
+    return {
+      user: req.user,
+      message: 'Token válido',
+    };
+  }
+
   // ===== GOOGLE OAUTH ENDPOINTS =====
 
   @Get('google')
@@ -71,5 +88,38 @@ export class AuthController {
     const redirectUrl = `${frontendUrl}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
 
     return res.redirect(redirectUrl);
+  }
+
+  // ===== TESTE ROTA PÚBLICA =====
+  @Get('test-public')
+  @ApiOperation({ summary: 'Teste de rota pública (sem autenticação)' })
+  async testPublic() {
+    return { message: 'Rota pública funcionando!', timestamp: new Date().toISOString() };
+  }
+
+  // ===== PASSWORD RECOVERY =====
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicitar recuperação de senha' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Redefinir senha com token' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  // ===== PROFILE UPDATE =====
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar perfil do usuário logado' })
+  async updateProfile(@Req() req, @Body() dto: UpdateUserDto) {
+    return this.authService.updateProfile(req.user.id, dto);
   }
 }

@@ -25,4 +25,9 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod;
+
+  @ApiPropertyOptional({ description: 'Descrição da fatura' })
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

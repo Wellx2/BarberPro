@@ -3,8 +3,9 @@ import { FinancialReportsService } from './financial-reports.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
+import { ModuleAccessGuard, RequireModule } from '../common/guards/module-access.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole, ModuleType } from '@prisma/client';
 
 /**
  * Controller para Relatórios Financeiros
@@ -18,7 +19,8 @@ import { UserRole } from '@prisma/client';
  * Acesso restrito a ADMINs
  */
 @Controller('financial-reports')
-@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard, ModuleAccessGuard)
+@RequireModule(ModuleType.FINANCEIRO)
 @Roles(UserRole.ADMIN)
 export class FinancialReportsController {
   constructor(private readonly financialReportsService: FinancialReportsService) {}

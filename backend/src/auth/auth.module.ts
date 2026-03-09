@@ -8,6 +8,8 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { BarbershopModulesModule } from '../barbershop-modules/barbershop-modules.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19,9 +21,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
       ttl: 900, // 15 minutos
       limit: 100, // 100 requisições por 15 min por IP
     }),
+    BarbershopModulesModule,
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

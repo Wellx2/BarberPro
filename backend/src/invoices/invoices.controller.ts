@@ -1,7 +1,18 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Query,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
@@ -39,5 +50,23 @@ export class InvoicesController {
   @ApiOperation({ summary: 'Buscar fatura por ID' })
   findOne(@CurrentUser() user: any, @Param('id') id: string) {
     return this.invoicesService.findOne(user, id);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Atualizar fatura (processar pagamento)' })
+  update(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() updateInvoiceDto: UpdateInvoiceDto,
+  ) {
+    return this.invoicesService.update(user, id, updateInvoiceDto);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Cancelar fatura' })
+  cancel(@CurrentUser() user: any, @Param('id') id: string, @Query('reason') reason: string) {
+    return this.invoicesService.cancel(user, id, reason);
   }
 }

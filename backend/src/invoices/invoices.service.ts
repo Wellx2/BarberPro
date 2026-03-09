@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { InvoiceType, InvoiceStatus } from '@prisma/client';
 
 @Injectable()
@@ -39,18 +40,16 @@ export class InvoicesService {
       data: {
         shopId: requester.shopId,
         clientId: dto.clientId,
-        planId: dto.planId,
+        clientName: client.name,
         amount: dto.amount,
         type: dto.type,
         paymentMethod: dto.paymentMethod,
         status: InvoiceStatus.PENDING,
+        description: dto.description,
       },
       include: {
         client: {
           select: { id: true, name: true, phone: true },
-        },
-        plan: {
-          select: { id: true, name: true, price: true },
         },
       },
     });
@@ -81,9 +80,7 @@ export class InvoicesService {
         client: {
           select: { id: true, name: true, phone: true },
         },
-        plan: {
-          select: { id: true, name: true, price: true },
-        },
+        items: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -96,9 +93,7 @@ export class InvoicesService {
         client: {
           select: { id: true, name: true, phone: true, email: true },
         },
-        plan: {
-          select: { id: true, name: true, price: true, benefits: true },
-        },
+        items: true,
       },
     });
 
@@ -107,6 +102,117 @@ export class InvoicesService {
     }
 
     return invoice;
+  }
+
+  async update(requester: any, id: string, dto: UpdateInvoiceDto) {
+    // 1. Buscar invoice e validar tenant
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+    });
+
+    if (!invoice || invoice.shopId !== requester.shopId) {
+      throw new NotFoundException('Fatura não encontrada');
+    }
+
+    // 2. Validações de negócio
+    if (invoice.status === InvoiceStatus.PAID) {
+      throw new BadRequestException('Não é possível alterar fatura já paga');
+    }
+
+    if (invoice.status === InvoiceStatus.CANCELLED) {
+      throw new BadRequestException('Não é possível alterar fatura cancelada');
+    }
+
+    // 3. Se está marcando como PAID, paymentMethod é obrigatório
+    if (dto.status === InvoiceStatus.PAID) {
+      if (!dto.paymentMethod) {
+        throw new BadRequestException('paymentMethod é obrigatório ao marcar como PAID');
+      }
+      if (!dto.paidAt) {
+        dto.paidAt = new Date().toISOString();
+      }
+    }
+
+    // 4. Atualizar invoice
+    const updated = await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        status: dto.status,
+        paymentMethod: dto.paymentMethod,
+        paidAt: dto.paidAt ? new Date(dto.paidAt) : undefined,
+        description: dto.description,
+      },
+      include: {
+        client: {
+          select: { id: true, name: true, phone: true },
+        },
+        items: true,
+      },
+    });
+
+    // 5. Auditoria
+    await this.logAction(
+      'UPDATE',
+      id,
+      requester.id,
+      requester.shopId,
+      `Status alterado para ${dto.status || invoice.status}`,
+    );
+
+    return updated;
+  }
+
+  async cancel(requester: any, id: string, reason?: string) {
+    // 1. Buscar invoice e validar tenant
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+    });
+
+    if (!invoice || invoice.shopId !== requester.shopId) {
+      throw new NotFoundException('Fatura não encontrada');
+    }
+
+    // 2. Validações
+    if (invoice.status === InvoiceStatus.PAID) {
+      throw new BadRequestException('Não é possível cancelar fatura já paga. Use estorno.');
+    }
+
+    if (invoice.status === InvoiceStatus.CANCELLED) {
+      throw new BadRequestException('Fatura já está cancelada');
+    }
+
+    // 3. Cancelar
+    const cancelled = await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        status: InvoiceStatus.CANCELLED,
+        cancelledAt: new Date(),
+        description: reason
+          ? `${invoice.description || ''} | Cancelado: ${reason}`
+          : invoice.description,
+      },
+      include: {
+        client: {
+          select: { id: true, name: true, phone: true },
+        },
+        items: true,
+      },
+    });
+
+    // 4. Auditoria
+    await this.logAction(
+      'CANCEL',
+      id,
+      requester.id,
+      requester.shopId,
+      reason || 'Fatura cancelada',
+    );
+
+    return {
+      message: 'Fatura cancelada com sucesso',
+      status: cancelled.status,
+      invoice: cancelled,
+    };
   }
 
   private async logAction(

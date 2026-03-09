@@ -18,9 +18,9 @@ export class CreateExpenseDto {
   @IsEnum(ExpenseType)
   type: ExpenseType;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  category: string; // Subcategoria customizável
+  category?: string; // Subcategoria customizável (opcional)
 
   @IsString()
   @IsNotEmpty()
@@ -30,8 +30,8 @@ export class CreateExpenseDto {
   @Min(0)
   amount: number;
 
-  @IsNotEmpty()
-  dueDate: Date;
+  @IsOptional()
+  dueDate?: Date;
 
   @IsOptional()
   paidDate?: Date;

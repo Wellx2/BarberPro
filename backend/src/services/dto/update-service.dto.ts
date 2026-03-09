@@ -12,6 +12,7 @@ export class UpdateServiceDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   price?: number;
 
   @IsOptional()
@@ -23,6 +24,14 @@ export class UpdateServiceDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  featured?: boolean;
 }

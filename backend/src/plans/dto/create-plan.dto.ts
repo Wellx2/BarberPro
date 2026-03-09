@@ -1,7 +1,24 @@
-import { IsString, IsNumber, IsArray, Min, Max } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNumber,
+  IsArray,
+  Min,
+  Max,
+  IsOptional,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePlanDto {
+  @ApiPropertyOptional({
+    description: 'ID da barbearia (obrigatório para SUPER_ADMIN, ignorado para ADMIN)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID()
+  shopId?: string;
+
   @ApiProperty({ description: 'Nome do plano', example: 'Premium' })
   @IsString()
   name: string;
@@ -25,4 +42,44 @@ export class CreatePlanDto {
   @Min(0)
   @Max(100)
   discount: number;
+
+  @ApiPropertyOptional({ description: 'Validade em meses', example: 12 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  benefitMonths?: number;
+
+  @ApiPropertyOptional({ description: 'Quantidade de serviços inclusos', example: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  benefitServices?: number;
+
+  @ApiPropertyOptional({ description: 'Quantidade de produtos inclusos', example: 2 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  benefitProducts?: number;
+
+  @ApiPropertyOptional({ description: 'Percentual de cashback', example: 10 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  benefitMoneyback?: number;
+
+  @ApiPropertyOptional({ description: 'Descrição detalhada do plano' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ description: 'Se é o plano mais popular', example: true })
+  @IsOptional()
+  @IsBoolean()
+  isPopular?: boolean;
+
+  @ApiPropertyOptional({ description: 'Se o plano está ativo', example: true })
+  @IsOptional()
+  @IsBoolean()
+  active?: boolean;
 }

@@ -26,7 +26,7 @@ export class ServiceOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly commissionsService: CommissionsService,
-  ) {}
+  ) { }
 
   /**
    * Cria uma nova comanda/ordem de serviço
@@ -133,10 +133,18 @@ export class ServiceOrdersService {
 
     // Se for produto, atualiza estoque
     if (dto.type === OrderItemType.PRODUCT && dto.productId) {
-      await this.prisma.product.update({
+      const updatedProduct = await this.prisma.product.update({
         where: { id: dto.productId },
         data: { stock: { decrement: dto.quantity } },
       });
+
+      // Go-live: Estoque Automático
+      if (updatedProduct.stock <= 0 && updatedProduct.active) {
+        await this.prisma.product.update({
+          where: { id: dto.productId },
+          data: { active: false },
+        });
+      }
 
       // Registra movimentação de estoque
       await this.prisma.productStockMovement.create({

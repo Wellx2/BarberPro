@@ -1,0 +1,176 @@
+/* ============================================================================
+   BARBERPRO - TAILWIND PATTERN LIBRARY
+   
+   Classes reutilizáveis para manter consistência visual e reduzir duplicação
+   de código. Use estes padrões em novas features e páginas.
+   
+   IMPORTANTE: Este arquivo deve ser importado em src/index.tsx
+   ============================================================================ */
+
+/* TYPOGRAPHY PATTERNS */
+
+/* Label XS - Pequena tag de categoria (9px) */
+.label-xs {
+  @apply text-[9px] font-black text-amber-600 uppercase tracking-[0.2em];
+}
+
+/* Label SM - Pequena tag padrão (10px) */
+.label-sm {
+  @apply text-[10px] font-black text-amber-500 uppercase tracking-widest;
+}
+
+/* Label SM Gray - Tag cinza discreta (10px) */
+.label-sm-gray {
+  @apply text-[10px] font-black text-gray-400 uppercase tracking-widest;
+}
+
+/* Helper Text - Texto auxiliar descritivo */
+.helper-text {
+  @apply text-xs font-bold text-gray-400 uppercase tracking-widest;
+}
+
+/* Helper Text MT - Texto auxiliar com margem superior */
+.helper-text-mt {
+  @apply text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1;
+}
+
+/* ============================================================================
+   BORDER RADIUS PATTERNS
+   ============================================================================ */
+
+/* Card Radius - Grandes cards e containers principais (35px) */
+.radius-card {
+  @apply rounded-[35px];
+}
+
+/* Input Radius - Inputs e campos de formulário (25px) */
+.radius-input {
+  @apply rounded-[25px];
+}
+
+/* Badge Radius - Badges e tags pequenas (full) */
+.radius-badge {
+  @apply rounded-full;
+}
+
+/* ============================================================================
+   CONTAINER PATTERNS
+   ============================================================================ */
+
+/* Card Base - Base para cards com hover */
+.card-base {
+  @apply bg-white dark:bg-gray-800 rounded-[35px] shadow-sm overflow-hidden hover:shadow-2xl transition-all border border-transparent dark:border-gray-700;
+}
+
+/* Card Base Flex - Card com flex column */
+.card-base-flex {
+  @apply card-base flex flex-col;
+}
+
+/* Input Base - Base para inputs com estilo consistente */
+.input-base {
+  @apply w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[25px] text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-none focus:border-blue-500;
+}
+
+/* ============================================================================
+   LAYOUT PATTERNS
+   ============================================================================ */
+
+/* Flex Center - Centralizado com flex */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+/* Flex Between - Espaço entre com flex */
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+/* Flex Col Center - Coluna centralizada */
+.flex-col-center {
+  @apply flex flex-col items-center justify-center;
+}
+
+/* ============================================================================
+   BACKGROUND PATTERNS
+   ============================================================================ */
+
+/* Background Alert Amber */
+.bg-alert-amber {
+  @apply bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20;
+}
+
+/* Background Alert Success */
+.bg-alert-success {
+  @apply bg-green-100 dark:bg-green-900/30 text-green-600;
+}
+
+/* ============================================================================
+   BADGE/TAG PATTERNS
+   ============================================================================ */
+
+/* Badge Amber - Status/Tags em destaque */
+.badge-amber {
+  @apply text-[10px] font-black uppercase text-amber-500 bg-amber-50 px-4 py-2 rounded-full border border-amber-100;
+}
+
+/* Badge Inline Amber - Badge em linha */
+.badge-inline-amber {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+}
+
+/* ============================================================================
+   STATE PATTERNS
+   ============================================================================ */
+
+/* Feature Enabled - Estado de feature ativado */
+.feature-enabled {
+  @apply bg-green-50 border-green-100 text-green-600;
+}
+
+/* Feature Disabled - Estado de feature desativado */
+.feature-disabled {
+  @apply bg-gray-50 border-gray-100 text-gray-300;
+}
+
+/* ============================================================================
+   ANIMATION PATTERNS
+   ============================================================================ */
+
+/* Fade In - Animação de entrada simples */
+.animate-fade-in {
+  @apply animate-in fade-in duration-300;
+}
+
+/* Slide In Right - Slide pela direita */
+.animate-slide-in-right {
+  @apply animate-in slide-in-from-right-full duration-300;
+}
+
+/* ============================================================================
+   UTILITY PATTERNS
+   ============================================================================ */
+
+/* Line Clamp 2 - Texto truncado em 2 linhas */
+.line-clamp-2 {
+  @apply line-clamp-2;
+}
+
+/* Dark Text - Texto que respeita dark mode */
+.dark-text {
+  @apply text-gray-900 dark:text-white;
+}
+
+/* ============================================================================
+   USAGE EXAMPLES
+   
+   Em novas páginas/componentes:
+   
+   <span className="label-sm">Categoria</span>
+   <div className="card-base-flex">
+     <img className="radius-input" src="..." />
+   </div>
+   <input className="input-base" placeholder="..." />
+   <div className="badge-amber">Status</div>
+   
+   ============================================================================ */

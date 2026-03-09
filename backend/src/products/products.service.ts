@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -18,8 +23,13 @@ export class ProductsService {
         name: dto.name,
         price: dto.price,
         stock: dto.stock,
+        costPrice: dto.costPrice,
+        unit: dto.unit,
         category: dto.category,
         description: dto.description,
+        formulation: dto.formulation,
+        howToUse: dto.howToUse,
+        recommendedFor: dto.recommendedFor,
         image: dto.image,
         active: dto.active !== undefined ? dto.active : true,
       },
@@ -29,13 +39,24 @@ export class ProductsService {
     return product;
   }
 
-  async findAll(requester: any, active?: boolean) {
+  async findAll(requester: any) {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
 
     return this.prisma.product.findMany({
       where: {
         shopId: requester.shopId,
-        ...(active !== undefined ? { active } : {}),
+        deletedAt: null, // Filtrar produtos não deletados
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  // Método público para buscar produtos por shopId (sem autenticação)
+  async findByShop(shopId: string) {
+    return this.prisma.product.findMany({
+      where: {
+        shopId,
+        deletedAt: null, // Filtrar produtos não deletados
       },
       orderBy: { name: 'asc' },
     });
@@ -43,7 +64,7 @@ export class ProductsService {
 
   async findOne(requester: any, id: string) {
     const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product || product.shopId !== requester.shopId) {
+    if (!product || product.shopId !== requester.shopId || product.deletedAt !== null) {
       throw new NotFoundException('Produto não encontrado');
     }
     return product;
@@ -81,15 +102,61 @@ export class ProductsService {
 
   async remove(requester: any, id: string, dto: RemoveProductDto) {
     const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product || product.shopId !== requester.shopId) {
+    if (!product || product.shopId !== requester.shopId || product.deletedAt !== null) {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    // Soft delete
-    await this.prisma.product.update({ where: { id }, data: { active: false } });
+    // Soft delete com timestamp
+    await this.prisma.product.update({ 
+      where: { id }, 
+      data: { deletedAt: new Date() } 
+    });
     await this.logAction('REMOVE', id, requester.id, requester.shopId, dto.reason);
 
-    return { message: 'Produto removido (soft delete)' };
+    return { message: 'Produto removido com sucesso' };
+  }
+
+  // Métodos de Destaque (Featured)
+  async findFeatured(requester: any) {
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+
+    return this.prisma.product.findMany({
+      where: {
+        shopId: requester.shopId,
+        featured: true,
+        deletedAt: null, // Filtrar produtos não deletados
+      },
+      take: 3,
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async toggleFeatured(requester: any, id: string) {
+    const product = await this.findOne(requester, id);
+
+    // Limitar a 3 destaques
+    const featuredCount = await this.prisma.product.count({
+      where: { shopId: requester.shopId, featured: true, deletedAt: null },
+    });
+
+    if (!product.featured && featuredCount >= 3) {
+      throw new BadRequestException('Limite de 3 produtos em destaque atingido (máximo por loja)');
+    }
+
+    const updated = await this.prisma.product.update({
+      where: { id },
+      data: { featured: !product.featured },
+    });
+
+    await this.logAction(
+      'TOGGLE_FEATURED',
+      id,
+      requester.id,
+      requester.shopId,
+      `Destaque ${updated.featured ? 'ativado' : 'desativado'}`,
+    );
+
+    return updated;
   }
 
   private async logAction(
