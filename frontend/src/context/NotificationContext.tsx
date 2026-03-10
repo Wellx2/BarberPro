@@ -21,7 +21,42 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const timeoutRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
 
+  // Solicitar permissão de Web Push Notifications ao montar
+  React.useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          // Web Push Notifications ativadas
+        }
+      });
+    }
+  }, []);
+
   const addNotification = useCallback((type: NotificationType, message: string, title?: string) => {
+    // Diparar Web Push Notification de verdade (API do Navegador)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      // Disparar Web Push apenas acompanhado de um aviso visual se necessário.
+      // E evitar duplicatas
+      try {
+        new Notification(title || 'BarberPro', {
+          body: message,
+          icon: '/pwa-192x192.svg',
+          badge: '/pwa-192x192.svg'
+        });
+      } catch (e) {
+        // Fallback for mobile browsers that require Service Worker registration to show notifications
+        if (navigator.serviceWorker) {
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification(title || 'BarberPro', {
+              body: message,
+              icon: '/pwa-192x192.svg',
+              badge: '/pwa-192x192.svg'
+            });
+          });
+        }
+      }
+    }
+
     setNotifications((prev) => {
       const existingNotification = prev.find(
         n => n.type === type && n.message === message && n.title === title
@@ -34,10 +69,10 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           clearTimeout(existingTimeout);
           timeoutRefs.current.delete(existingNotification.id);
         }
-        
+
         // Remover a notificação existente
         const withoutExisting = prev.filter((n) => n.id !== existingNotification.id);
-        
+
         // Adicionar nova notificação após pequeno delay para animação
         setTimeout(() => {
           const id = Math.random().toString(36).substr(2, 9);
@@ -53,7 +88,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
           timeoutRefs.current.set(id, timeout);
         }, 100); // Pequeno delay para animação
-        
+
         return withoutExisting;
       }
 
@@ -94,23 +129,21 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   return (
     <NotificationContext.Provider value={{ addNotification, removeNotification }}>
       {children}
-      
+
       {/* Notification Container - Fixed Position */}
       <div className="fixed top-4 right-0 left-0 md:left-auto md:right-4 z-[100] flex flex-col items-center md:items-end gap-2 px-4 pointer-events-none">
         {notifications.map((notification) => (
           <div
             key={notification.id}
-            className={`pointer-events-auto w-full max-w-sm bg-white rounded-xl shadow-2xl border-l-4 p-4 flex items-start gap-3 animate-fade-in transition-all transform translate-y-0 opacity-100 ${
-              notification.type === 'success' ? 'border-green-500' :
+            className={`pointer-events-auto w-full max-w-sm bg-white rounded-xl shadow-2xl border-l-4 p-4 flex items-start gap-3 animate-fade-in transition-all transform translate-y-0 opacity-100 ${notification.type === 'success' ? 'border-green-500' :
               notification.type === 'error' ? 'border-red-500' :
-              notification.type === 'warning' ? 'border-amber-500' : 'border-blue-500'
-            }`}
+                notification.type === 'warning' ? 'border-amber-500' : 'border-blue-500'
+              }`}
           >
-            <div className={`mt-0.5 ${
-               notification.type === 'success' ? 'text-green-500' :
-               notification.type === 'error' ? 'text-red-500' :
-               notification.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
-            }`}>
+            <div className={`mt-0.5 ${notification.type === 'success' ? 'text-green-500' :
+              notification.type === 'error' ? 'text-red-500' :
+                notification.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
+              }`}>
               {notification.type === 'success' && <CheckCircle size={20} />}
               {notification.type === 'error' && <AlertCircle size={20} />}
               {notification.type === 'warning' && <Bell size={20} />}
@@ -120,7 +153,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
               {notification.title && <h4 className="font-bold text-gray-900 text-sm">{notification.title}</h4>}
               <p className="text-sm text-gray-600 leading-snug">{notification.message}</p>
             </div>
-            <button 
+            <button
               onClick={() => removeNotification(notification.id)}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >

@@ -80,19 +80,19 @@ export function validateJWTForAppointments(token: string): {
  */
 export function debugCurrentJWT(): void {
   const token = localStorage.getItem('accessToken');
-  
+
   console.group('ðŸ” DEBUG JWT');
-  
+
   if (!token) {
     console.error('âŒ Nenhum token encontrado no localStorage');
     console.groupEnd();
     return;
   }
 
-  
+
   const validation = validateJWTForAppointments(token);
-  
-  
+
+
   if (validation.errors.length > 0) {
     console.group('âš ï¸ Problemas encontrados:');
     validation.errors.forEach(error => console.error(error));
@@ -100,13 +100,6 @@ export function debugCurrentJWT(): void {
   }
 
   if (validation.payload) {
-    console.group('Campos importantes:');
-    console.log('Role:', validation.payload.role);
-    console.log('ShopId:', validation.payload.shopId);
-    console.log('Expira:', validation.payload.exp
-      ? new Date(validation.payload.exp * 1000).toLocaleString()
-      : 'N/A'
-    );
     console.groupEnd();
   }
 

@@ -1,22 +1,26 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Camera, 
-  Save, 
-  X, 
+import {
+  User,
+  Mail,
+  Lock,
+  Camera,
+  Save,
+  X,
   Shield,
   Scissors,
   UserCircle2,
   ArrowLeft,
+  LogOut,
   Eye,
-  EyeOff
+  EyeOff,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { useNotification } from '../context/NotificationContext';
+import { api } from '../services/api';
 
 export const UserProfile: React.FC = () => {
   const { user, updateUserProfile } = useAuth();
@@ -25,6 +29,7 @@ export const UserProfile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,6 +40,11 @@ export const UserProfile: React.FC = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  // 🛡️ LGPD: Global notification preference (synced to API)
+  const [globalPushEnabled, setGlobalPushEnabled] = useState<boolean>(
+    (user as any)?.globalPushEnabled !== false // default true
+  );
+  const [isSavingPush, setIsSavingPush] = useState(false);
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -52,9 +62,9 @@ export const UserProfile: React.FC = () => {
   };
 
   // Ícone baseado no role
-  const RoleIcon = user.role === UserRole.BARBER ? Scissors : 
-                   user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN ? Shield : 
-                   UserCircle2;
+  const RoleIcon = user.role === UserRole.BARBER ? Scissors :
+    user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN ? Shield :
+      UserCircle2;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -123,28 +133,40 @@ export const UserProfile: React.FC = () => {
       }
     }
 
-    // Atualizar usuário
-    const updatedUser = {
-      ...user,
+    // Atualizar usuário no backend
+    setIsSaving(true);
+
+    // Preparar DTO para o backend
+    const profileData: any = {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      avatar: avatarPreview || user.avatar
     };
 
-    updateUserProfile(updatedUser);
-    
-    addNotification('success', 'Perfil atualizado com sucesso!', 'Sucesso');
-    setIsEditing(false);
-    setAvatarPreview(null);
-    
-    // Limpar campos de senha
-    setFormData(prev => ({
-      ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    }));
+    if (formData.newPassword) {
+      profileData.password = formData.newPassword;
+    }
+
+    updateUserProfile(profileData)
+      .then(() => {
+        addNotification('success', 'Perfil atualizado com sucesso!', 'Sucesso');
+        setIsEditing(false);
+        setAvatarPreview(null);
+
+        // Limpar campos de senha
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      })
+      .catch((error) => {
+        addNotification('error', error.message || 'Erro ao atualizar perfil', 'Erro');
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
 
   const handleCancel = () => {
@@ -174,6 +196,17 @@ export const UserProfile: React.FC = () => {
             <ArrowLeft size={20} />
             <span className="font-medium">Voltar</span>
           </button>
+          <button
+            onClick={() => {
+              const { logout } = require('../context/AuthContext');
+              logout();
+              navigate('/');
+            }}
+            className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl font-bold"
+          >
+            <LogOut size={18} />
+            <span>Sair</span>
+          </button>
         </div>
 
         {/* Profile Card */}
@@ -182,13 +215,13 @@ export const UserProfile: React.FC = () => {
           <div className="relative h-32 bg-gradient-to-br from-amber-500 to-orange-600">
             <div className="absolute -bottom-16 left-8">
               <div className="relative">
-                <div 
+                <div
                   className={`w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-xl overflow-hidden ${isEditing ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
                   onClick={handleAvatarClick}
                 >
                   {displayAvatar ? (
-                    <img 
-                      src={displayAvatar} 
+                    <img
+                      src={displayAvatar}
                       alt={user.name}
                       className="w-full h-full object-cover"
                     />
@@ -198,7 +231,7 @@ export const UserProfile: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {isEditing && (
                   <button
                     onClick={handleAvatarClick}
@@ -207,7 +240,7 @@ export const UserProfile: React.FC = () => {
                     <Camera size={18} />
                   </button>
                 )}
-                
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -239,10 +272,11 @@ export const UserProfile: React.FC = () => {
                   </button>
                   <button
                     onClick={handleSave}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2"
+                    disabled={isSaving}
+                    className={`bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Save size={18} />
-                    Salvar
+                    {isSaving ? 'Salvando...' : 'Salvar'}
                   </button>
                 </div>
               )}
@@ -439,6 +473,52 @@ export const UserProfile: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Preferências LGPD */}
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 mt-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                {globalPushEnabled ? <Bell size={18} className="text-amber-500" /> : <BellOff size={18} className="text-gray-400" />}
+                Preferências de Privacidade
+              </h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-gray-900 dark:text-white text-sm">Notificações & Lembretes</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {globalPushEnabled ? 'Você receberá lembretes de agendamentos (LGPD)' : 'Notificações desativadas globalmente'}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={globalPushEnabled}
+                    disabled={isSavingPush}
+                    onChange={async (e) => {
+                      const newVal = e.target.checked;
+                      setGlobalPushEnabled(newVal);
+                      setIsSavingPush(true);
+                      try {
+                        await api.patch(`/users/${user!.id}`, { globalPushEnabled: newVal });
+                        // Pedir permissão do browser se ativar
+                        if (newVal && 'Notification' in window && Notification.permission !== 'granted') {
+                          Notification.requestPermission();
+                        }
+                        addNotification('success', newVal ? 'Notificações ativadas' : 'Notificações desativadas', 'Preferências salvas');
+                      } catch {
+                        setGlobalPushEnabled(!newVal); // revert on error
+                        addNotification('error', 'Erro ao salvar preferência. Tente novamente.', 'Erro');
+                      } finally {
+                        setIsSavingPush(false);
+                      }
+                    }}
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500 disabled:opacity-50"></div>
+                </label>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                Você pode alterar individualmente por agendamento no seu painel de clientes.
+              </p>
             </div>
           </div>
         </div>

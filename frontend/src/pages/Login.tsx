@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { authService } from '../services';
-import { Scissors, ArrowLeft, Key } from 'lucide-react';
+import { Scissors, ArrowLeft, Key, Phone } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -13,12 +13,13 @@ export const Login: React.FC = () => {
   const { addNotification } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const from = location.state?.from || '/dashboard';
 
-  const [view, setView] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [view, setView] = useState<'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'PHONE_LOGIN'>('LOGIN');
+  const [loginMethod, setLoginMethod] = useState<'EMAIL' | 'PHONE'>('EMAIL');
   const [isLoading, setIsLoading] = useState(false);
-  const [loginData, setLoginData] = useState({ 
+  const [loginData, setLoginData] = useState({
     email: 'admin@barberpro.com',  // ✅ Valor padrão para teste
     password: 'senha123'            // ✅ Valor padrão para teste
   });
@@ -37,12 +38,26 @@ export const Login: React.FC = () => {
     try {
       // Usar o novo método de login que faz requisição real ao backend
       await login(loginData.email, loginData.password);
-      
+
       addNotification('success', `Bem-vindo!`);
       navigate(from, { replace: true, state: location.state });
     } catch (error: any) {
       console.error('Erro no login:', error);
       addNotification('error', error.message || 'Erro ao fazer login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneLogin = async (phone: string) => {
+    setIsLoading(true);
+    try {
+      // Simulação de envio de OTP (Em um app real, chamaria o backend)
+      addNotification('success', `Código enviado para ${phone}`);
+      // setView('VERIFY_OTP'); // Futura implementação
+      alert("Recurso de login por telefone (OTP) em desenvolvimento. Use e-mail por enquanto.");
+    } catch (error: any) {
+      addNotification('error', 'Erro ao enviar código');
     } finally {
       setIsLoading(false);
     }
@@ -66,10 +81,10 @@ export const Login: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await authService.registerShop(registerData);
-      
+
       // Após registrar, fazer login automático
       await login(registerData.email, registerData.password);
-      
+
       addNotification('success', `Bem-vindo, ${response.user.name}!`);
       navigate(from, { replace: true, state: location.state });
     } catch (error: any) {
@@ -101,8 +116,8 @@ export const Login: React.FC = () => {
             {view === 'LOGIN'
               ? 'Faça login para continuar'
               : view === 'REGISTER'
-              ? 'Crie sua conta e barbearia'
-              : 'Selecione como deseja acessar'}
+                ? 'Crie sua conta e barbearia'
+                : 'Selecione como deseja acessar'}
           </p>
         </div>
 
@@ -133,13 +148,54 @@ export const Login: React.FC = () => {
               <div className="flex flex-col gap-2 mt-4">
                 <button
                   type="button"
+                  onClick={() => setView('PHONE_LOGIN')}
+                  className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all"
+                >
+                  <Phone size={14} className="text-amber-500" /> Entrar com WhatsApp
+                </button>
+                <button
+                  type="button"
                   onClick={() => setView('REGISTER')}
-                  className="text-center text-[10px] font-black uppercase text-amber-600 hover:underline"
+                  className="text-center text-[10px] font-black uppercase text-amber-600 hover:underline mt-2"
                 >
                   Não tenho conta? Cadastrar
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setView('FORGOT_PASSWORD')}
+                  className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+                >
+                  Esqueci minha senha
+                </button>
               </div>
             </form>
+          )}
+
+          {view === 'PHONE_LOGIN' && (
+            <PhoneLoginView
+              onBack={() => setView('LOGIN')}
+              onSubmit={handlePhoneLogin}
+              isLoading={isLoading}
+            />
+          )}
+
+          {view === 'FORGOT_PASSWORD' && (
+            <InstructionsView
+              onBack={() => setView('LOGIN')}
+              onSubmit={async (email) => {
+                setIsLoading(true);
+                try {
+                  await authService.forgotPassword(email);
+                  addNotification('success', 'Se o e-mail existir, você receberá instruções de recuperação.');
+                  setView('LOGIN');
+                } catch (error: any) {
+                  addNotification('error', error.message || 'Erro ao processar solicitação');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              isLoading={isLoading}
+            />
           )}
 
           {view === 'REGISTER' && (
@@ -201,6 +257,110 @@ export const Login: React.FC = () => {
             </form>
           )}
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Componente auxiliar para a vista de esqueci senha
+const InstructionsView: React.FC<{
+  onBack: () => void,
+  onSubmit: (email: string) => Promise<void>,
+  isLoading: boolean
+}> = ({ onBack, onSubmit, isLoading }) => {
+  const [email, setEmail] = useState('');
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
+        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+          Digite seu e-mail abaixo. Se houver uma conta associada, enviaremos as instruções para recuperar sua senha.
+        </p>
+      </div>
+
+      <Input
+        label="Seu E-mail"
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="seu@email.com"
+        fullWidth
+      />
+
+      <div className="flex flex-col gap-3">
+        <Button
+          type="button"
+          variant="primary"
+          fullWidth
+          onClick={() => onSubmit(email)}
+          disabled={isLoading || !email}
+        >
+          {isLoading ? 'Enviando...' : 'Enviar Instruções'}
+        </Button>
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+        >
+          Voltar para o Login
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Componente auxiliar para a vista de login por telefone
+const PhoneLoginView: React.FC<{
+  onBack: () => void,
+  onSubmit: (phone: string) => Promise<void>,
+  isLoading: boolean
+}> = ({ onBack, onSubmit, isLoading }) => {
+  const [phone, setPhone] = useState('');
+
+  const formatPhone = (val: string) => {
+    let v = val.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length > 7) return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
+    if (v.length > 2) return `(${v.slice(0, 2)}) ${v.slice(2)}`;
+    return v;
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
+        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium text-center">
+          Acesse sua conta rapidamente usando seu WhatsApp. Enviaremos um código de acesso.
+        </p>
+      </div>
+
+      <Input
+        label="WhatsApp"
+        type="tel"
+        required
+        value={phone}
+        onChange={(e) => setPhone(formatPhone(e.target.value))}
+        placeholder="(11) 99999-9999"
+        fullWidth
+      />
+
+      <div className="flex flex-col gap-3">
+        <Button
+          type="button"
+          variant="primary"
+          fullWidth
+          onClick={() => onSubmit(phone)}
+          disabled={isLoading || phone.length < 14}
+        >
+          {isLoading ? 'Enviando...' : 'Receber Código'}
+        </Button>
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+        >
+          Entrar com E-mail e Senha
+        </button>
       </div>
     </div>
   );

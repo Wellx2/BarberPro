@@ -10,6 +10,10 @@ export interface Barbershop {
   address: string;
   phone: string;
   image: string;
+  logo?: string | null;          // 🎨 Logo original
+  logoUrl?: string | null;       // 🎨 White Label URL alternativa
+  bannerUrl?: string | null;     // 🎨 White Label Banner
+  primaryColor?: string | null;  // 🎨 White Label Cor primária
   latitude?: number;
   longitude?: number;
   openingHours?: string;
@@ -52,6 +56,9 @@ export interface BarbershopPreview {
     closingTime: string;
     intervalMinutes: number;
     logo: string | null;
+    logoUrl?: string | null;   // 🎨 White Label
+    bannerUrl?: string | null; // 🎨 White Label
+    primaryColor?: string | null; // 🎨 White Label
   };
   services: Array<{
     id: string;

@@ -28,7 +28,7 @@ class ApiClient {
   ): Promise<{ data: T }> {
     const token = this.getAuthToken();
     const fullURL = `${this.baseURL}${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -47,7 +47,7 @@ class ApiClient {
         // Tentar refresh token se receber 401 e retry estiver habilitado
         if (response.status === 401 && retry && !endpoint.includes('/auth/')) {
           const refreshToken = localStorage.getItem('refreshToken');
-          
+
           if (refreshToken) {
             try {
               const refreshResponse = await fetch(`${this.baseURL}/auth/refresh`, {
@@ -55,16 +55,16 @@ class ApiClient {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refreshToken })
               });
-              
+
               if (refreshResponse.ok) {
                 const data = await refreshResponse.json();
-                
+
                 // Backend retorna accessToken (camelCase)
                 const newToken = data.accessToken;
-                
+
                 if (newToken) {
                   localStorage.setItem('accessToken', newToken);
-                  
+
                   // Tentar novamente com novo token
                   return this.request<T>(endpoint, options, false);
                 } else {
@@ -78,7 +78,7 @@ class ApiClient {
               console.error('Erro ao renovar token:', refreshError);
             }
           }
-          
+
           // Se chegou aqui, o refresh falhou - limpar sessão
           localStorage.clear();
           window.location.href = '/login';
@@ -88,13 +88,13 @@ class ApiClient {
           message: 'Erro ao processar resposta',
           statusCode: response.status,
         }));
-        
+
         console.error('❌ Erro HTTP:', {
           status: response.status,
           endpoint,
           error
         });
-        
+
         throw error;
       }
 
@@ -120,6 +120,13 @@ class ApiClient {
   async post<T>(endpoint: string, data?: unknown): Promise<{ data: T }> {
     return this.request<T>(endpoint, {
       method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async put<T>(endpoint: string, data?: unknown): Promise<{ data: T }> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
   }

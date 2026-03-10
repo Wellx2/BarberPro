@@ -3,13 +3,14 @@ import {
   DollarSign, Users, Scissors, ShoppingBag, Layers, Megaphone,
   Plus, Trash2, Edit3, X, Power, Check, TrendingUp, Eye, EyeOff,
   Calculator, AlertCircle, PieChart, BarChart3, Landmark, Tag, Share2, Image as ImageIcon,
-  Lock, Calendar, Clock, Settings, Zap, Store, ChevronDown, MessageSquare
+  Lock, Calendar, Clock, Settings, Zap, Store, ChevronDown, MessageSquare, Shield
 } from 'lucide-react';
 import {
   Appointment, Barber, Invoice, Product, Plan, Service, Campaign,
   TeamMember, TeamMemberRole, TEAM_ROLE_LABELS, BarberWorkModel, WORK_MODEL_LABELS, CreateTeamMemberDto,
   AgendaLock, CreateAgendaLockDto, AgendaLockConflict
 } from '../../types';
+import { AgendaLockModal } from '../../components/modals/AgendaLockModal';
 import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -20,6 +21,7 @@ import { Modal, Alert } from '../../components/feedback';
 import { Cashier } from './Cashier';
 import { ShareLink } from '../../components/ShareLink';
 import { ShopSelector } from '../../components/ShopSelector';
+import AdminAppointmentHistory from './AdminAppointmentHistory';
 import { productService } from '../../services/productService';
 import { serviceService } from '../../services/serviceService';
 import { teamService } from '../../services/teamService';
@@ -113,13 +115,6 @@ export const AdminDashboard: React.FC = () => {
   // Estados para Trancar Agenda
   const [showLockAgendaModal, setShowLockAgendaModal] = useState(false);
   const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
-  const [lockConflict, setLockConflict] = useState<AgendaLockConflict | null>(null);
-  const [lockForm, setLockForm] = useState({
-    date: '',
-    startTime: '',
-    endTime: '',
-    reason: '',
-  });
 
   // Estados para Plans (Planos)
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
@@ -1078,76 +1073,10 @@ export const AdminDashboard: React.FC = () => {
 
   const handleOpenLockAgendaModal = (member: TeamMember) => {
     setSelectedTeamMember(member);
-    setLockForm({
-      date: '',
-      startTime: '',
-      endTime: '',
-      reason: '',
-    });
-    setLockConflict(null);
     setShowLockAgendaModal(true);
   };
 
-  const handleCheckLockConflicts = async () => {
-    if (!selectedTeamMember) return;
 
-    if (!lockForm.date || !lockForm.startTime || !lockForm.endTime || !lockForm.reason.trim()) {
-      addNotification('error', 'Preencha todos os campos');
-      return;
-    }
-
-    try {
-      const lockData: CreateAgendaLockDto = {
-        teamMemberId: selectedTeamMember.id,
-        date: lockForm.date,
-        startTime: lockForm.startTime,
-        endTime: lockForm.endTime,
-        reason: lockForm.reason.trim(),
-      };
-
-      const conflict = await teamService.checkConflicts(lockData);
-      setLockConflict(conflict);
-
-      if (!conflict.hasConflicts) {
-        addNotification('success', 'Nenhum conflito encontrado! Pode confirmar o bloqueio.', 'OK');
-      } else {
-        addNotification('warning', `${conflict.conflicts.length} agendamento(s) será(ão) afetado(s)`, 'Atenção');
-      }
-    } catch (error: any) {
-      console.error('Erro ao verificar conflitos:', error);
-      addNotification('error', 'Erro ao verificar conflitos');
-    }
-  };
-
-  const handleConfirmLockAgenda = async (forceOverride = false) => {
-    if (!selectedTeamMember) return;
-
-    try {
-      const lockData: CreateAgendaLockDto = {
-        teamMemberId: selectedTeamMember.id,
-        date: lockForm.date,
-        startTime: lockForm.startTime,
-        endTime: lockForm.endTime,
-        reason: lockForm.reason.trim(),
-        forceOverride,
-      };
-
-      await teamService.createLock(lockData);
-
-      addNotification('success', 'Agenda bloqueada com sucesso!');
-
-      if (forceOverride && lockConflict?.hasConflicts) {
-        addNotification('info', 'Clientes afetados foram notificados', 'Notificações Enviadas');
-      }
-
-      setShowLockAgendaModal(false);
-      setLockConflict(null);
-    } catch (error: any) {
-      console.error('Erro ao bloquear agenda:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao bloquear agenda';
-      addNotification('error', errorMessage);
-    }
-  };
 
   // ============================================================================
   // FUNÇÕES DE PLANS MANAGEMENT (Gerenciamento de Planos)
@@ -1323,8 +1252,11 @@ export const AdminDashboard: React.FC = () => {
     { id: 'BARBERS', icon: Users, label: 'Time' },
     { id: 'SERVICES', icon: Scissors, label: 'Serviços' },
     { id: 'PRODUCTS', icon: ShoppingBag, label: 'Produtos' },
+    { id: 'STOCK', icon: Layers, label: 'Estoque' },
     { id: 'PLANS', icon: Layers, label: 'Planos' },
+    { id: 'HISTORY', icon: Calendar, label: 'Histórico' },
     { id: 'SETTINGS', icon: Settings, label: 'Configurações' },
+    ...(isSuperAdmin ? [{ id: 'SUPER', icon: Shield, label: 'Super Admin' }] : []),
   ];
 
   return (
@@ -1375,6 +1307,11 @@ export const AdminDashboard: React.FC = () => {
             </button>
           ))}
         </div>
+
+        {/* Histórico Tab */}
+        {activeTab === 'HISTORY' && (
+          <AdminAppointmentHistory />
+        )}
 
         {/* Financial Health Tab - Saúde Financeira */}
         {activeTab === 'FINANCIAL' && (
@@ -3244,154 +3181,32 @@ export const AdminDashboard: React.FC = () => {
         }
 
         {/* Lock Agenda Modal */}
-        {
-          showLockAgendaModal && selectedTeamMember && (
-            <Modal
-              isOpen={showLockAgendaModal}
-              onClose={() => {
+        {showLockAgendaModal && selectedTeamMember && (
+          <AgendaLockModal
+            memberId={selectedTeamMember.id}
+            selectedDate={new Date()}
+            shop={currentShop}
+            onClose={() => setShowLockAgendaModal(false)}
+            onCheckConflicts={(data) => teamService.checkConflicts(data)}
+            onConfirm={async (data) => {
+              try {
+                await teamService.createLock({
+                  teamMemberId: selectedTeamMember.id,
+                  ...data
+                });
                 setShowLockAgendaModal(false);
-                setLockConflict(null);
-              }}
-              size="lg"
-              title={`Trancar Agenda - ${selectedTeamMember.name}`}
-            >
-              <div className="flex flex-col gap-5 pb-2">
-                {!lockConflict ? (
-                  <>
-                    <div className="space-y-4">
-                      <Alert variant="info" className="text-sm">
-                        <strong>Atenção:</strong> Ao trancar a agenda, o sistema verificará se há agendamentos conflitantes.
-                        Você poderá decidir se deseja cancelar os agendamentos existentes.
-                      </Alert>
-
-                      {/* Data */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Data *
-                        </label>
-                        <Input
-                          type="date"
-                          value={lockForm.date}
-                          onChange={(e) => setLockForm({ ...lockForm, date: e.target.value })}
-                        />
-                      </div>
-
-                      {/* Horários */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Hora Início *
-                          </label>
-                          <Input
-                            type="time"
-                            value={lockForm.startTime}
-                            onChange={(e) => setLockForm({ ...lockForm, startTime: e.target.value })}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                            Hora Fim *
-                          </label>
-                          <Input
-                            type="time"
-                            value={lockForm.endTime}
-                            onChange={(e) => setLockForm({ ...lockForm, endTime: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Motivo */}
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Motivo do Bloqueio *
-                        </label>
-                        <textarea
-                          value={lockForm.reason}
-                          onChange={(e) => setLockForm({ ...lockForm, reason: e.target.value })}
-                          placeholder="Ex: Férias, Consulta médica, Treinamento..."
-                          rows={3}
-                          className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 resize-none"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Botões */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => {
-                          setShowLockAgendaModal(false);
-                          setLockConflict(null);
-                        }}
-                        className="w-full sm:flex-1 px-6 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition-all"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={handleCheckLockConflicts}
-                        className="w-full sm:flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg transition-all"
-                      >
-                        Verificar Conflitos
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Resultado da verificação */}
-                    <div className="space-y-4">
-                      {lockConflict.hasConflicts ? (
-                        <>
-                          <Alert variant="warning" className="text-sm">
-                            <strong>⚠️ {lockConflict.conflicts.length} Agendamento(s) Conflitante(s)</strong>
-                            <p className="mt-2">{lockConflict.message}</p>
-                          </Alert>
-
-                          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
-                            <h4 className="font-bold text-gray-900 dark:text-white">Agendamentos Afetados:</h4>
-                            {lockConflict.conflicts.map((appt) => (
-                              <div key={appt.id} className="p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                                <p className="font-semibold text-gray-900 dark:text-white">{appt.clientName}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {new Date(appt.date).toLocaleDateString('pt-BR')} às {appt.time}
-                                </p>
-                                <p className="text-xs text-gray-500">{appt.serviceName}</p>
-                              </div>
-                            ))}
-                          </div>
-
-                          <Alert variant="info" className="text-sm">
-                            Ao confirmar, os clientes afetados serão notificados automaticamente e receberão sugestão de remarcação.
-                          </Alert>
-                        </>
-                      ) : (
-                        <Alert variant="success" className="text-sm">
-                          <strong>✓ Nenhum Conflito</strong>
-                          <p className="mt-2">Não há agendamentos neste período. Pode confirmar o bloqueio.</p>
-                        </Alert>
-                      )}
-                    </div>
-
-                    {/* Botões de Confirmação */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => setLockConflict(null)}
-                        className="w-full sm:flex-1 px-6 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition-all"
-                      >
-                        Voltar
-                      </button>
-                      <button
-                        onClick={() => handleConfirmLockAgenda(lockConflict.hasConflicts)}
-                        className="w-full sm:flex-1 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg transition-all"
-                      >
-                        {lockConflict.hasConflicts ? 'Confirmar e Notificar Clientes' : 'Confirmar Bloqueio'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </Modal>
-          )
-        }
+                addNotification('success', 'Agenda bloqueada com sucesso!');
+                if (data.forceOverride) {
+                  addNotification('info', 'Clientes afetados foram notificados');
+                }
+              } catch (error: any) {
+                console.error('Erro ao bloquear agenda:', error);
+                const errorMessage = error.response?.data?.message || 'Erro ao bloquear agenda';
+                addNotification('error', errorMessage);
+              }
+            }}
+          />
+        )}
 
         {/* Plan Modal - CRUD de Planos */}
         {

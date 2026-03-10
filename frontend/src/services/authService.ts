@@ -25,10 +25,11 @@ interface AuthResponse {
     id: string;
     name: string;
     email: string;
+    phone?: string;
     role: string;
-    shopId: string;           // ✅ Backend retorna shopId
-    barberId?: string;        // ID da entidade Barber (para role BARBER)
-    clientId?: string;        // ID da entidade Client (para role CLIENT)
+    shopId: string;
+    barberId?: string;
+    clientId?: string;
   };
 }
 
@@ -36,14 +37,14 @@ export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/login', credentials);
     const authData = response.data;
-    
-    
+
+
     if (authData.accessToken && authData.refreshToken) {
       localStorage.setItem('accessToken', authData.accessToken);
       localStorage.setItem('refreshToken', authData.refreshToken);
       localStorage.setItem('user', JSON.stringify(authData.user));
-      
-      
+
+
       // Buscar módulos habilitados após login
       try {
         await this.fetchEnabledModules(authData.user.shopId);
@@ -55,7 +56,7 @@ export const authService = {
       console.error('Formato recebido:', authData);
       throw new Error('Login não retornou tokens válidos');
     }
-    
+
     return authData;
   },
 
@@ -116,8 +117,8 @@ export const authService = {
       console.warn('âš ï¸ Endpoint de módulos não disponível. Habilitando todos por padrão.');
       // Se o endpoint não existir, habilita todos os módulos por padrão
       const allModules = [
-        'AGENDA', 'FINANCEIRO', 'CAIXA', 'SERVICOS', 
-        'GESTAO_TIME', 'PRODUTOS', 'MARKETING', 'PLANOS', 
+        'AGENDA', 'FINANCEIRO', 'CAIXA', 'SERVICOS',
+        'GESTAO_TIME', 'PRODUTOS', 'MARKETING', 'PLANOS',
         'NOTIFICACOES', 'CLIENTES'
       ];
       localStorage.setItem('enabled_modules', JSON.stringify(allModules));
@@ -128,19 +129,44 @@ export const authService = {
   // Verificar se tem acesso a um módulo
   hasModuleAccess(moduleType: string): boolean {
     const user = this.getCurrentUser();
-    
+
     // SUPER_ADMIN tem acesso a tudo
     if (user?.role === 'SUPER_ADMIN') return true;
-    
+
     const modulesStr = localStorage.getItem('enabled_modules');
     if (!modulesStr) return false;
-    
+
     try {
       const enabledModules: string[] = JSON.parse(modulesStr);
       return enabledModules.includes(moduleType);
     } catch {
       return false;
     }
+  },
+
+  // Perfil e Recuperação de Senha
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await api.post<{ message: string }>('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(data: any): Promise<{ message: string }> {
+    const response = await api.post<{ message: string }>('/auth/reset-password', data);
+    return response.data;
+  },
+
+  async updateProfile(data: any): Promise<{ message: string; user: AuthResponse['user'] }> {
+    const response = await api.put<{ message: string; user: AuthResponse['user'] }>('/auth/profile', data);
+
+    // Se a atualização foi bem sucedida, atualiza o localStorage
+    if (response.data.user) {
+      const currentUser = this.getCurrentUser();
+      const updatedUser = { ...currentUser, ...response.data.user };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem('barber_user', JSON.stringify(updatedUser));
+    }
+
+    return response.data;
   },
 
   isAuthenticated(): boolean {

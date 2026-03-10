@@ -17,6 +17,8 @@ export interface Barber {
   reviewCount?: number;
   barbershopId: string;
   active: boolean;
+  commissionRate?: number;
+  balance?: number;
 }
 
 export const barberService = {
@@ -96,4 +98,29 @@ export const barberService = {
     const response = await api.get<string[]>(`/barbers/${barberId}/available-slots?date=${date}`);
     return response.data;
   },
+
+  /**
+   * Verificar conflitos de agenda
+   */
+  async checkConflicts(data: { barberId: string; date: string; startTime: string; endTime: string }): Promise<{ hasConflicts: boolean; conflictCount: number; conflictingAppointments: any[] }> {
+    const response = await api.post<{ hasConflicts: boolean; conflictCount: number; conflictingAppointments: any[] }>(`/barbers/agenda-locks/check-conflicts`, data);
+    return response.data;
+  },
+
+  /**
+   * Trancar agenda do barbeiro
+   */
+  async createAgendaLock(data: { barberId: string; date: string; startTime: string; endTime: string; reason: string; conflictingAppointmentIds?: string[] }): Promise<any> {
+    const response = await api.post(`/barbers/agenda-locks`, data);
+    return response.data;
+  },
+
+  /**
+   * Buscar agenda trancada do barbeiro
+   */
+  async getAgendaLocks(barberId: string): Promise<any[]> {
+    const response = await api.get<any[]>(`/barbers/${barberId}/agenda-locks`);
+    return response.data;
+  },
 };
+

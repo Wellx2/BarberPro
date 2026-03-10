@@ -278,7 +278,6 @@ export class AuthService {
       data: { resetToken, resetUrl }
     });
 
-    console.log(`[PASS_RESET] Token para ${dto.email}: ${resetToken}`);
 
     return { message: 'Se o e-mail estiver cadastrado, você receberá um link de recuperação.' };
   }

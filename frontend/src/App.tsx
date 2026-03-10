@@ -11,6 +11,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { ResetPassword } from './pages/ResetPassword';
 import { UserProfile } from './pages/UserProfile';
 import { Booking } from './pages/Booking';
 import { BarberProfile } from './pages/BarberProfile';
@@ -20,9 +21,13 @@ import { Plans } from './pages/Plans';
 import { Terms } from './pages/Terms';
 import { Privacy } from './pages/Privacy';
 import { Contact } from './pages/Contact';
-import { Appointment } from './types';
+import { Appointment, UserRole } from './types';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Appointments from './pages/admin/Appointments';
+import AdminAppointmentHistory from './pages/admin/AdminAppointmentHistory';
+import { SuperAdminDashboard } from './pages/admin/SuperAdminDashboard';
+import { Cashier } from './pages/admin/Cashier';
+import { StockMovements } from './pages/admin/StockMovements';
 import { LoadingSkeletonCompact } from './components/LoadingSkeleton';
 import { ShopLoadError } from './components/ShopLoadError';
 
@@ -37,39 +42,71 @@ const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     if (!user || user?.role !== 'CLIENT') return;
 
-    const checkAppointments = () => {
-      const stored = localStorage.getItem('appointments');
-      const notified = JSON.parse(localStorage.getItem('notified_appointments') || '[]');
+    const checkAppointments = async () => {
+      const globalEnabled = localStorage.getItem('global_notifications_enabled') !== 'false';
+      if (!globalEnabled) return;
 
-      if (stored) {
-        const appointments: Appointment[] = JSON.parse(stored);
+      try {
+        const { appointmentService } = await import('./services');
+        const response = await appointmentService.list({ status: 'SCHEDULED' });
+        const appointments: Appointment[] = Array.isArray(response) ? response : [];
+        const notified = JSON.parse(localStorage.getItem('notified_appointments') || '[]');
+
         const now = new Date();
-        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+        const hasPlan = !!user.planId;
+        const timeWindowMs = hasPlan ? 2 * 60 * 60 * 1000 : 60 * 60 * 1000;
+        const timeWindowDate = new Date(now.getTime() + timeWindowMs);
+
+        const disabledStr = localStorage.getItem('disabled_reminders') || '[]';
+        const disabledList = JSON.parse(disabledStr);
+
+        let newNotified = false;
 
         appointments.forEach(apt => {
-          if (apt.clientId === user.id && apt.status === 'SCHEDULED' && !notified.includes(apt.id)) {
-            const aptDate = new Date(apt.date);
+          if (apt.status === 'SCHEDULED' && !notified.includes(apt.id)) {
+            const aptDate = new Date(apt.date || apt.scheduledFor);
 
-            // Check if appointment is within the next hour (and in the future)
-            if (aptDate > now && aptDate <= oneHourLater) {
-              addNotification(
-                'warning',
-                `Seu agendamento é às ${aptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Chegue com 10 min de antecedência.`,
-                'Atendimento em Breve'
-              );
+            // Check se agendamento está dentro da janela de lembrete
+            if (aptDate > now && aptDate <= timeWindowDate) {
+              const tempKey = `${apt.barberId}_${aptDate.toISOString().split('T')[0]}_${String(aptDate.getHours()).padStart(2, '0')}:${String(aptDate.getMinutes()).padStart(2, '0')}`;
+              const isRemindersDisabledLocally = disabledList.includes(apt.id) || disabledList.includes(tempKey);
 
-              // Mark as notified
+              if (!isRemindersDisabledLocally) {
+                const formattedTime = aptDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                if (hasPlan) {
+                  addNotification(
+                    'info',
+                    `Lembrete Premium: Seu agendamento é às ${formattedTime}. Você pode reagendar ou cancelar com antecedência, se necessário.`,
+                    'Lembrete de Agendamento'
+                  );
+                } else {
+                  addNotification(
+                    'warning',
+                    `Lembrete: Seu agendamento é às ${formattedTime}. Se não puder comparecer, cancele para evitar penalidades.`,
+                    'Atendimento em Breve'
+                  );
+                }
+              }
+
+              // Marcar como notificado (ou silenciado permanentemente) para não reavaliar
               notified.push(apt.id);
-              localStorage.setItem('notified_appointments', JSON.stringify(notified));
+              newNotified = true;
             }
           }
         });
+
+        if (newNotified) {
+          localStorage.setItem('notified_appointments', JSON.stringify(notified));
+        }
+      } catch (error) {
+        console.error('Failed to fetch appointments for notifications', error);
       }
     };
 
-    // Run check immediately and then every 60 seconds
+    // Run check immediately and then every 3 minutes
     checkAppointments();
-    const interval = setInterval(checkAppointments, 60000);
+    const interval = setInterval(checkAppointments, 3 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [user, addNotification]);
@@ -135,6 +172,7 @@ const App: React.FC = () => {
                     <Route path="/services" element={<Services />} />
                     <Route path="/products" element={<Products />} />
                     <Route path="/plans" element={<Plans />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* Rotas Protegidas */}
                     <Route path="/dashboard" element={
@@ -155,6 +193,26 @@ const App: React.FC = () => {
                     <Route path="/admin/appointments" element={
                       <ProtectedRoute>
                         <Appointments />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/history" element={
+                      <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+                        <AdminAppointmentHistory />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/super" element={
+                      <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                        <SuperAdminDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/cashier" element={
+                      <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+                        <Cashier />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/stock" element={
+                      <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+                        <StockMovements />
                       </ProtectedRoute>
                     } />
 

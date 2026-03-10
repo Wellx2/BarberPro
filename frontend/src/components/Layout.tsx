@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { Scissors, Calendar, User, LayoutDashboard, LogOut, Menu, X, Instagram, Phone, Sun, Moon, ShoppingBag, Home as HomeIcon, Award, List } from 'lucide-react';
 import { UserRole } from '../types';
 import { UserMenu } from './UserMenu';
+import { PWABadge } from './PWABadge';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -63,6 +64,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   <ShoppingBag size={18} /> Loja
                 </Link>
               )}
+
+              <Link to="/book" className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all">
+                <Calendar size={18} /> Agendar
+              </Link>
 
               <div className="h-6 w-px bg-gray-700 mx-2"></div>
 
@@ -138,7 +143,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <ShoppingBag size={20} />
             <span className="text-[10px] font-bold uppercase">Loja</span>
           </Link>
-          <Link to="/dashboard" className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/dashboard') ? 'text-amber-500' : 'text-gray-400'}`}>
+          <Link to={isAuthenticated ? "/dashboard" : "/login"} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/dashboard') || isTabActive('/profile') ? 'text-amber-500' : 'text-gray-400'}`}>
             <User size={20} />
             <span className="text-[10px] font-bold uppercase">Perfil</span>
           </Link>
@@ -157,6 +162,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <p className="text-xs opacity-50">&copy; 2025 BarberPro System. Todos os direitos reservados.</p>
         </div>
       </footer>
+
+      <PWABadge />
     </div>
   );
 };

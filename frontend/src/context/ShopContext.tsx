@@ -35,7 +35,7 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
     intervalMinutes: 30,
     loyaltyEnabled: false,
     loyaltyProgramTarget: 10,
-    coordinates: barbershop.latitude && barbershop.longitude 
+    coordinates: barbershop.latitude && barbershop.longitude
       ? { lat: barbershop.latitude, lng: barbershop.longitude }
       : { lat: 0, lng: 0 },
     settings: {
@@ -63,21 +63,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastSyncedUserId = useRef<string | null>(null);
   const hasSwappedMockShop = useRef(false);
-  
+
   // Load shops (priorizar localStorage, mas fetch backend SEMPRE)
   const [shops, setShops] = useState<Shop[]>(() => {
     const stored = localStorage.getItem('shops');
-    
+
     if (stored) {
       try {
         const parsedShops = JSON.parse(stored);
-        
+
         // Verificar se são dados reais do backend (têm UUIDs, não 'shop-1')
-        const hasRealData = parsedShops.length > 0 && 
-                           parsedShops[0].id.length > 10 && 
-                           !parsedShops[0].id.startsWith('shop-');
-        
-        
+        const hasRealData = parsedShops.length > 0 &&
+          parsedShops[0].id.length > 10 &&
+          !parsedShops[0].id.startsWith('shop-');
+
+
         if (hasRealData) {
           return parsedShops;
         }
@@ -85,7 +85,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('âŒ ShopContext: Erro ao parsear cache:', e);
       }
     }
-    
+
     return [];
   });
 
@@ -93,19 +93,19 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    * Função central de fetch de barbearias (reutilizável)
    */
   const performFetch = async () => {
-    
+
     // Criar novo AbortController apenas se não existir
     if (!abortControllerRef.current) {
       abortControllerRef.current = new AbortController();
     }
-    
+
     setIsLoadingShops(true);
     setFetchError(null);
-    
+
     try {
       const barbershops = await barbershopService.listPublic();
-      
-      
+
+
       if (!barbershops || barbershops.length === 0) {
         console.error('âŒ ShopContext: Nenhuma barbearia retornada');
         setFetchError('Nenhuma barbearia encontrada no backend');
@@ -113,23 +113,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLoadingShops(false);
         return;
       }
-      
+
       const convertedShops = barbershops.map(convertBarbershopToShop);
-      
-      
+
+
       setShops(convertedShops);
       localStorage.setItem('shops', JSON.stringify(convertedShops));
       setFetchError(null);
-      
+
     } catch (error: any) {
       // Ignorar erros de abort (são intencionais)
       if (error.name === 'AbortError') {
         return;
       }
-      
+
       // Determinar mensagem de erro específica
       let errorMsg = 'Erro ao buscar barbearias';
-      
+
       if (error.statusCode === 0 || error.message === 'Failed to fetch') {
         errorMsg = 'Backend não está acessível';
       } else if (error.statusCode === 429) {
@@ -139,7 +139,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (error.message) {
         errorMsg = error.message;
       }
-      
+
       setFetchError(errorMsg);
       fetchFailedPermanently.current = true;
     } finally {
@@ -150,23 +150,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Buscar barbearias do backend sempre na montagem (cache pode estar desatualizado)
   useEffect(() => {
-    
+
     // PROTEÇÃO: Se já falhou permanentemente, NÃO tentar novamente
     if (fetchFailedPermanently.current) {
       return;
     }
-    
+
     // PROTEÇÃO: Verificar se já tentou buscar (não resetar para evitar loop)
     if (hasFetchedShops.current) {
       return;
     }
-    
+
     // Marcar IMEDIATAMENTE para prevenir duplicatas
     hasFetchedShops.current = true;
-    
+
     // Executar fetch (sempre busca do backend para garantir IDs atualizados)
     performFetch();
-    
+
     // Cleanup: Abortar requisição APENAS ao desmontar componente
     return () => {
       if (abortControllerRef.current) {
@@ -177,7 +177,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Load selected shop (vazio inicialmente, backend vai preencher)
   const [shop, setShop] = useState<Shop>(() => {
-    
+
     // 1. Check if user is logged in and has a shopId (from backend)
     try {
       const userStr = localStorage.getItem('user');
@@ -188,7 +188,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (stored) {
             const storedShops = JSON.parse(stored);
             const userShop = storedShops.find((s: Shop) => s.id === user.shopId);
-            
+
             if (userShop && !userShop.id.startsWith('shop-')) {
               return userShop;
             }
@@ -198,19 +198,19 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('âŒ ShopContext: Erro ao buscar shop do usuário:', error);
     }
-    
+
     // 2. Check Subdomain (Deep Linking) - paulista.barberpro.com
     const hostname = window.location.hostname;
     const subdomain = hostname.split('.')[0];
-    
+
     // Slugify function para comparar subdomínios com nomes de loja
     const slugify = (str: string) => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-    
+
     const stored = localStorage.getItem('shops');
     if (stored) {
       try {
         const storedShops = JSON.parse(stored);
-        
+
         if (subdomain !== 'localhost' && subdomain !== 'www') {
           const foundFromSubdomain = storedShops.find((s: Shop) => slugify(s.name) === subdomain);
           if (foundFromSubdomain && !foundFromSubdomain.id.startsWith('shop-')) {
@@ -221,7 +221,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // 3. Check URL Parameters (Deep Linking - ?shopId=xxx)
         const params = new URLSearchParams(window.location.search);
         const urlShopId = params.get('shopId');
-        
+
         if (urlShopId) {
           const foundFromUrl = storedShops.find((s: Shop) => s.id === urlShopId);
           if (foundFromUrl && !foundFromUrl.id.startsWith('shop-')) {
@@ -235,7 +235,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (found && !found.id.startsWith('shop-')) {
           return found;
         }
-        
+
         // Retornar primeira barbearia válida do cache
         const firstValid = storedShops.find((s: Shop) => !s.id.startsWith('shop-'));
         if (firstValid) {
@@ -245,7 +245,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Ignorar erro
       }
     }
-    
+
     // Retornar objeto vazio temporário (backend vai preencher)
     return {
       id: '',
@@ -259,9 +259,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loyaltyEnabled: false,
       loyaltyProgramTarget: 10,
       coordinates: { lat: 0, lng: 0 },
-      settings: { 
-        showBarbers: true, 
-        subscriptionEnabled: false, 
+      settings: {
+        showBarbers: true,
+        subscriptionEnabled: false,
         allowPayOnLocation: true,
         modulesEnabled: {
           clientPlans: false,
@@ -281,10 +281,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (shops.length === 0) {
       return;
     }
-    
+
     // ✅ Verificar se o shop atual EXISTE na nova lista (IDs podem ter mudado no banco)
     const shopExistsInList = shop.id && shops.some(s => s.id === shop.id);
-    
+
     if (shopExistsInList) {
       // Shop ainda válido - atualizar com dados frescos do backend
       const freshShop = shops.find(s => s.id === shop.id);
@@ -293,12 +293,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return;
     }
-    
+
     // Shop inválido (ID não existe no banco) - tentar recuperar seleção anterior por ID salvo
     const storedId = localStorage.getItem('selected_shop_id');
     const savedShop = storedId ? shops.find(s => s.id === storedId) : null;
     const shopToSet = savedShop || shops[0];
-    
+
     setShop(shopToSet);
     localStorage.setItem('selected_shop_id', shopToSet.id);
   }, [shops, shop.id]); // ✅ Executa quando shops ou shop.id mudar
@@ -310,22 +310,22 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       lastSyncedUserId.current = null;
       return;
     }
-    
+
     // Se já sincronizou este usuário, não faz nada
     if (lastSyncedUserId.current === user.id) {
       return;
     }
-    
+
     // Marcar como processado IMEDIATAMENTE para evitar reprocessamento
     lastSyncedUserId.current = user.id;
-    
+
     // Buscar a barbearia no localStorage primeiro
     const storedShops = localStorage.getItem('shops');
     if (storedShops) {
       try {
         const parsedShops = JSON.parse(storedShops);
         const userShop = parsedShops.find((s: Shop) => s.id === user.shopId);
-        
+
         if (userShop) {
           setShop(userShop);
           return;
@@ -334,7 +334,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Erro ao parsear shops:', e);
       }
     }
-    
+
     // Buscar do backend se não encontrou localmente
     barbershopService.getById(user.shopId)
       .then(barbershop => {
@@ -365,28 +365,40 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [shop.id, shop.name]);
 
+  // 🎨 White Label: Injetar cor primária do tenant como CSS variable
+  useEffect(() => {
+    const raw = (shop as any).primaryColor;
+    const color = raw && /^#[0-9A-Fa-f]{3,6}$/.test(raw) ? raw : '#f59e0b'; // amber-500 padrão
+    document.documentElement.style.setProperty('--tenant-primary', color);
+    // Versão translúcida para hover/glassmorphism
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    document.documentElement.style.setProperty('--tenant-primary-rgb', `${r},${g},${b}`);
+  }, [(shop as any).primaryColor, shop.id]);
+
   const updateShopSettings = (updatedShop: Shop) => {
     setShops(prev => prev.map(s => s.id === updatedShop.id ? updatedShop : s));
     if (shop.id === updatedShop.id) {
-        setShop(updatedShop);
+      setShop(updatedShop);
     }
   };
 
   const createShop = (newShop: Shop) => {
-      setShops(prev => [...prev, newShop]);
+    setShops(prev => [...prev, newShop]);
   };
 
   const generateTimeSlots = () => {
     const slots: string[] = [];
     const [startHour, startMinute] = shop.openingTime.split(':').map(Number);
     const [endHour, endMinute] = shop.closingTime.split(':').map(Number);
-    
+
     let current = new Date();
     current.setHours(startHour, startMinute, 0, 0);
-    
+
     const end = new Date();
     end.setHours(endHour, endMinute, 0, 0);
-    
+
     while (current < end) {
       const timeString = current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       slots.push(timeString);
@@ -398,36 +410,36 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Helper to calculate distance in km
   const calculateDistance = async (shopLat: number, shopLng: number): Promise<string | null> => {
-      return new Promise((resolve) => {
-          if (!navigator.geolocation) {
-              resolve(null);
-              return;
-          }
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
 
-          navigator.geolocation.getCurrentPosition(
-              (position) => {
-                  const userLat = position.coords.latitude;
-                  const userLng = position.coords.longitude;
-                  
-                  const R = 6371; // Radius of the earth in km
-                  const dLat = deg2rad(shopLat - userLat);
-                  const dLng = deg2rad(shopLng - userLng);
-                  const a = 
-                      Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(deg2rad(userLat)) * Math.cos(deg2rad(shopLat)) * 
-                      Math.sin(dLng/2) * Math.sin(dLng/2)
-                      ; 
-                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-                  const d = R * c; // Distance in km
-                  resolve(d.toFixed(1));
-              },
-              () => resolve(null) // Error or denied
-          );
-      });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          const R = 6371; // Radius of the earth in km
+          const dLat = deg2rad(shopLat - userLat);
+          const dLng = deg2rad(shopLng - userLng);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(deg2rad(userLat)) * Math.cos(deg2rad(shopLat)) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2)
+            ;
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const d = R * c; // Distance in km
+          resolve(d.toFixed(1));
+        },
+        () => resolve(null) // Error or denied
+      );
+    });
   };
 
   const deg2rad = (deg: number) => {
-      return deg * (Math.PI/180);
+    return deg * (Math.PI / 180);
   };
 
   /**
@@ -453,12 +465,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // 4. Disparar evento para componentes recarregarem dados
-      window.dispatchEvent(new CustomEvent('shop-changed', { 
-        detail: { 
-          oldShopId: shop.id, 
+      window.dispatchEvent(new CustomEvent('shop-changed', {
+        detail: {
+          oldShopId: shop.id,
           newShopId: shopId,
-          shop: response.shop 
-        } 
+          shop: response.shop
+        }
       }));
     } catch (error) {
       console.error('Erro ao trocar de barbearia:', error);
@@ -474,21 +486,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     hasFetchedShops.current = false;
     fetchFailedPermanently.current = false;
     setFetchError(null);
-    
+
     // Executar fetch novamente
     performFetch();
   };
 
   return (
-    <ShopContext.Provider value={{ 
-      shops, 
-      shop, 
-      setShop, 
-      switchShop, 
-      updateShopSettings, 
-      createShop, 
-      generateTimeSlots, 
-      calculateDistance, 
+    <ShopContext.Provider value={{
+      shops,
+      shop,
+      setShop,
+      switchShop,
+      updateShopSettings,
+      createShop,
+      generateTimeSlots,
+      calculateDistance,
       isLoadingShops,
       fetchError,
       retryFetch

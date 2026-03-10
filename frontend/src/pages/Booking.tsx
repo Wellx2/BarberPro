@@ -42,6 +42,22 @@ export const Booking: React.FC = () => {
   const [selectedBarber, setSelectedBarber] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<string>(''); // Para ADMIN/BARBER escolher cliente
   const [clientSearchQuery, setClientSearchQuery] = useState<string>(''); // Busca de clientes
+  const [reminderEnabled, setReminderEnabled] = useState<boolean>(true); // 🛡️ LGPD toggle por agendamento
+
+  // Auto-selecionar o barbeiro logado se for BARBER
+  useEffect(() => {
+    if (user?.role === 'BARBER' && !selectedBarber && allBarbers.length > 0) {
+      if (user.barberId) {
+        setSelectedBarber(user.barberId);
+      } else {
+        const matchingBarber = allBarbers.find(b => b.id === user.id || b.email === user.email);
+        if (matchingBarber) {
+          setSelectedBarber(matchingBarber.id);
+        }
+      }
+    }
+  }, [user, allBarbers, selectedBarber]);
+
   // Pré-selecionar data atual para melhor UX
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState<string>('');
@@ -252,7 +268,8 @@ export const Booking: React.FC = () => {
       // ADMIN: clientId + barberId + serviceIds + date (ambos obrigatórios)
       let appointmentData: any = {
         serviceIds: selectedServices,
-        date: appointmentDate.toISOString()
+        date: appointmentDate.toISOString(),
+        reminderEnabled, // 🛡️ LGPD: persist user's reminder preference
       };
 
       // CLIENT: precisa de barberId, clientId é inferido do JWT
@@ -294,7 +311,7 @@ export const Booking: React.FC = () => {
       );
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('âŒ Erro ao criar agendamento:', error);
+      console.error('Erro ao criar agendamento:', error);
 
       // Tratar erro 403 (vínculo)
       if (error?.statusCode === 403 || error?.status === 403) {
@@ -362,8 +379,12 @@ export const Booking: React.FC = () => {
       </div>
 
       {/* Progress steps */}
-      <div className="flex justify-between items-center mb-10 px-4">
-        {[1, 2, 3, 4].map(s => (<div key={s} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm transition-all ${step >= s ? 'bg-amber-500 text-white shadow-lg scale-110' : 'bg-gray-200 dark:bg-gray-800 text-gray-400'}`}>{s}</div>))}
+      <div className="flex justify-between items-center mb-10 px-4 relative before:absolute before:inset-0 before:top-1/2 before:-translate-y-1/2 before:h-1 before:bg-gray-200 dark:before:bg-gray-800 before:-z-10">
+        {Array.from({ length: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? 5 : 4 }, (_, i) => i + 1).map(s => (
+          <div key={s} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm transition-all z-10 ${step >= s ? 'bg-amber-500 text-white shadow-lg scale-110' : 'bg-gray-200 dark:bg-gray-800 text-gray-400'}`}>
+            {s}
+          </div>
+        ))}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-[40px] shadow-2xl border dark:border-gray-700 overflow-hidden min-h-[550px]">
@@ -380,7 +401,7 @@ export const Booking: React.FC = () => {
                     R$ {activeServices.filter(s => selectedServices.includes(s.id)).reduce((acc, curr) => acc + curr.price, 0).toFixed(2)}
                   </p>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                    {selectedServices.length} {selectedServices.length === 1 ? 'serviço' : 'serviços'} â€¢ {totalDuration}min
+                    {selectedServices.length} {selectedServices.length === 1 ? 'serviço' : 'serviços'} e {totalDuration}min
                   </p>
                 </div>
               )}
@@ -567,10 +588,10 @@ export const Booking: React.FC = () => {
                       disabled={blocked || !selectedDate}
                       onClick={() => setSelectedTime(time)}
                       className={`py-5 rounded-[22px] text-[11px] font-black uppercase tracking-widest transition-all relative ${blocked
-                          ? 'bg-[#1a222f] text-gray-700 opacity-20 cursor-not-allowed'
-                          : isSelected
-                            ? 'bg-amber-500 text-white shadow-2xl shadow-amber-500/40 z-10 scale-105'
-                            : 'bg-[#1a222f] text-white hover:bg-amber-500/10 hover:text-amber-500 hover:-translate-y-0.5 active:scale-95'
+                        ? 'bg-[#1a222f] text-gray-700 opacity-20 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-amber-500 text-white shadow-2xl shadow-amber-500/40 z-10 scale-105'
+                          : 'bg-[#1a222f] text-white hover:bg-amber-500/10 hover:text-amber-500 hover:-translate-y-0.5 active:scale-95'
                         }`}
                     >
                       {time}
@@ -622,10 +643,10 @@ export const Booking: React.FC = () => {
                       disabled={blocked || !selectedDate}
                       onClick={() => setSelectedTime(time)}
                       className={`py-5 rounded-[22px] text-[11px] font-black uppercase tracking-widest transition-all relative ${blocked
-                          ? 'bg-[#1a222f] text-gray-700 opacity-20 cursor-not-allowed'
-                          : isSelected
-                            ? 'bg-amber-500 text-white shadow-2xl shadow-amber-500/40 z-10 scale-105'
-                            : 'bg-[#1a222f] text-white hover:bg-amber-500/10 hover:text-amber-500 hover:-translate-y-0.5 active:scale-95'
+                        ? 'bg-[#1a222f] text-gray-700 opacity-20 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-amber-500 text-white shadow-2xl shadow-amber-500/40 z-10 scale-105'
+                          : 'bg-[#1a222f] text-white hover:bg-amber-500/10 hover:text-amber-500 hover:-translate-y-0.5 active:scale-95'
                         }`}
                     >
                       {time}
@@ -651,20 +672,47 @@ export const Booking: React.FC = () => {
               <div className="space-y-6 relative z-10">
                 <div className="flex justify-between items-center border-b border-white/10 pb-5">
                   <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Data & Hora</span>
-                  <span className="font-black text-amber-500 uppercase tracking-tight">{new Date(selectedDate + 'T00:00:00').toLocaleDateString()} às {selectedTime}</span>
+                  <span className="font-black text-amber-500 uppercase tracking-tight">{new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'numeric' }).toUpperCase()} às {selectedTime}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/10 pb-5">
                   <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Barbeiro</span>
                   <span className="font-black text-white uppercase tracking-tight">{shopBarbers.find(b => b.id === selectedBarber)?.name || 'Profissional'}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Investimento</span>
-                  <span className="text-4xl font-black text-amber-500 tracking-tighter leading-none">R$ {activeServices.filter(s => selectedServices.includes(s.id)).reduce((acc, curr) => acc + curr.price, 0).toFixed(2)}</span>
+                <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl mb-8 border border-gray-100 dark:border-gray-800">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-gray-600 dark:text-gray-400 font-bold">Total Estimado</span>
+                    <span className="text-2xl font-black text-amber-500">
+                      R$ {activeServices.filter(s => selectedServices.includes(s.id)).reduce((acc, curr) => acc + curr.price, 0).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200 dark:border-gray-800">
+                    <div>
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-white">Lembrete de Agendamento</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {reminderEnabled ? 'Você receberá um lembrete antes do horário' : 'Lembrete desativado para este agendamento'}
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        id="reminder-toggle"
+                        checked={reminderEnabled}
+                        onChange={(e) => setReminderEnabled(e.target.checked)}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
 
-              <Button onClick={handleConfirm} variant="primary" fullWidth className="!py-6 gap-4">
-                <Check size={24} strokeWidth={3} /> Confirmar Agora
+              <Button
+                className="w-full flex items-center justify-center gap-4 py-6 text-lg font-bold"
+                variant="primary"
+                onClick={handleConfirm}
+              >
+                <Check size={24} strokeWidth={3} /> <span>Confirmar Agora</span>
               </Button>
             </div>
           </div>

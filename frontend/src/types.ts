@@ -77,11 +77,20 @@ export enum BarberAvailability {
   OFFLINE = 'OFFLINE',
 }
 
+export enum OrderStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export type PaymentMethod = 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD';
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string; 
+  phone: string;
   role: UserRole;
   avatar?: string;
   planId?: string;
@@ -93,7 +102,7 @@ export interface User {
   clientId?: string;  // ID da entidade Client (diferente do User ID)
   bio?: string;
   birthDate?: string;
-  isGuest?: boolean; 
+  isGuest?: boolean;
 }
 
 export interface UpdateProfileDto {
@@ -133,21 +142,21 @@ export interface ShopFeatures {
   maxTeamMembers: number; // Simples: 3, Plus: 10, Premium: ilimitado
   hasAppointments: boolean; // Todos: true
   hasCashier: boolean; // Simples: true, Plus: true, Premium: true
-  
+
   // Financial features
   hasFinancialDashboard: boolean; // Simples: false, Plus: true, Premium: true
   hasCommissionReports: boolean; // Simples: false, Plus: true, Premium: true
   commissionReportPeriods: ('WEEKLY' | 'BIWEEKLY' | 'MONTHLY')[]; // Plus/Premium
-  
+
   // Product & Inventory features
   hasProducts: boolean; // Simples: false, Plus: false, Premium: true
   hasInventory: boolean; // Simples: false, Plus: false, Premium: true
   hasProductReports: boolean; // Simples: false, Plus: false, Premium: true
-  
+
   // Advanced reports
   hasAdvancedReports: boolean; // Simples: false, Plus: limited, Premium: true
   hasAIAnalysis: boolean; // Simples: false, Plus: false, Premium: true
-  
+
   // Support
   hasPrioritySupport: boolean; // Simples: false, Plus: false, Premium: true
   hasConfigurationSupport: boolean; // Simples: false, Plus: false, Premium: true
@@ -424,6 +433,21 @@ export interface UpdateBarberDto {
   active?: boolean;
 }
 
+export interface Client {
+  id: string;
+  shopId: string;
+  userId?: string;
+  name: string;
+  phone: string;
+  email?: string;
+  avatar?: string;
+  observations?: string;
+  loyaltyPoints?: number;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // ============================================================================
 // TEAM / COLABORADORES
 // ============================================================================
@@ -590,8 +614,8 @@ export interface Appointment {
   shopId?: string;
   barbershopId?: string;
   clientId: string;
-  clientPhone?: string; 
-  clientName?: string;  
+  clientPhone?: string;
+  clientName?: string;
   barberId: string;
   serviceIds: string[];
   date?: string;

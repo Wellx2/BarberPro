@@ -1,0 +1,43 @@
+# [MVP Refinement] Login, UI/UX, and Strategic Improvements
+
+This plan outlines the steps to elevate the BarberPro MVP to "premium" status, focusing on reducing friction (login), increasing visual appeal (WOW factor), and identifying strategic growth features from a barber's perspective.
+
+## User Review Required
+
+> [!IMPORTANT]
+> I will implement a **Phone-only Login** option (OTP approach) alongside the current Email/Password to reduce friction, as requested.
+> I will also add "Upselling Micro-interactions" to the dashboard to help barbers sell more products.
+
+## Proposed Changes
+
+---
+
+### [Auth Module] - Login Friction Reduction
+- **Objective**: Implement a phone-based login flow.
+- [NEW] [loginService.ts](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/services/loginService.ts): Add support for phone authentication.
+- [MODIFY] [Login.tsx](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/pages/Login.tsx): Update UI to allow switching between Email and Phone login.
+
+---
+
+### [UI/UX] - Visual "WOW" and Sales Boost
+- **Objective**: Make the system feel more premium and proactive in sales.
+- [MODIFY] [index.css](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/index.css): Add global glassmorphism and premium gradient tokens.
+- [MODIFY] [BarberDashboard.tsx](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/pages/barber/BarberDashboard.tsx): 
+    - Add "Recommended Add-ons" section based on the selected service (e.g., if "Haircut", suggest "Pomade").
+    - Implement smooth transitions and micro-animations for OS updates.
+
+---
+
+### [Strategic Report] - Barber Perspective Audit
+- **Objective**: Create a "Barber-to-System" improvement report.
+- [NEW] [barber_improvement_report.md](file:///C:/Users/wsilv/.gemini/antigravity/brain/54b5a5b9-96ab-41e1-9a6a-5ef15abf735f/barber_improvement_report.md): Document gaps like "Quick Comanda for Walk-ins", "Customer Birthday Alerts", and "Commission Withdrawal Portal".
+
+## Verification Plan
+
+### Automated Tests
+- `npm run test` for auth logic.
+- Browser test: Verify phone login UI state transitions.
+
+### Manual Verification
+- Testing the new "Add Service" flow with animations.
+- Verifying the "WOW" elements on different screen sizes.

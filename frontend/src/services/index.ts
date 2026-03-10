@@ -12,3 +12,7 @@ export * from './barberService';
 export * from './planService';
 export * from './financialService';
 export * from './teamService';
+export * from './serviceOrderService';
+export * from './clientService';
+export * from './expenseService';
+export * from './supplyItemService';

@@ -202,43 +202,71 @@ export function useClientAppointments(clientId: string | null) {
       const data = await appointmentService.list();
       setAppointments(data);
 
-      // Separar futuros e passados
+      // Helpers de ordenação exportados para reuso
       const getAppointmentDate = (apt: Appointment) => {
         const rawDate = apt.date || apt.scheduledFor;
         if (!rawDate) return null;
 
+        if (rawDate && typeof rawDate === 'object' && !((rawDate as any) instanceof Date) && Object.keys(rawDate as any || {}).length === 0) {
+          return null;
+        }
+
         let parsed = new Date(rawDate);
 
-        // Fallback para datas salvas incorretamente como texto (ex: "04/03/2026 Às 09:30")
         if (Number.isNaN(parsed.getTime()) && typeof rawDate === 'string') {
-          const match = rawDate.match(/(\d{2})\/(\d{2})\/(\d{4}).*?(\d{2}):(\d{2})/);
+          const match = rawDate.match(/(\d{2})\/(\d{2})\/(\d{4})(?:.*?(\d{2}):(\d{2}))?/);
           if (match) {
             const [_, d, m, y, h, min] = match;
-            parsed = new Date(`${y}-${m}-${d}T${h}:${min}:00.000Z`);
+            parsed = new Date(Number(y), Number(m) - 1, Number(d), Number(h || '0'), Number(min || '0'));
+          } else if (/^\d+$/.test(rawDate)) {
+            parsed = new Date(Number(rawDate));
           }
         }
 
         return Number.isNaN(parsed.getTime()) ? null : parsed;
       };
 
+      const statusPriority = (status: string) => {
+        if (status === 'SCHEDULED') return 0;
+        if (status === 'COMPLETED') return 1;
+        return 2; // CANCELLED variants
+      };
+
+      const sortByTime = (a: Appointment, b: Appointment) => {
+        const da = getAppointmentDate(a)?.getTime() ?? 0;
+        const db = getAppointmentDate(b)?.getTime() ?? 0;
+        return da - db;
+      };
+
+      const sortByStatusThenTime = (a: Appointment, b: Appointment) => {
+        const statusDiff = statusPriority(a.status) - statusPriority(b.status);
+        if (statusDiff !== 0) return statusDiff;
+        const da = getAppointmentDate(a)?.getTime() ?? 0;
+        const db = getAppointmentDate(b)?.getTime() ?? 0;
+        // Para agendados, do mais cedo para o mais tarde (ASC)
+        if (a.status === 'SCHEDULED') return da - db;
+        // Para concluídos/cancelados, do mais recente para o mais antigo (DESC)
+        return db - da;
+      };
+
       const now = new Date();
+      // Upcoming: Apenas SCHEDULED e que não passaram do horário
       const upcomingList = data.filter(apt => {
         const appointmentDate = getAppointmentDate(apt);
         if (!appointmentDate) return false;
-        return appointmentDate >= now && apt.status === 'SCHEDULED';
+        return apt.status === 'SCHEDULED' && appointmentDate >= now;
       });
+
+      // Past: Tudo que não é Upcoming (concluídos, cancelados, ou agendados expirados)
       const pastList = data.filter(apt => {
         const appointmentDate = getAppointmentDate(apt);
-
-        if (!appointmentDate) {
-          return apt.status === 'COMPLETED' || apt.status.includes('CANCELLED');
-        }
-
-        return appointmentDate < now || apt.status === 'COMPLETED' || apt.status.includes('CANCELLED');
+        // Se não tem data ou já passou ou não está agendado
+        if (!appointmentDate) return apt.status !== 'SCHEDULED';
+        return appointmentDate < now || apt.status !== 'SCHEDULED';
       });
 
-      setUpcoming(upcomingList);
-      setPast(pastList);
+      setUpcoming([...upcomingList].sort(sortByTime));
+      setPast([...pastList].sort(sortByStatusThenTime));
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Erro ao carregar agendamentos';
       setError(errorMsg);

@@ -12,32 +12,45 @@ export const Terms: React.FC = () => {
 
         <div className="prose prose-amber max-w-none text-gray-600 space-y-6">
           <p>
-            Bem-vindo ao {shop.name}. Ao acessar ou usar nosso sistema de agendamento e serviços, você concorda em cumprir e estar vinculado aos seguintes termos e condições.
+            Bem-vindo ao {shop.name}. Ao acessar ou usar nosso sistema de agendamento (incluindo o aplicativo PWA) e serviços associados (doravante, a "Plataforma"), você concorda em cumprir e estar vinculado aos seguintes termos e condições. Caso discorde de qualquer parte destes termos, você não deve utilizar a Plataforma.
           </p>
 
-          <h3 className="text-xl font-bold text-gray-900">1. Agendamentos</h3>
+          <h3 className="text-xl font-bold text-gray-900">1. Agendamentos e Política de Cancelamento</h3>
           <p>
-            Os agendamentos realizados através da nossa plataforma são compromissos firmados entre o cliente e o profissional. Solicitamos que cancelamentos sejam feitos com pelo menos 24 horas de antecedência. Cancelamentos tardios ou não comparecimento podem estar sujeitos a taxas ou perda de benefícios de fidelidade.
+            Os agendamentos realizados através da nossa Plataforma são compromissos firmados entre o cliente e o profissional. Solicitamos que cancelamentos ou remarcações sejam feitos com pelo menos 2 horas de antecedência. Cancelamentos tardios ou o não comparecimento ("no-show") podem resultar na cobrança de taxas compensatórias, perda de benefícios de fidelidade ou até bloqueio temporário de agendamentos futuros.
           </p>
 
-          <h3 className="text-xl font-bold text-gray-900">2. Planos e Assinaturas</h3>
+          <h3 className="text-xl font-bold text-gray-900">2. Planos de Assinatura</h3>
           <p>
-            Os planos de assinatura (Básico, Premium, VIP, Ilimitado) são cobrados mensalmente. O cancelamento pode ser realizado a qualquer momento, mas não haverá reembolso proporcional para o mês vigente. Os benefícios não utilizados não acumulam para o mês seguinte.
+            Os planos de assinatura oferecidos são cobrados mensalmente de forma recorrente. O cancelamento da assinatura pode ser realizado a qualquer momento pelo usuário, entretanto, não haverá reembolso proporcional para o ciclo vigente já pago. Os benefícios contidos na assinatura não são cumulativos e expiram ao final de cada período em caso de não utilização.
           </p>
 
-          <h3 className="text-xl font-bold text-gray-900">3. Conduta</h3>
+          <h3 className="text-xl font-bold text-gray-900">3. Comunicações e Notificações (PWA, E-mail, SMS, Push)</h3>
           <p>
-            Reservamo-nos o direito de recusar atendimento a qualquer pessoa por qualquer motivo a qualquer momento. Comportamento inadequado, desrespeitoso ou perigoso em nossas instalações resultará no cancelamento imediato de serviços e possível banimento da plataforma.
+            Ao utilizar a Plataforma, você consente em receber comunicações transacionais e promocionais (como confirmações e lembretes de agendamento) via E-mail, SMS, WhatsApp e Push Notifications (Notificações do Navegador/PWA).
+          </p>
+          <p>
+            <strong>Isenção de Responsabilidade sobre Notificações:</strong> Os sistemas de notificação operam em regime de "melhor esforço". O {shop.name} <strong>NÃO</strong> garante a entrega ininterrupta, pontual ou livre de falhas de e-mails, SMS, Web Push ou mensagens via WhatsApp, pois estas dependem das operadoras de telefonia, provedores de e-mail e configurações de bateria e permissões do dispositivo do usuário. O não recebimento de um lembrete <strong>não</strong> isenta o cliente da responsabilidade de comparecer ao agendamento ou das penalidades por não comparecimento.
           </p>
 
-          <h3 className="text-xl font-bold text-gray-900">4. Pagamentos</h3>
+          <h3 className="text-xl font-bold text-gray-900">4. Conduta do Usuário</h3>
           <p>
-            Aceitamos pagamentos via cartão de crédito e débito através da plataforma. Todos os preços estão sujeitos a alterações sem aviso prévio, embora honraremos o preço de agendamentos já confirmados.
+            O {shop.name} se reserva o direito de recusar atendimento, suspender ou encerrar contas de usuários por qualquer motivo, inclusive, sem limitação, em casos de comportamento inadequado, desrespeitoso ou violação destes Termos. A segurança de nossos profissionais e clientes é prioritária.
           </p>
 
-          <h3 className="text-xl font-bold text-gray-900">5. Modificações dos Termos</h3>
+          <h3 className="text-xl font-bold text-gray-900">5. Pagamentos e Tarifas</h3>
           <p>
-            Podemos atualizar estes termos de tempos em tempos. Recomendamos que você revise esta página periodicamente para quaisquer alterações. O uso continuado do serviço após a publicação de alterações constitui aceitação dessas alterações.
+            Aceitamos pagamentos via métodos digitais parceiros. Os preços dos serviços e planos estão sujeitos a alterações mediante aviso prévio razoável em nossa Plataforma. Agendamentos já confirmados e pagos terão seu valor integralmente honrado.
+          </p>
+
+          <h3 className="text-xl font-bold text-gray-900">6. Limitação de Responsabilidade da Plataforma de Software</h3>
+          <p>
+            A Plataforma é fornecida no estado em que se encontra ("as is"). Na máxima extensão permitida pela lei aplicável, o {shop.name} e os desenvolvedores do software BarberPro não se responsabilizam por danos indiretos, incidentais, especiais ou punitivos decorrentes de (i) sua incapacidade de acesso ou uso da Plataforma; (ii) falhas técnicas, interrupções ou indisponibilidade temporária do serviço (PWA ou Web); ou (iii) qualquer conduta inadequada de terceiros dentro das dependências do estabelecimento.
+          </p>
+
+          <h3 className="text-xl font-bold text-gray-900">7. Modificações dos Termos</h3>
+          <p>
+            Estes Termos podem ser atualizados periodicamente para refletir mudanças legais ou operacionais. A data de atualização será destacada no topo. O uso contínuo da Plataforma após tais alterações constitui sua aceitação tácita e integral.
           </p>
         </div>
       </div>
