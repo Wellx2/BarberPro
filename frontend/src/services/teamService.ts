@@ -3,9 +3,9 @@
  */
 
 import { api } from './api';
-import { 
-  TeamMember, 
-  CreateTeamMemberDto, 
+import {
+  TeamMember,
+  CreateTeamMemberDto,
   UpdateTeamMemberDto,
   AgendaLock,
   CreateAgendaLockDto,
@@ -103,10 +103,10 @@ export const teamService = {
       if (teamMemberId) params.append('teamMemberId', teamMemberId);
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
-      
+
       const queryString = params.toString();
       const endpoint = `/agenda-locks${queryString ? '?' + queryString : ''}`;
-      
+
       const response = await api.get<AgendaLock[]>(endpoint);
       return response.data;
     } catch (error) {

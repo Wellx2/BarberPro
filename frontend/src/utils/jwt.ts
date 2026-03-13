@@ -20,7 +20,7 @@ export function decodeJWT(token: string): JWTPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.error('âŒ Token JWT inválido: não tem 3 partes');
+      console.error('Token JWT inválido: não tem 3 partes');
       return null;
     }
 
@@ -31,7 +31,7 @@ export function decodeJWT(token: string): JWTPayload | null {
 
     return parsed as JWTPayload;
   } catch (error) {
-    console.error('âŒ Erro ao decodificar JWT:', error);
+    console.error('Erro ao decodificar JWT:', error);
     return null;
   }
 }
@@ -57,15 +57,15 @@ export function validateJWTForAppointments(token: string): {
 
   // Verificações críticas
   if (!payload.sub && !payload.userId) {
-    errors.push('âŒ Token não contém userId (sub)');
+    errors.push('Token não contém userId (sub)');
   }
 
   if (!payload.shopId && !payload.barbershopId) {
-    errors.push('âŒ Token não contém shopId - Backend não conseguirá inferir a barbearia!');
+    errors.push('Token não contém shopId - Backend não conseguirá inferir a barbearia!');
   }
 
   if (!payload.role) {
-    errors.push('âš ï¸ Token não contém role');
+    errors.push('Token não contém role');
   }
 
   return {
@@ -84,7 +84,7 @@ export function debugCurrentJWT(): void {
   console.group('ðŸ” DEBUG JWT');
 
   if (!token) {
-    console.error('âŒ Nenhum token encontrado no localStorage');
+    console.error('Nenhum token encontrado não localStorage');
     console.groupEnd();
     return;
   }
@@ -94,7 +94,7 @@ export function debugCurrentJWT(): void {
 
 
   if (validation.errors.length > 0) {
-    console.group('âš ï¸ Problemas encontrados:');
+    console.group('Problemas encontrados:');
     validation.errors.forEach(error => console.error(error));
     console.groupEnd();
   }

@@ -131,7 +131,7 @@ export const ScheduleBlocks: React.FC = () => {
                     onClick={() => handleEdit(block)}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   >
-                    <Calendar size={18} className="text-amber-500" />
+                    <Calendar size={18} className="text-tenant-primary" />
                   </button>
                   <button
                     onClick={() => handleDelete(block.id)}
@@ -159,7 +159,7 @@ export const ScheduleBlocks: React.FC = () => {
                         </span>
                       </div>
                       {(block as any).isRecurring && (
-                        <div className="text-xs font-bold text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg w-fit mt-2 uppercase">
+                        <div className="text-xs font-bold text-tenant-primary dark:text-tenant-primary bg-tenant-primary/5 dark:bg-tenant-primary/10 px-3 py-1.5 rounded-lg w-fit mt-2 uppercase">
                           📅 Recorrente: {(block as any).recurringDays?.join(', ') || 'Diariamente'}
                         </div>
                       )}
@@ -236,7 +236,7 @@ export const ScheduleBlocks: React.FC = () => {
                     type="checkbox"
                     checked={formData.isRecurring}
                     onChange={e => setFormData({ ...formData, isRecurring: e.target.checked })}
-                    className="w-5 h-5 rounded accent-amber-500"
+                    className="w-5 h-5 rounded accent-[var(--tenant-primary)]"
                   />
                   <span className="text-sm font-bold text-gray-900 dark:text-white">Repetir semanalmente?</span>
                 </label>
@@ -256,7 +256,7 @@ export const ScheduleBlocks: React.FC = () => {
                           }))
                         }
                         className={`w-10 h-10 rounded-lg font-bold text-xs transition-all ${formData.recurringDays.includes(day)
-                          ? 'bg-amber-500 text-white shadow-lg'
+                          ? 'bg-tenant-primary text-white shadow-lg'
                           : 'bg-white dark:bg-gray-700 text-gray-400 border border-gray-200 dark:border-gray-600'
                           }`}
                       >

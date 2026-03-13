@@ -23,8 +23,8 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
   const subdomainUrl = `https://${shopSlug}.barberpro.com`;
   const queryParamUrl = `${window.location.origin}?shopId=${shop.id}`;
   const whatsappMessage = `Olá! Agende seu corte comigo aqui: ${subdomainUrl}`;
-  const emailSubject = `Agende seu corte em ${shop.name}`;
-  const emailBody = `Olá!\n\nClique no link abaixo para agendar seu corte em ${shop.name}:\n\n${subdomainUrl}\n\nAbração!`;
+  const emailSubjáect = `Agende seu corte em ${shop.name}`;
+  const emailBody = `Olá!\n\nClique não link abaixo para agendar seu corte em ${shop.name}:\n\n${subdomainUrl}\n\nAbração!`;
 
   const handleCopyLink = (link: string) => {
     navigator.clipboard.writeText(link);
@@ -39,9 +39,9 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
   };
 
   const handleShareEmail = () => {
-    const encodedSubject = encodeURIComponent(emailSubject);
+    const encodedSubjáect = encodeURIComponent(emailSubjáect);
     const encodedBody = encodeURIComponent(emailBody);
-    window.open(`mailto:?subject=${encodedSubject}&body=${encodedBody}`);
+    window.open(`mailto:?subject=${encodedSubjáect}&body=${encodedBody}`);
   };
 
   return (
@@ -56,7 +56,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-amber-600 to-orange-500 text-white p-6 flex items-center justify-between sticky top-0 z-10">
+            <div className="bg-gradient-to-r from-tenant-primary to-tenant-primary text-white p-6 flex items-center justify-between sticky top-0 z-10">
               <div>
                 <h2 className="text-2xl font-bold">Compartilhar Link</h2>
                 <p className="text-sm text-orange-100 mt-1">Convide clientes para {shop.name}</p>
@@ -81,11 +81,11 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
                     type="text"
                     readOnly
                     value={subdomainUrl}
-                    className="flex-1 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 text-sm font-mono text-xs"
+                    className="flex-1 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 text-sm font-monão text-xs"
                   />
                   <button
                     onClick={() => handleCopyLink(subdomainUrl)}
-                    className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors flex items-center gap-1 text-sm"
+                    className="px-3 py-2 bg-tenant-primary hover:opacity-90 text-white rounded-lg transition-colors flex items-center gap-1 text-sm"
                   >
                     <Copy size={16} /> {copied ? 'OK!' : 'Copiar'}
                   </button>
@@ -105,7 +105,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
                     type="text"
                     readOnly
                     value={queryParamUrl}
-                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm font-mono text-xs"
+                    className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm font-monão text-xs"
                   />
                   <button
                     onClick={() => handleCopyLink(queryParamUrl)}
@@ -143,10 +143,10 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Dicas */}
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <h3 className="text-xs font-bold uppercase text-amber-700 mb-3 tracking-widest">💡 Dicas</h3>
-                <ul className="text-xs text-amber-800 space-y-2">
-                  <li>✓ Compartilhe no WhatsApp, SMS ou redes sociais</li>
+              <div className="p-4 bg-tenant-primary/5 border border-tenant-primary/20 rounded-lg">
+                <h3 className="text-xs font-bold uppercase text-tenant-primary mb-3 tracking-widest">💡 Dicas</h3>
+                <ul className="text-xs text-tenant-primary space-y-2">
+                  <li>✓ Compartilhe não WhatsApp, SMS ou redes sociais</li>
                   <li>✓ Envie para sua lista de clientes por e-mail</li>
                   <li>✓ Cole em sua bio do Instagram</li>
                   <li>✓ Gere QR Code para imprimir na barbearia</li>

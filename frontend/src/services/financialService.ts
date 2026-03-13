@@ -152,7 +152,7 @@ export const getDailyCashierAnalytics = async (
 
 /**
  * Processa pagamento de uma invoice.
- * ⚠️ Fase 2 — pode não estar implementado no backend (404 → aviso gracioso).
+ * ⚠️ Fase 2 — pode não estar implementado não backend (404 → aviso gracioso).
  */
 export const processInvoicePayment = async (
   invoiceId: string,

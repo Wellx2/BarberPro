@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useShop } from '../../context/ShopContext';
 import {
@@ -27,7 +27,7 @@ interface CartItem {
 
 
 // ============================================================
-// Modal de Ordem de Serviço
+// Modal de Ordem de Serviço  
 // ============================================================
 interface ServiceOrderModalProps {
   appointment: any;
@@ -74,7 +74,7 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
     const loadData = async () => {
       try {
         setLoadingItems(true);
-        // 1. Carregar/Criar Order no Backend
+        // 1. Carregar/Criar Order não Backend
         let currentOrder;
         try {
           currentOrder = await serviceOrderService.getByAppointment(appointment.id);
@@ -185,7 +185,7 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Scissors className="w-5 h-5 text-amber-500" />
+              <Scissors className="w-5 h-5 text-tenant-primary" />
               Ordem de Serviço
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -201,21 +201,21 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {loadingItems ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tenant-primary"></div>
               <p className="mt-4 text-gray-500 text-sm">Carregando itens da comanda...</p>
             </div>
           ) : (
             <>
-              {/* Seção de Itens Atuais */}
+              {/* Sessão de Itens Atuais */}
               <section>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-amber-500" /> Itens da Comanda
+                    <Package className="w-4 h-4 text-tenant-primary" /> Itens da Comanda
                   </h3>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowServiceSearch(!showServiceSearch)}
-                      className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                      className="text-xs font-bold text-tenant-primary dark:text-tenant-primary hover:underline flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" /> Adicionar Serviço
                     </button>
@@ -239,10 +239,10 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
                             });
                             setShowServiceSearch(false);
                           }}
-                          className="flex justify-between items-center p-2 text-sm hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors border border-transparent hover:border-amber-200"
+                          className="flex justify-between items-center p-2 text-sm hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors border border-transparent hover:border-tenant-primary/20"
                         >
                           <span className="text-gray-700 dark:text-gray-300">{svc.name}</span>
-                          <span className="font-bold text-amber-600">{formatCurrency(svc.price)}</span>
+                          <span className="font-bold text-tenant-primary">{formatCurrency(svc.price)}</span>
                         </button>
                       ))}
                     </div>
@@ -256,7 +256,7 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
                       className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${item.type === 'SERVICE' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                        <div className={`p-2 rounded-lg ${item.type === 'SERVICE' ? 'bg-tenant-primary/5 text-tenant-primary' : 'bg-blue-50 text-blue-600'}`}>
                           {item.type === 'SERVICE' ? <Scissors className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
                         </div>
                         <div>
@@ -280,9 +280,9 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
 
               {/* Sales Booster (Recomendações) */}
               {recommendations.length > 0 && (
-                <section className="bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/50 rounded-2xl p-4 animate-in fade-in zoom-in-95">
-                  <h4 className="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Star className="w-3 h-3 fill-amber-500" /> Dica de Venda (Boost)
+                <section className="bg-tenant-primary/5/50 dark:bg-tenant-primary/10 border border-tenant-primary/20/50 dark:border-tenant-primary/30/50 rounded-2xl p-4 animate-in fade-in zoom-in-95">
+                  <h4 className="text-xs font-black text-tenant-primary dark:text-tenant-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Star className="w-3 h-3 fill-tenant-primary" /> Dica de Venda (Boost)
                   </h4>
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                     {recommendations.map(p => (
@@ -295,14 +295,14 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
                           quantity: 1,
                           unitPrice: p.price
                         })}
-                        className="flex-shrink-0 flex items-center gap-3 p-2.5 bg-white dark:bg-gray-800 rounded-xl border border-amber-200 dark:border-amber-700 shadow-sm hover:border-amber-500 transition-all text-left group"
+                        className="flex-shrink-0 flex items-center gap-3 p-2.5 bg-white dark:bg-gray-800 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/50 shadow-sm hover:border-tenant-primary transition-all text-left group"
                       >
-                        <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center text-amber-600">
+                        <div className="w-10 h-10 bg-tenant-primary/10 dark:bg-tenant-primary/20/40 rounded-lg flex items-center justify-center text-tenant-primary">
                           <ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-gray-900 dark:text-white line-clamp-1">{p.name}</p>
-                          <p className="text-[10px] font-black text-amber-600">{formatCurrency(p.price)}</p>
+                          <p className="text-[10px] font-black text-tenant-primary">{formatCurrency(p.price)}</p>
                         </div>
                       </button>
                     ))}
@@ -310,7 +310,7 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
                 </section>
               )}
 
-              {/* Seção de Adição de Produtos */}
+              {/* Sessão de Adição de Produtos */}
               <section className="pt-4 border-t border-gray-100 dark:border-gray-700">
                 <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4 text-blue-500" /> Vender Produtos
@@ -326,11 +326,11 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
                         quantity: 1,
                         unitPrice: product.price
                       })}
-                      className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-700 rounded-xl hover:border-amber-400 dark:hover:border-amber-400 bg-white dark:bg-gray-800 transition-all text-left"
+                      className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-700 rounded-xl hover:border-tenant-primary/40 dark:hover:border-tenant-primary/40 bg-white dark:bg-gray-800 transition-all text-left"
                     >
                       <div>
                         <p className="text-sm font-bold text-gray-900 dark:text-white">{product.name}</p>
-                        <p className="text-xs text-amber-600 font-bold">{formatCurrency(product.price)}</p>
+                        <p className="text-xs text-tenant-primary font-bold">{formatCurrency(product.price)}</p>
                       </div>
                       <Plus className="w-4 h-4 text-gray-400" />
                     </button>
@@ -367,7 +367,7 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
           <div className="flex justify-between items-end mb-5">
             <div>
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Subtotal da Comanda</p>
-              <p className="text-3xl font-black text-amber-600 dark:text-amber-500">
+              <p className="text-3xl font-black text-tenant-primary dark:text-tenant-primary">
                 {formatCurrency(order?.subtotal || 0)}
               </p>
             </div>
@@ -480,7 +480,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
         <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <Plus className="w-5 h-5 text-amber-500" /> Novo Agendamento
+            <Plus className="w-5 h-5 text-tenant-primary" /> Novo Agendamento
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5" />
@@ -494,7 +494,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
               required
               value={selectedClient}
               onChange={e => setSelectedClient(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-amber-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
             >
               <option value="">Selecione um cliente...</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -510,7 +510,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
                   type="button"
                   onClick={() => toggleService(s.id)}
                   className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${selectedServices.includes(s.id)
-                    ? 'bg-amber-500 border-amber-600 text-white'
+                    ? 'bg-tenant-primary border-tenant-primary text-white'
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                     }`}
                 >
@@ -528,7 +528,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
                 required
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
               />
             </div>
             <div>
@@ -538,7 +538,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
                 required
                 value={time}
                 onChange={e => setTime(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
               />
             </div>
           </div>
@@ -548,7 +548,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-amber-500 resize-none h-20"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary resize-none h-20"
             />
           </div>
 
@@ -659,6 +659,9 @@ export const BarberDashboard: React.FC = () => {
         const rate = barberDetail?.commissionRate || 40;
         return sum + ((apt.totalPrice || 0) * (rate / 100));
       }, 0),
+    avgTicket: schedule.filter(apt => apt.status === 'COMPLETED').length > 0
+      ? schedule.filter(apt => apt.status === 'COMPLETED').reduce((sum, apt) => sum + (apt.totalPrice || 0), 0) / schedule.filter(apt => apt.status === 'COMPLETED').length
+      : 0,
   };
 
   const changeDate = (offset: number) => {
@@ -757,7 +760,7 @@ export const BarberDashboard: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setShowCreateApptModal(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-all shadow-sm"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-tenant-primary text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-sm"
           >
             <Plus className="w-5 h-5" />
             Agendar Cliente
@@ -792,7 +795,7 @@ export const BarberDashboard: React.FC = () => {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
           <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-1">Aguardando</p>
           <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{summary.scheduled}</p>
@@ -801,20 +804,28 @@ export const BarberDashboard: React.FC = () => {
           <p className="text-xs text-green-600 dark:text-green-400 font-semibold uppercase tracking-wide mb-1">Concluídos</p>
           <p className="text-3xl font-bold text-green-900 dark:text-green-100">{summary.completed}</p>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-100 dark:border-amber-800">
-          <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wide mb-1">Minha Comissão</p>
-          <p className="text-xl font-bold text-amber-900 dark:text-amber-100">{formatCurrency(summary.totalCommission)}</p>
+        <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl p-4 border border-tenant-primary/10 dark:border-tenant-primary/30">
+          <p className="text-xs text-tenant-primary dark:text-tenant-primary font-semibold uppercase tracking-wide mb-1">Ticket Médio</p>
+          <p className="text-3xl font-bold text-tenant-primary dark:text-white/90">{formatCurrency(summary.avgTicket)}</p>
+        </div>
+        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
+          <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wide mb-1">Minha Comis.</p>
+          <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(summary.totalCommission)}</p>
+        </div>
+        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-800">
+          <p className="text-xs text-red-600 dark:text-red-400 font-semibold uppercase tracking-wide mb-1">Cancelados</p>
+          <p className="text-3xl font-bold text-red-900 dark:text-red-100">{summary.cancelled}</p>
         </div>
         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1">Saldo</p>
-          <p className="text-xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(barberDetail?.balance || 0)}</p>
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1">Meu Saldo</p>
+          <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(barberDetail?.balance || 0)}</p>
         </div>
       </div>
 
       {/* Lista de Agendamentos */}
       {loading ? (
         <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tenant-primary mx-auto"></div>
           <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando agenda...</p>
         </div>
       ) : error ? (
@@ -846,7 +857,7 @@ export const BarberDashboard: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-gray-600 dark:text-gray-300 tracking-tight">
-                      HORÁRIO TRANCADO: <span className="text-amber-600 dark:text-amber-500">{lock.startTime} - {lock.endTime}</span>
+                      HORÁRIO TRANCADO: <span className="text-tenant-primary dark:text-tenant-primary">{lock.startTime} - {lock.endTime}</span>
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">{lock.reason}</p>
                   </div>
@@ -886,15 +897,15 @@ export const BarberDashboard: React.FC = () => {
                   key={appointment.id}
                   className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-l-4 transition-all ${isCompleted ? 'opacity-70 border-green-400'
                     : isCancelled ? 'opacity-50 border-red-400'
-                      : 'border-amber-400 hover:shadow-md'
+                      : 'border-tenant-primary/40 hover:shadow-md'
                     }`}
                 >
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-4">
                       {/* Horário */}
-                      <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
-                        <Clock className="w-4 h-4 text-amber-500 mb-1" />
-                        <span className="text-lg font-bold text-amber-900 dark:text-amber-100 leading-none">
+                      <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/30">
+                        <Clock className="w-4 h-4 text-tenant-primary mb-1" />
+                        <span className="text-lg font-bold text-tenant-primary dark:text-white/90 leading-nãone">
                           {safeFormatTime(appointment.date || appointment.scheduledFor)}
                         </span>
                       </div>
@@ -943,7 +954,7 @@ export const BarberDashboard: React.FC = () => {
 
                       {/* Preço */}
                       <div className="flex-shrink-0 text-right">
-                        <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                        <p className="text-xl font-bold text-tenant-primary dark:text-tenant-primary">
                           {formatCurrency(appointment.totalPrice)}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -952,13 +963,13 @@ export const BarberDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Ações â€” apenas para SCHEDULED */}
+                    {/* Ações — apenas para SCHEDULED */}
                     {isScheduled && (
                       <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                         <button
                           onClick={() => handleClientArrived(appointment)}
                           disabled={isLoading}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-60"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-60"
                         >
                           <UserCheck className="w-4 h-4" />
                           {isLoading ? 'Aguarde...' : 'Cliente Chegou'}
@@ -1015,9 +1026,9 @@ export const BarberDashboard: React.FC = () => {
               });
               setShowLockModal(false);
               refresh();
-              alert(data.forceOverride ? 'Horário trancado e clientes notificados!' : 'Horário trancado com sucesso!');
+              alert(data.forceOverride ? 'Horário trancado e clientes não notificados!' : 'Horário trancado com sucesso!');
             } catch (e: any) {
-              alert(e?.response?.data?.message || e?.message || 'Erro ao trancar horário. Verifique conflitos.');
+              alert(e?.response?.data?.message || e?.message || 'Erro ao trancar Horário. Verifique conflitos.');
             }
           }}
         />
@@ -1026,8 +1037,8 @@ export const BarberDashboard: React.FC = () => {
       {showOverdueAlert && overdueAppointments.length > 0 && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+            <div className="w-16 h-16 bg-tenant-primary/10 dark:bg-tenant-primary/15 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-tenant-primary dark:text-tenant-primary" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pendências Detectadas!</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -1037,7 +1048,7 @@ export const BarberDashboard: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={() => setShowOverdueAlert(false)}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md"
+                className="w-full py-3 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold transition-all shadow-md"
               >
                 Entendi, vou resolver agora
               </button>
@@ -1061,3 +1072,5 @@ export const BarberDashboard: React.FC = () => {
     </div>
   );
 };
+
+

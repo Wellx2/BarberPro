@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Star, Calendar, MapPin, ChevronDown, MessageSquare, Scissors, Award, ArrowRight } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
@@ -13,8 +13,11 @@ import { Container } from '../components/layout/Container';
 import { Grid } from '../components/layout/Grid';
 import { Button, Card } from '../components/ui';
 import { barbershopService } from '../services/barbershopService';
+import { LocationMap } from '../components/LocationMap';
 import { api } from '../services/api';
-import { Service, Product } from '../types';
+import { Service, Product, Appointment } from '../types';
+import { appointmentService } from '../services/appointmentService';
+import { Wifi, Car, Accessibility, Coffee, Tv, Gamepad, Wine, Fan } from 'lucide-react'; // Import icons for amenities
 
 export const Home: React.FC = () => {
   const { shop, fetchError, retryFetch } = useShop();
@@ -27,6 +30,7 @@ export const Home: React.FC = () => {
   const [barbers, setBarbers] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastAppointment, setLastAppointment] = useState<Appointment | null>(null);
   const lastLoadedShopId = React.useRef<string | null>(null);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
@@ -43,7 +47,7 @@ export const Home: React.FC = () => {
       return;
     }
 
-    // ✅ PROTEÇÃO 3: Evitar recarregar para o mesmo shop SE já tem dados
+    // ✅ PROTEÇÃO 3: Evitar recarregar para o mesmo shop SE jáá tem dados
     if (lastLoadedShopId.current === shop.id && services.length > 0) {
       return;
     }
@@ -99,13 +103,27 @@ export const Home: React.FC = () => {
 
     loadPreview();
 
+    // Buscar último agendamento para o botão "Refazer último corte"
+    if (isAuthenticated && user?.role === 'CLIENT' && !fetchError && shop.id) {
+      appointmentService.list({ status: 'COMPLETED' })
+        .then(appointments => {
+          if (appointments && appointments.length > 0) {
+            const sorted = appointments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            // Verifica se o agendamento foi na loja atual
+            // Assumimos que a listagem já filtra por usuário. Se o back não filtrar por loja, pode precisar filtro extra.
+            setLastAppointment(sorted[0]);
+          }
+        })
+        .catch(err => console.error('Home: Erro ao buscar último agendamento', err));
+    }
+
     // ✅ Cleanup: Abortar requisição ao desmontar
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [shop.id, fetchError]);
+  }, [shop.id, fetchError, isAuthenticated, user]);
 
   const modulesEnabled = shop.settings.modulesEnabled || {
     clientPlans: true,
@@ -135,7 +153,22 @@ export const Home: React.FC = () => {
     else navigate('/login', { state: { from: '/book', ...state } });
   };
 
-  // Removing invasive fetchError block. Handled by Layout banner and Skeletons now.
+  // Helper to map amenity strings to icons and labels
+  const getAmenityInfo = (amenity: string) => {
+    const map: Record<string, { icon: React.ReactNode; label: string }> = {
+      wifi: { icon: <Wifi size={24} />, label: 'Wi-Fi' },
+      parking: { icon: <Car size={24} />, label: 'Estacionamento' },
+      accessibility: { icon: <Accessibility size={24} />, label: 'Acessibilidade' },
+      coffee: { icon: <Coffee size={24} />, label: 'Café Cortesia' },
+      tv: { icon: <Tv size={24} />, label: 'TV' },
+      games: { icon: <Gamepad size={24} />, label: 'Video Game' },
+      bar: { icon: <Wine size={24} />, label: 'Bar/Bebidas' },
+      ac: { icon: <Fan size={24} />, label: 'Ar Condicionado' }
+    };
+    return map[amenity.toLowerCase()] || { icon: <Star size={24} />, label: amenity };
+  };
+
+  // Removing invasive fetchError block. Handled by Layout banner and Skeletons nãow.
 
   return (
     <div className="flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -143,7 +176,11 @@ export const Home: React.FC = () => {
       {/* 1. Hero Section */}
       <section className="relative bg-gray-900 text-white h-[85vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80'} alt={shop.name} className="w-full h-full object-cover opacity-30" />
+          <img
+            src={shop.bannerUrl || shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80'}
+            alt={shop.name}
+            className="w-full h-full object-cover opacity-30"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
         </div>
 
@@ -152,30 +189,73 @@ export const Home: React.FC = () => {
           className="absolute top-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-4 rounded-[20px] bg-gray-800/80 backdrop-blur-xl border border-gray-700/60 text-white hover:bg-gray-700/80 transition-all shadow-2xl group"
         >
           <div className="flex items-center gap-2 md:gap-3">
-            <MapPin size={18} className="text-amber-500 shrink-0" />
+            <MapPin size={18} className="text-tenant-primary shrink-0" />
             <div className="hidden md:flex flex-col items-start gap-0.5">
-              <span className="text-[10px] font-black uppercase text-amber-500 tracking-widest">Unidade Selecionada</span>
+              <span className="text-[10px] font-black uppercase text-[#f59e0b] text-tenant-primary tracking-widest">Unidade Selecionada</span>
               <span className="text-base font-black uppercase tracking-tight text-white">{shop.name}</span>
             </div>
             <span className="md:hidden text-sm font-black uppercase tracking-tight text-white">{shop.name}</span>
           </div>
-          <ChevronDown size={18} className="text-gray-400 group-hover:text-amber-500 transition-colors ml-0 md:ml-2 shrink-0" />
+          <ChevronDown size={18} className="text-gray-400 group-hover:text-tenant-primary transition-colors ml-0 md:ml-2 shrink-0" />
         </button>
 
         <div className="relative max-w-7xl mx-auto px-4 text-center w-full animate-fade-in">
-          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 uppercase leading-none">
-            Estilo &<br /><span className="text-amber-500">Tradição</span>
+          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 uppercase leading-nãone">
+            Estilo &<br /><span className="text-[#f59e0b] text-tenant-primary">Tradição</span>
           </h1>
           <p className="text-base md:text-xl text-gray-300 max-w-xl mx-auto mb-12 font-medium">
-            Excelência no atendimento para a unidade {shop.name}.
+            Excelência não atendimento para a unidade {shop.name}.
           </p>
-          <div className="flex justify-center">
-            <PrimaryButton onClick={() => handleBook()}>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <PrimaryButton onClick={() => handleBook()} className="w-full sm:w-auto">
               Agendar Agora
             </PrimaryButton>
+
+            {/* MVP Quick Reschedule */}
+            {lastAppointment && (
+              <button
+                onClick={() => navigate('/book', {
+                  state: {
+                    preSelectedBarberId: lastAppointment.barberId,
+                    preSelectedServiceId: lastAppointment.serviceIds
+                  }
+                })}
+                className="w-full sm:w-auto px-8 py-5 rounded-[22px] bg-white/10 backdrop-blur-md border border-white/20 text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                Refazer Último Corte
+              </button>
+            )}
           </div>
         </div>
       </section>
+
+      {/* 1.5 Amenities Section */}
+      {shop.amenities && shop.amenities.length > 0 && (
+        <section className="py-12 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+          <Container size="xl">
+            <div className="mb-8 pl-4 lg:pl-0">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Comodidades</h2>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">Conforto para o seu atendimento</p>
+            </div>
+
+            <div className="flex flex-wrap gap-4 scrollbar-hide">
+              {shop.amenities.map((amenity, index) => {
+                const info = getAmenityInfo(amenity);
+                return (
+                  <div key={index} className="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-2xl p-4 min-w-[120px] transition-transform hover:-translate-y-1">
+                    <div className="text-gray-700 dark:text-gray-300 mb-2">
+                      {info.icon}
+                    </div>
+                    <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-tight text-center">
+                      {info.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* 2. Services Section (Destaques da Unidade) */}
       <section className="py-24 bg-gray-50 dark:bg-gray-900/50 border-y border-gray-100 dark:border-gray-800">
@@ -187,7 +267,7 @@ export const Home: React.FC = () => {
 
           {loading ? (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
               <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando preview...</p>
             </div>
           ) : services.length > 0 ? (
@@ -203,7 +283,7 @@ export const Home: React.FC = () => {
               <div className="text-center mt-16">
                 <button
                   onClick={() => navigateWithAuth('/services')}
-                  className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-600 font-bold uppercase text-sm tracking-wider transition-colors group"
+                  className="inline-flex items-center gap-2 text-tenant-primary hover:opacity-80 font-bold uppercase text-sm tracking-wider transition-colors group"
                 >
                   Ver Catálogo Completo
                   <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -212,7 +292,7 @@ export const Home: React.FC = () => {
             </>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Nenhum serviço disponível no momento.</p>
+              <p className="text-gray-500 dark:text-gray-400">Nenhum serviço disponível não momento.</p>
             </div>
           )}
         </Container>
@@ -226,7 +306,7 @@ export const Home: React.FC = () => {
 
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
                 <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando preview...</p>
               </div>
             ) : products.length > 0 ? (
@@ -242,7 +322,7 @@ export const Home: React.FC = () => {
                 <div className="text-center mt-12">
                   <button
                     onClick={() => navigateWithAuth('/products')}
-                    className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-600 font-bold uppercase text-sm tracking-wider transition-colors group"
+                    className="inline-flex items-center gap-2 text-tenant-primary hover:opacity-80 font-bold uppercase text-sm tracking-wider transition-colors group"
                   >
                     Ver Loja
                     <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -251,7 +331,7 @@ export const Home: React.FC = () => {
               </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">Nenhum produto disponível no momento.</p>
+                <p className="text-gray-500 dark:text-gray-400">Nenhum produto disponível não momento.</p>
               </div>
             )}
           </Container>
@@ -268,7 +348,7 @@ export const Home: React.FC = () => {
             />
             {loading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
                 <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando profissionais...</p>
               </div>
             ) : barbers.length > 0 ? (
@@ -280,23 +360,30 @@ export const Home: React.FC = () => {
                 >
                   {barbers.map(barber => (
                     <Card key={barber.id} hover className="flex flex-col md:flex-row overflow-hidden !p-0">
-                      <div className="relative w-full md:w-48 h-64 md:h-full flex-shrink-0">
+                      <div
+                        className="relative w-full md:w-48 h-64 md:h-full flex-shrink-0 cursor-pointer"
+                        onClick={() => navigate(`/barber/${barber.id}`)}
+                      >
                         <img
                           src={barber.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(barber.name) + '&background=f59e0b&color=fff&size=512'}
                           alt={barber.name}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-4 left-4 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-black">
+                        <div className="absolute top-4 left-4 bg-tenant-primary text-white px-3 py-1 rounded-full text-xs font-black">
                           {barber.role === 'BARBER' ? 'BARBEIRO' : barber.role === 'HAIRDRESSER' ? 'CABELEIREIRO' : 'PROFISSIONAL'}
                         </div>
                       </div>
                       <div className="flex-1 p-6">
-                        <h3 className="text-2xl font-black uppercase dark:text-white mb-1">{barber.name}</h3>
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="text-2xl font-black uppercase dark:text-white cursor-pointer hover:text-tenant-primary transition-colors" onClick={() => navigate(`/barber/${barber.id}`)}>
+                            {barber.name}
+                          </h3>
+                        </div>
                         {barber.nickname && (
-                          <p className="text-sm text-amber-500 font-bold mb-2">({barber.nickname})</p>
+                          <p className="text-sm text-tenant-primary font-bold mb-2">({barber.nickname})</p>
                         )}
                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 italic line-clamp-2">
-                          {barber.description || 'Profissional experiente dedicado à excelência no atendimento.'}
+                          {barber.description || 'Profissional experiente dedicado à excelência não atendimento.'}
                         </p>
                         <div className="flex flex-wrap gap-2 mb-4">
                           {barber.specialties?.map((spec: string, idx: number) => (
@@ -307,19 +394,29 @@ export const Home: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-6 mb-6">
                           <div className="flex items-center gap-2">
-                            <Star size={16} className="text-amber-500" fill="currentColor" />
+                            <Star size={16} className="text-tenant-primary" fill="currentColor" />
                             <span className="font-bold dark:text-white">{barber.rating?.toFixed(1) || '5.0'}</span>
                           </div>
                         </div>
-                        <Button
-                          variant="primary"
-                          size="md"
-                          onClick={() => handleBook()}
-                          fullWidth
-                          icon={<Calendar size={16} />}
-                        >
-                          Agendar Horário
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            size="md"
+                            onClick={() => handleBook()}
+                            className="flex-1 gap-2"
+                            icon={<Calendar size={16} />}
+                          >
+                            Agendar
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="md"
+                            onClick={() => navigate(`/barber/${barber.id}`)}
+                            className="px-4"
+                          >
+                            Perfil
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))}
@@ -333,7 +430,7 @@ export const Home: React.FC = () => {
                   </p>
                   <button
                     onClick={() => navigateWithAuth('/services')}
-                    className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-500 font-bold text-sm transition-colors"
+                    className="inline-flex items-center gap-2 text-tenant-primary hover:opacity-80 dark:text-tenant-primary dark:hover:opacity-90 font-bold text-sm transition-colors"
                   >
                     {isAuthenticated ? 'Ver Todos os Profissionais' : 'Ver Todos os Profissionais'}
                     <ArrowRight size={18} strokeWidth={3} />
@@ -342,7 +439,7 @@ export const Home: React.FC = () => {
               </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">Nenhum profissional disponível no momento.</p>
+                <p className="text-gray-500 dark:text-gray-400">Nenhum profissional disponível não momento.</p>
               </div>
             )}
           </Container>
@@ -359,35 +456,46 @@ export const Home: React.FC = () => {
             />
             {loading ? (
               <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-amber-500 border-t-transparent"></div>
+                <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-tenant-primary border-t-transparent"></div>
               </div>
             ) : reviews.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
                 {reviews.map((review: any) => (
-                  <div key={review.id} className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center gap-1 mb-3">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={16}
-                          className={i < review.rating ? 'text-amber-500 fill-current' : 'text-gray-300'}
-                        />
-                      ))}
-                      <span className="ml-2 text-sm font-bold text-amber-500">{review.rating.toFixed(1)}</span>
+                  <div key={review.id} className="bg-white dark:bg-gray-800 rounded-[35px] p-8 shadow-xl shadow-gray-200/50 dark:shadow-nãone border border-gray-100 dark:border-gray-700 relative flex flex-col justify-between group hover:-translate-y-2 transition-transform duration-300">
+                    <div className="absolute top-8 right-8 text-gray-200 dark:text-gray-700 pointer-events-nãone">
+                      <MessageSquare size={48} className="rotate-12 opacity-50" />
                     </div>
-                    {review.comment && (
-                      <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 italic">
-                        "{review.comment}"
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold">
+
+                    <div>
+                      <div className="flex items-center gap-1 mb-6">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            size={20}
+                            className={i < review.rating ? 'text-tenant-primary fill-tenant-primary' : 'text-gray-200 dark:text-gray-600'}
+                          />
+                        ))}
+                      </div>
+
+                      {review.comment && (
+                        <p className="text-gray-700 dark:text-gray-300 font-medium leading-loose mb-8 relative z-10 text-lg">
+                          "{review.comment}"
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
+                      <div className="w-12 h-12 rounded-[18px] bg-tenant-primary/10 flex items-center justify-center text-tenant-primary font-black text-lg">
                         {(review.client?.name || 'C').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-bold dark:text-white">{review.client?.name || 'Cliente'}</p>
+                        <p className="font-black uppercase tracking-tight text-gray-900 dark:text-white leading-nãone mb-1">
+                          {review.client?.name || 'Cliente da Loja'}
+                        </p>
                         {review.barber && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">com {review.barber.name}</p>
+                          <p className="text-[10px] font-bold text-tenant-primary uppercase tracking-widest">
+                            Atendido por {review.barber.name.split(' ')[0]}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -405,6 +513,13 @@ export const Home: React.FC = () => {
 
       {/* 6. Subscription (Assinatura) */}
       {subscriptionsActive && <PlansSection />}
+
+      {/* 7. Location Map */}
+      <section className="py-24 bg-gray-50 dark:bg-gray-900/50">
+        <Container size="xl">
+          <LocationMap shop={shop} />
+        </Container>
+      </section>
 
       {showLocationModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/95 backdrop-blur-md">

@@ -1,29 +1,41 @@
-﻿/**
+import { api } from './api';
+import { Plan, CreatePlanDto } from '../types';
+
+/**
  * Serviço de Planos de Assinatura
  * 
  * Gerencia os planos que a barbearia oferece aos seus clientes.
  * O shopId é automaticamente inferido no backend através do JWT (TenantGuard).
  */
-
-import { api } from './api';
-import { Plan, CreatePlanDto, UpdatePlanDto } from '../types';
-
 export const planService = {
   /**
    * Buscar planos públicos de uma barbearia específica (sem autenticação)
    */
-  async getPublicPlans(shopId: string): Promise<Plan[]> {
-    const response = await api.get<Plan[]>(`/plans/public/shop/${shopId}`);
+  async listPublic(shopId: string): Promise<Plan[]> {
+    const response = await api.get<Plan[]>(`/plans/public/${shopId}`);
     return response.data;
   },
 
   /**
-   * Buscar todos os planos da loja atual
-   * Backend filtra automaticamente por shopId do usuário logado (TenantGuard)
+   * Alias para compatibilidade com componentes antigos
    */
-  async getAll(): Promise<Plan[]> {
+  async getPublicPlans(shopId: string): Promise<Plan[]> {
+    return this.listPublic(shopId);
+  },
+
+  /**
+   * Buscar todos os planos da loja atual
+   */
+  async list(): Promise<Plan[]> {
     const response = await api.get<Plan[]>('/plans');
     return response.data;
+  },
+
+  /**
+   * Alias para compatibilidade com componentes antigos
+   */
+  async getAll(): Promise<Plan[]> {
+    return this.list();
   },
 
   /**
@@ -46,8 +58,8 @@ export const planService = {
   /**
    * Atualizar plano existente (requer autenticação ADMIN)
    */
-  async update(id: string, data: UpdatePlanDto): Promise<Plan> {
-    const response = await api.patch<Plan>(`/plans/${id}`, data);
+  async update(id: string, data: Partial<CreatePlanDto>): Promise<Plan> {
+    const response = await api.put<Plan>(`/plans/${id}`, data);
     return response.data;
   },
 
@@ -55,9 +67,8 @@ export const planService = {
    * Excluir plano (requer autenticação ADMIN)
    * Apenas planos inativos podem ser excluídos
    */
-  async delete(id: string): Promise<{ message: string }> {
-    const response = await api.delete<{ message: string }>(`/plans/${id}`);
-    return response.data;
+  async delete(id: string): Promise<void> {
+    await api.delete(`/plans/${id}`);
   },
 
   /**

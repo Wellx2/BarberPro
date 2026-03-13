@@ -87,7 +87,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
           }, 5000);
 
           timeoutRefs.current.set(id, timeout);
-        }, 100); // Pequeno delay para animação
+        }, 100); // Pequenão delay para animação
 
         return withoutExisting;
       }
@@ -137,12 +137,12 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             key={notification.id}
             className={`pointer-events-auto w-full max-w-sm bg-white rounded-xl shadow-2xl border-l-4 p-4 flex items-start gap-3 animate-fade-in transition-all transform translate-y-0 opacity-100 ${notification.type === 'success' ? 'border-green-500' :
               notification.type === 'error' ? 'border-red-500' :
-                notification.type === 'warning' ? 'border-amber-500' : 'border-blue-500'
+                notification.type === 'warning' ? 'border-tenant-primary' : 'border-blue-500'
               }`}
           >
             <div className={`mt-0.5 ${notification.type === 'success' ? 'text-green-500' :
               notification.type === 'error' ? 'text-red-500' :
-                notification.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
+                notification.type === 'warning' ? 'text-tenant-primary' : 'text-blue-500'
               }`}>
               {notification.type === 'success' && <CheckCircle size={20} />}
               {notification.type === 'error' && <AlertCircle size={20} />}

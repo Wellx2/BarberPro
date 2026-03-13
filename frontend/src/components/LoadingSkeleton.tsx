@@ -98,7 +98,7 @@ export const LoadingSkeletonCompact: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
         {/* Spinner */}
-        <div className="mx-auto w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="mx-auto w-16 h-16 border-4 border-tenant-primary border-t-transparent rounded-full animate-spin mb-4"></div>
         
         {/* Text */}
         <div className="space-y-2">

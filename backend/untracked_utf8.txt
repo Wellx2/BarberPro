@@ -1,0 +1,7 @@
+﻿docs/walkthrough.md.resolved
+out_untracked.txt
+prisma/migrations/20260306044604_upgrade_suggestion_from_ia/migration.sql
+skills/ia_devs/SKILL.md
+src/appointments/dto/complete-appointment.dto.ts
+src/auth/dto/forgot-password.dto.ts
+src/auth/dto/reset-password.dto.ts

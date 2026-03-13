@@ -2,26 +2,28 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 
 interface PrimaryButtonProps {
+    onClick: () => void;
     children: React.ReactNode;
-    onClick?: () => void;
+    className?: string;
     icon?: React.ReactNode;
     fullWidth?: boolean;
-    className?: string;
 }
 
 export const PrimaryButton: React.FC<PrimaryButtonProps> = ({ 
-    children, 
     onClick, 
+    children, 
+    className = '', 
     icon,
-    fullWidth = false,
-    className = ''
+    fullWidth = false
 }) => {
+    const widthClass = fullWidth ? 'w-full' : '';
+    
     return (
         <button
             onClick={onClick}
-            className={`${fullWidth ? 'w-full' : ''} px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black uppercase tracking-widest text-sm rounded-[20px] flex items-center justify-center gap-3 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-amber-500/50 ${className}`}
+            className={`px-8 py-5 rounded-[22px] bg-[#f59e0b] bg-tenant-primary text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl hover:opacity-90 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-3 ${widthClass} ${className}`}
         >
-            {icon || <Calendar size={22} />}
+            {icon || <Calendar size={20} />}
             {children}
         </button>
     );

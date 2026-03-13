@@ -65,11 +65,11 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
             return;
         }
 
-        // Validação de horário no frontend
+        // Validação de horário não frontend
         const lockDate = new Date(date + 'T' + startTime);
-        const now = new Date();
-        if (lockDate < now) {
-            alert('Não é possível bloquear um horário no passado.');
+        const nãow = new Date();
+        if (lockDate < nãow) {
+            alert('Não é possível bloquear um horário não passado.');
             return;
         }
 
@@ -92,7 +92,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-amber-500" />
+                        <Clock className="w-5 h-5 text-tenant-primary" />
                         Trancar Agenda
                     </h2>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
@@ -109,7 +109,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                                 value={date}
                                 onChange={e => setDate(e.target.value)}
                                 min={new Date().toISOString().split('T')[0]}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
                                 required
                             />
                         </div>
@@ -120,7 +120,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                                 id="isFullDay"
                                 checked={isFullDay}
                                 onChange={e => setIsFullDay(e.target.checked)}
-                                className="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                                className="w-4 h-4 text-tenant-primary border-gray-300 rounded focus:ring-tenant-primary cursor-pointer"
                             />
                             <label htmlFor="isFullDay" className="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">
                                 Trancar o dia inteiro ({shop?.openingTime || '--:--'} - {shop?.closingTime || '--:--'})
@@ -135,17 +135,17 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                                         type="time"
                                         value={startTime}
                                         onChange={e => setStartTime(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Término</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Términão</label>
                                     <input
                                         type="time"
                                         value={endTime}
                                         onChange={e => setEndTime(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
                                         required
                                     />
                                 </div>
@@ -160,7 +160,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                             value={reason}
                             onChange={e => setReason(e.target.value)}
                             placeholder="Ex: Reunião, Horário de Almoço..."
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
                             required
                         />
                     </div>
@@ -202,7 +202,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                     <button
                         type="submit"
                         disabled={submitting || (conflicts.length > 0 && !forceOverride)}
-                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                        className="w-full py-3 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                     >
                         {submitting ? 'Trancando...' : 'Confirmar Bloqueio'}
                     </button>

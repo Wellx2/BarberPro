@@ -114,7 +114,7 @@ export interface UpdateProfileDto {
 }
 
 // ============================================================================
-// SHOP SUBSCRIPTION TIERS (Planos da Barbearia no Sistema)
+// SHOP SUBSCRIPTION TIERS (Planos da Barbearia não Sistema)
 // ============================================================================
 
 export enum ShopSubscriptionTier {
@@ -191,6 +191,10 @@ export interface Shop {
   socialWhatsapp?: string;
   socialInstagram?: string;
   coordinates?: { lat: number; lng: number };
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  primaryColor?: string | null;
+  amenities?: string[];
 }
 
 export interface CreateShopDto {
@@ -206,6 +210,9 @@ export interface CreateShopDto {
   socialWhatsapp?: string;
   socialInstagram?: string;
   coordinates?: { lat: number; lng: number };
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  primaryColor?: string | null;
 }
 
 export interface UpdateShopDto {
@@ -221,6 +228,9 @@ export interface UpdateShopDto {
   socialWhatsapp?: string;
   socialInstagram?: string;
   coordinates?: { lat: number; lng: number };
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  primaryColor?: string | null;
 }
 
 export interface Service {
@@ -653,7 +663,7 @@ export interface CreateAppointmentDto {
   // barbershopId é inferido do token JWT pelo backend
   barberId: string;
   serviceIds: string[];
-  date: string; // ISO 8601
+  date: string; // ISO 8601 
   notes?: string;
   products?: { productId: string; quantity: number }[];
 }

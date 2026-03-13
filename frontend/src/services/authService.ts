@@ -52,9 +52,9 @@ export const authService = {
         console.warn('âš ï¸ Não foi possível carregar módulos:', error);
       }
     } else {
-      console.error('âŒ Login não retornou tokens válidos');
+      console.error('âŒ Login não retornãou tokens válidos');
       console.error('Formato recebido:', authData);
-      throw new Error('Login não retornou tokens válidos');
+      throw new Error('Login não retornãou tokens válidos');
     }
 
     return authData;

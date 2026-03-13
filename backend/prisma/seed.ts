@@ -25,6 +25,8 @@ async function main() {
     prisma.barber.deleteMany(),
     prisma.client.deleteMany(),
     prisma.user.deleteMany(),
+    prisma.userShopAccess.deleteMany(),
+    prisma.barbershopModule.deleteMany(),
     prisma.barbershop.deleteMany(),
   ]);
 
@@ -34,6 +36,7 @@ async function main() {
   console.log('📍 Criando Barbearia 1: BarberPro Centro...');
   const shop1 = await prisma.barbershop.create({
     data: {
+      id: '46fd2604-1d7f-4943-96f6-7a69523738d8',
       name: 'BarberPro Centro',
       cnpj: '12345678000190',
       phone: '(11) 98765-4321',
@@ -79,6 +82,17 @@ async function main() {
   // Usuários da Barbearia 1
   console.log('👤 Criando usuários...');
   const passwordHash = await bcrypt.hash('senha123', BCRYPT_SALT);
+
+  console.log('👑 Criando Super Admin...');
+  const superAdmin = await prisma.user.create({
+    data: {
+      name: 'Super Admin',
+      email: 'superadmin@barberpro.com',
+      phone: '(11) 00000-0000',
+      passwordHash,
+      role: UserRole.SUPER_ADMIN,
+    },
+  });
 
   const admin1 = await prisma.user.create({
     data: {
@@ -2511,17 +2525,6 @@ async function main() {
     });
   }
 
-  // Super Admin
-  console.log('\n👑 Criando Super Admin...');
-  await prisma.user.create({
-    data: {
-      name: 'Super Admin',
-      email: 'superadmin@barberpro.com',
-      phone: '(11) 99999-0000',
-      passwordHash,
-      role: UserRole.SUPER_ADMIN,
-    },
-  });
 
   // FAQs para shop 1
   console.log('❓ Criando FAQs...');
@@ -3017,6 +3020,16 @@ async function main() {
   console.log(`✅ ${totalInvoiceItems} Itens de fatura criados`);
 
   // Contar totais
+
+  console.log('🔗 Concedendo acesso do Admin às lojas (Franquia)...');
+  await prisma.userShopAccess.createMany({
+    data: [
+      { userId: admin1.id, shopId: shop1.id, role: UserRole.ADMIN },
+      { userId: admin1.id, shopId: shop2.id, role: UserRole.ADMIN },
+      { userId: admin2.id, shopId: shop2.id, role: UserRole.ADMIN },
+    ],
+  });
+
   const totalUsers = await prisma.user.count();
   const totalBarbershops = await prisma.barbershop.count();
   const totalBarbers = await prisma.barber.count();

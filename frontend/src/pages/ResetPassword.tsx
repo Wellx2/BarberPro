@@ -33,7 +33,7 @@ export const ResetPassword: React.FC = () => {
         }
 
         if (newPassword.length < 6) {
-            addNotification('error', 'A senha deve ter pelo menos 6 caracteres.');
+            addNotification('error', 'A senha deve ter pelo menãos 6 caracteres.');
             return;
         }
 
@@ -73,8 +73,8 @@ export const ResetPassword: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
             <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-50 dark:border-gray-700">
                 <div className="bg-gray-900 p-8 text-center">
-                    <div className="inline-block p-4 rounded-2xl bg-amber-500/10 mb-4">
-                        <Key className="h-8 w-8 text-amber-500" />
+                    <div className="inline-block p-4 rounded-2xl bg-tenant-primary/10 mb-4">
+                        <Key className="h-8 w-8 text-tenant-primary" />
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
                         Nova Senha
@@ -113,7 +113,7 @@ export const ResetPassword: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/login')}
-                        className="w-full text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+                        className="w-full text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary transition-colors"
                     >
                         Voltar para o Login
                     </button>

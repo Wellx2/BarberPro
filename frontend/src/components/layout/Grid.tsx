@@ -1,6 +1,6 @@
-ï»¿/**
+/**
  * Grid Component - Sistema de Design BarberPro
- * Grid responsivo com auto-fit e customizaÃ§Ã£o de colunas
+ * Grid responsivo com auto-fit e customização de colunas
  */
 
 import React from 'react';

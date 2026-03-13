@@ -17,8 +17,8 @@ export const ShopLoadError: React.FC = () => {
       <div className="max-w-md w-full bg-gray-800 rounded-lg shadow-2xl p-8 text-center">
         {/* Ícone de Alerta */}
         <div className="mb-6">
-          <div className="w-16 h-16 mx-auto bg-amber-500/10 rounded-full flex items-center justify-center">
-            <AlertTriangle className="w-8 h-8 text-amber-500" />
+          <div className="w-16 h-16 mx-auto bg-tenant-primary/10 rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-8 h-8 text-tenant-primary" />
           </div>
         </div>
 
@@ -39,8 +39,8 @@ export const ShopLoadError: React.FC = () => {
           </p>
           <ul className="text-gray-400 text-sm space-y-1">
             <li>• Verifique se o backend está rodando</li>
-            <li>• Confirme a URL: <code className="text-amber-500">http://localhost:3000</code></li>
-            <li>• Verifique se o endpoint existe: <code className="text-amber-500">/api/barbershops/public</code></li>
+            <li>• Confirme a URL: <code className="text-tenant-primary">http://localhost:3000</code></li>
+            <li>• Verifique se o endpoint existe: <code className="text-tenant-primary">/api/barbershops/public</code></li>
             <li>• Aguarde alguns segundos se ocorreu erro 429</li>
           </ul>
         </div>
@@ -50,7 +50,7 @@ export const ShopLoadError: React.FC = () => {
           <Button
             onClick={retryFetch}
             disabled={isLoadingShops}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-tenant-primary hover:opacity-90 text-gray-900 font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             {isLoadingShops ? (
               <>
@@ -68,7 +68,7 @@ export const ShopLoadError: React.FC = () => {
           <a
             href="https://github.com/seu-repo/barberpro/blob/main/TROUBLESHOOTING.md"
             target="_blank"
-            rel="noopener noreferrer"
+            rel="nãoopener nãoreferrer"
             className="text-gray-400 hover:text-gray-300 text-sm flex items-center justify-center gap-1 transition-colors"
           >
             <span>Ver guia de troubleshooting</span>
@@ -81,7 +81,7 @@ export const ShopLoadError: React.FC = () => {
           <summary className="text-gray-500 text-xs cursor-pointer hover:text-gray-400 transition-colors">
             Informações técnicas
           </summary>
-          <div className="mt-2 bg-gray-900 rounded p-3 text-xs text-gray-400 font-mono">
+          <div className="mt-2 bg-gray-900 rounded p-3 text-xs text-gray-400 font-monão">
             <div><strong>Erro:</strong> {fetchError}</div>
             <div><strong>Timestamp:</strong> {new Date().toLocaleString()}</div>
             <div><strong>User Agent:</strong> {navigator.userAgent.substring(0, 50)}...</div>

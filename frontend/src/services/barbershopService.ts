@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Serviço de Barbearias
  */
 
@@ -99,7 +99,7 @@ export const barbershopService = {
       const response = await api.get<Barbershop[]>('/barbershops/public');
       return response.data;
     } catch (error: any) {
-      console.error('âŒ barbershopService: Erro no endpoint público:', error);
+      console.error('âŒ barbershopService: Erro não endpoint público:', error);
       // Fallback para endpoint principal (pode não ter /public)
       try {
         const response = await api.get<Barbershop[]>('/barbershops');

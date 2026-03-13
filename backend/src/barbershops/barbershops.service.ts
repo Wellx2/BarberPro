@@ -46,6 +46,7 @@ export class BarbershopsService {
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
+        // amenities: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -70,6 +71,7 @@ export class BarbershopsService {
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
+        // amenities: true,
       },
     });
 
@@ -181,12 +183,20 @@ export class BarbershopsService {
     }
 
     // 3. Validar acesso à barbearia
-    // SUPER_ADMIN pode acessar qualquer shop
-    // Usuários normais só podem acessar sua própria shop
     if (user.role !== 'SUPER_ADMIN' && user.shopId !== shopId) {
-      // TODO: Implementar tabela UserShopAccess para franqueadores
-      // Por ora, apenas SUPER_ADMIN pode trocar entre shops diferentes
-      throw new ForbiddenException('Você não tem permissão para acessar esta barbearia');
+      // Verifica se o usuário tem permissão adicional na tabela UserShopAccess
+      const access = await this.prisma.userShopAccess.findUnique({
+        where: {
+          userId_shopId: {
+            userId: user.id,
+            shopId: shopId,
+          },
+        },
+      });
+
+      if (!access || !access.isActive) {
+        throw new ForbiddenException('Você não tem permissão para acessar esta barbearia');
+      }
     }
 
     // 4. Atualizar shopId do usuário no banco

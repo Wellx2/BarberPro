@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Container Component - Sistema de Design BarberPro
  * Container responsivo com max-width
  */

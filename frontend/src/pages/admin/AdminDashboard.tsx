@@ -1,9 +1,10 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   DollarSign, Users, Scissors, ShoppingBag, Layers, Megaphone,
   Plus, Trash2, Edit3, X, Power, Check, TrendingUp, Eye, EyeOff,
   Calculator, AlertCircle, PieChart, BarChart3, Landmark, Tag, Share2, Image as ImageIcon,
-  Lock, Calendar, Clock, Settings, Zap, Store, ChevronDown, MessageSquare, Shield
+  Lock, Calendar, Clock, Settings, Zap, Store, ChevronDown, MessageSquare, Shield, Package, Info,
+  Menu, MoreHorizontal
 } from 'lucide-react';
 import {
   Appointment, Barber, Invoice, Product, Plan, Service, Campaign,
@@ -19,6 +20,7 @@ import { Container } from '../../components/layout/Container';
 import { Grid } from '../../components/layout/Grid';
 import { Modal, Alert } from '../../components/feedback';
 import { Cashier } from './Cashier';
+import { Supplies } from './Supplies';
 import { ShareLink } from '../../components/ShareLink';
 import { ShopSelector } from '../../components/ShopSelector';
 import AdminAppointmentHistory from './AdminAppointmentHistory';
@@ -40,12 +42,18 @@ export const AdminDashboard: React.FC = () => {
   const { addNotification } = useNotification();
 
   const [activeTab, setActiveTab] = useState('FINANCIAL');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showFinancialValues, setShowFinancialValues] = useState(true);
   const [financialPeriod, setFinancialPeriod] = useState<AnalyticsPeriod>('TODAY');
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
   const [useCustomRange, setUseCustomRange] = useState(false);
   const [showShareLink, setShowShareLink] = useState(false);
   const [showShopSelector, setShowShopSelector] = useState(false);
+
+  // Estados para Detalhamento Financeiro (Modais)
+  const [showRevenueDetail, setShowRevenueDetail] = useState(false);
+  const [showCommissionDetail, setShowCommissionDetail] = useState(false);
+  const [showExpenseDetail, setShowExpenseDetail] = useState(false);
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const fallbackImage = 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80';
 
@@ -66,16 +74,12 @@ export const AdminDashboard: React.FC = () => {
     setFinancialPeriod('MONTH');
   };
 
-  // Estados para integração com API
+  // Estados para integrao com API
   const [analytics, setAnalytics] = useState<FinancialAnalytics | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
-  const [appointments] = useState<Appointment[]>(() =>
-    JSON.parse(localStorage.getItem('appointments') || '[]')
-  );
-  const [barbers, setBarbers] = useState<Barber[]>(() =>
-    JSON.parse(localStorage.getItem('barbers') || '[]')
-  );
+  const [appointments] = useState<Appointment[]>([]);
+  const [barbers, setBarbers] = useState<Barber[]>([]);
   // Custos fixos / Despesas via API
   const [fixedCosts, setFixedCosts] = useState<Expense[]>([]);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
@@ -88,12 +92,8 @@ export const AdminDashboard: React.FC = () => {
   const [loadingServices, setLoadingServices] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [plans, setPlans] = useState<Plan[]>(() =>
-    JSON.parse(localStorage.getItem('plans') || '[]')
-  );
-  const [invoices] = useState<Invoice[]>(() =>
-    JSON.parse(localStorage.getItem('invoices') || '[]')
-  );
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [invoices] = useState<Invoice[]>([]);
 
   // Estados para Team (Equipe/Colaboradores)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -139,7 +139,35 @@ export const AdminDashboard: React.FC = () => {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
 
-  // Estado do modal de confirmação de remoção
+  // Estados para White Label
+  const [wlPrimaryColor, setWlPrimaryColor] = useState(currentShop.primaryColor || '#f59e0b');
+  const [isSavingWl, setIsSavingWl] = useState(false);
+
+  useEffect(() => {
+    setWlPrimaryColor(currentShop.primaryColor || '#f59e0b');
+  }, [currentShop.primaryColor]);
+
+  const handleSaveWhiteLabel = async () => {
+    try {
+      setIsSavingWl(true);
+      const updatedShop = await barbershopService.update(currentShop.id, {
+        primaryColor: wlPrimaryColor
+      });
+      // Update only the specific field we knãow changed, to avoid type mismatch
+      setCurrentShop({
+        ...currentShop,
+        primaryColor: wlPrimaryColor
+      });
+      addNotification('success', 'Configurações de aparência salvas com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar aparência:', error);
+      addNotification('error', 'Erro ao salvar as configurações de aparência.');
+    } finally {
+      setIsSavingWl(false);
+    }
+  };
+
+  // Estado do modal de Confirmação de Remoção
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'SERVICE' | 'PRODUCT'; name: string } | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
@@ -181,7 +209,7 @@ export const AdminDashboard: React.FC = () => {
           ctx?.drawImage(img, 0, 0, width, height);
 
           // Comprimir para JPEG com qualidade 0.6 (mais comprimido)
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          const compressedBase64 = canvas.toDataURL('image/jápeg', 0.6);
 
           // Verificar tamanho final
           const sizeKB = compressedBase64.length / 1024;
@@ -265,7 +293,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     // Não fazer requisição com ID mock
     if (!currentShop.id || currentShop.id.startsWith('shop-')) {
-      console.warn('⚠️ Aguardando shopId real para carregar serviços');
+      console.warn('?? Aguardando shopId real para carregar serviços');
       setLoadingServices(false);
       return;
     }
@@ -289,7 +317,7 @@ export const AdminDashboard: React.FC = () => {
   // Carregar team members do backend
   useEffect(() => {
     if (!currentShop.id || currentShop.id.startsWith('shop-')) {
-      console.warn('⚠️ Aguardando shopId real para carregar equipe');
+      console.warn('?? Aguardando shopId real para carregar equipe');
       setLoadingTeam(false);
       return;
     }
@@ -379,7 +407,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     // Não fazer requisição com ID mock
     if (!currentShop.id || currentShop.id.startsWith('shop-')) {
-      console.warn('⚠️ Aguardando shopId real para carregar analytics');
+      console.warn('?? Aguardando shopId real para carregar analytics');
       setLoadingAnalytics(false);
       return;
     }
@@ -392,7 +420,7 @@ export const AdminDashboard: React.FC = () => {
         const data = await getFinancialAnalytics(currentShop.id, financialPeriod, startDate, endDate);
         setAnalytics(data);
       } catch (error: any) {
-        console.error('❌ Erro ao carregar analytics:', error);
+        console.error('? Erro ao carregar analytics:', error);
 
         // Verificar se é erro de autenticação
         if (error?.statusCode === 401 || error?.response?.status === 401) {
@@ -406,7 +434,7 @@ export const AdminDashboard: React.FC = () => {
 
         // Verificar se é erro de permissão (403)
         if (error?.statusCode === 403 || error?.response?.status === 403) {
-          console.warn('⚠️ Erro 403: Permissão negada para acessar dados financeiros');
+          console.warn('?? Erro 403: Permissão negada para acessar dados financeiros');
           addNotification(
             'warning',
             'Você não tem permissão para acessar os dados financeiros desta barbearia. Entre em contato com o administrador.',
@@ -417,10 +445,10 @@ export const AdminDashboard: React.FC = () => {
 
         // Verificar se endpoint não existe (404)
         if (error?.statusCode === 404 || error?.response?.status === 404) {
-          console.warn('⚠️ Endpoint /financial/analytics não encontrado');
+          console.warn('?? Endpoint /financial/analytics não encontrado');
           addNotification(
             'info',
-            'O módulo financeiro ainda não foi implementado no backend. Esta funcionalidade estará disponível na Fase 2.',
+            'O módulo financeiro ainda não foi implementado não backend. Esta funcionalidade estará disponível na Fase 2.',
             'Em Desenvolvimento'
           );
           return;
@@ -532,12 +560,12 @@ export const AdminDashboard: React.FC = () => {
   const handleSaveService = async () => {
     try {
       if (!serviceForm.name || !serviceForm.name.trim()) {
-        addNotification('error', 'Nome do serviço é obrigatório');
+        addNotification('error', 'Nome do serviço  obrigatrio');
         return;
       }
 
       if (!serviceForm.category || !serviceForm.category.trim()) {
-        addNotification('error', 'Categoria é obrigatória');
+        addNotification('error', 'Categoria  obrigatria');
         return;
       }
 
@@ -546,7 +574,7 @@ export const AdminDashboard: React.FC = () => {
         return;
       }
 
-      // Garantir que price e duration sejam números válidos
+      // Garantir que price e duration sejám numeros validos
       const price = parseFloat(String(serviceForm.price));
       const duration = parseInt(String(serviceForm.duration), 10);
 
@@ -599,7 +627,7 @@ export const AdminDashboard: React.FC = () => {
 
         // Validar tamanho da imagem (max 100KB base64)
         if (createData.image && createData.image.length > 100 * 1024) {
-          addNotification('error', 'Imagem muito grande. Tente uma imagem menor.');
+          addNotification('error', 'Imagem muito grande. Tente uma imagem menãor.');
           return;
         }
 
@@ -612,10 +640,10 @@ export const AdminDashboard: React.FC = () => {
       setShowServiceModal(false);
       setServiceImagePreview('');
     } catch (error: any) {
-      console.error('❌ Erro ao salvar serviço:', error);
-      console.error('❌ Resposta do servidor:', error.response?.data);
-      console.error('❌ Status:', error.response?.status);
-      console.error('❌ Config:', error.config);
+      console.error('? Erro ao salvar serviço:', error);
+      console.error('? Resposta do servidor:', error.response?.data);
+      console.error('? Status:', error.response?.status);
+      console.error('? Config:', error.config);
 
       const errorMessage = error.response?.data?.message || error.message || 'Erro ao salvar serviço';
 
@@ -623,9 +651,9 @@ export const AdminDashboard: React.FC = () => {
       if (error.config?.data) {
         try {
           const sentData = JSON.parse(error.config.data);
-          console.error('📦 Payload enviado:', sentData);
+          console.error('?? Payload enviado:', sentData);
         } catch (e) {
-          console.error('📦 Payload (raw):', error.config.data);
+          console.error('?? Payload (raw):', error.config.data);
         }
       }
 
@@ -658,7 +686,7 @@ export const AdminDashboard: React.FC = () => {
       setBarbers(updated);
       localStorage.setItem('barbers', JSON.stringify(updated));
     } else if (type === 'SERVICE') {
-      // Atualizar serviço no backend
+      // Atualizar serviço não backend
       const service = unitServices.find(s => s.id === id);
       if (service) {
         serviceService.update(id, { active: !service.active })
@@ -682,7 +710,7 @@ export const AdminDashboard: React.FC = () => {
         return;
       }
     } else if (type === 'PRODUCT') {
-      // Atualizar produto no backend
+      // Atualizar produto não backend
       const product = products.find(p => p.id === id);
       if (product) {
         productService.update(id, { active: !product.active })
@@ -697,7 +725,7 @@ export const AdminDashboard: React.FC = () => {
           .catch(error => {
             console.error('Erro ao atualizar produto:', error);
 
-            // Verificar se é erro de autenticação
+            // Verificar se  erro de autenticação
             if (error?.statusCode === 401) {
               addNotification('error', 'Sessão expirada. Faça login novamente.');
               // Limpar dados e redirecionar para login
@@ -717,7 +745,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const deleteItem = (id: string, type: 'BARBER' | 'SERVICE' | 'COST') => {
-    // Encontrar o item para exibir o nome no modal
+    // Encontrar o item para exibir o nãome não modal
     let itemName = '';
     if (type === 'SERVICE') {
       const service = unitServices.find(s => s.id === id);
@@ -784,7 +812,7 @@ export const AdminDashboard: React.FC = () => {
         return;
       }
 
-      // Garantir que os números sejam válidos
+      // Garantir que os números sejám válidos
       const price = parseFloat(String(productForm.price));
       const costPrice = parseFloat(String(productForm.costPrice)) || 0;
       const stock = parseInt(String(productForm.stock), 10) || 0;
@@ -796,7 +824,7 @@ export const AdminDashboard: React.FC = () => {
 
       if (editProduct) {
         // Atualizar produto existente
-        // ⚠️ NÃO enviar shopId - o backend pega do token JWT (TenantGuard)
+        // ?? NÃO enviar shopId - o backend pega do token JWT (TenantGuard)
         const updateData: any = {
           name: productForm.name.trim(),
           price: price,
@@ -806,7 +834,7 @@ export const AdminDashboard: React.FC = () => {
           unit: productForm.unit || 'unidade'
         };
 
-        // Só incluir campos opcionais se tiverem valor
+        // SÓ incluir campos opcionais se tiverem valor
         if (productForm.description && productForm.description.trim()) {
           updateData.description = productForm.description.trim();
         }
@@ -828,7 +856,7 @@ export const AdminDashboard: React.FC = () => {
           unit: productForm.unit || 'unidade'
         };
 
-        // Só incluir campos opcionais se tiverem valor
+        // SÓ incluir campos opcionais se tiverem valor
         if (productForm.description && productForm.description.trim()) {
           createData.description = productForm.description.trim();
         }
@@ -838,7 +866,7 @@ export const AdminDashboard: React.FC = () => {
 
         // Validar tamanho da imagem (max 100KB base64)
         if (createData.image && createData.image.length > 100 * 1024) {
-          addNotification('error', 'Imagem muito grande. Tente uma imagem menor.');
+          addNotification('error', 'Imagem muito grande. Tente uma imagem menãor.');
           return;
         }
 
@@ -893,7 +921,7 @@ export const AdminDashboard: React.FC = () => {
     if (!deleteTarget) return;
 
     if (!deleteReason.trim()) {
-      addNotification('error', 'Por favor, informe o motivo da remoção');
+      addNotification('error', 'Por favor, informe o motivo da Remoção');
       return;
     }
 
@@ -907,7 +935,7 @@ export const AdminDashboard: React.FC = () => {
         await serviceService.remove(deleteTarget.id, deleteReason);
         const data = await serviceService.list(currentShop.id);
         setUnitServices(data);
-        addNotification('success', 'Serviço removido com sucesso!');
+        addNotification('success', 'serviço removido com sucesso!');
       }
 
       // Fechar modal e limpar estados
@@ -1042,7 +1070,7 @@ export const AdminDashboard: React.FC = () => {
       return;
     }
 
-    const reason = prompt('Motivo da remoção (obrigatório):');
+    const reason = prompt('Motivo da Remoção (obrigatório):');
     if (!reason || !reason.trim()) {
       addNotification('error', 'Motivo é obrigatório');
       return;
@@ -1246,21 +1274,53 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const TABS = [
-    { id: 'FINANCIAL', icon: DollarSign, label: 'Saúde Financeira' },
-    { id: 'CASHIER', icon: Calculator, label: 'Caixa' },
-    { id: 'BARBERS', icon: Users, label: 'Time' },
-    { id: 'SERVICES', icon: Scissors, label: 'Serviços' },
-    { id: 'PRODUCTS', icon: ShoppingBag, label: 'Produtos' },
-    { id: 'STOCK', icon: Layers, label: 'Estoque' },
-    { id: 'PLANS', icon: Layers, label: 'Planos' },
-    { id: 'HISTORY', icon: Calendar, label: 'Histórico' },
-    { id: 'SETTINGS', icon: Settings, label: 'Configurações' },
-    ...(isSuperAdmin ? [{ id: 'SUPER', icon: Shield, label: 'Super Admin' }] : []),
+  // ─── Tab Groups ────────────────────────────────────────────────────────────
+  const TAB_GROUPS = [
+    {
+      label: 'Financeiro',
+      color: 'emerald',
+      tabs: [
+        { id: 'FINANCIAL', icon: DollarSign, label: 'Saúde Financeira', short: 'Saúde' },
+        { id: 'CASHIER', icon: Calculator, label: 'Caixa', short: 'Caixa' },
+      ],
+    },
+    {
+      label: 'Gestão',
+      color: 'blue',
+      tabs: [
+        { id: 'BARBERS', icon: Users, label: 'Time', short: 'Time' },
+        { id: 'SERVICES', icon: Scissors, label: 'Serviços', short: 'Serviços' },
+        { id: 'PRODUCTS', icon: ShoppingBag, label: 'Produtos', short: 'Produtos' },
+      ],
+    },
+    {
+      label: 'Estoque & Abast.',
+      color: 'orange',
+      tabs: [
+        { id: 'STOCK', icon: Layers, label: 'Estoque', short: 'Estoque' },
+        { id: 'SUPPLIES', icon: Package, label: 'Insumos', short: 'Insumos' },
+        { id: 'PLANS', icon: Tag, label: 'Planos', short: 'Planos' },
+      ],
+    },
+    {
+      label: 'Análise & Config.',
+      color: 'purple',
+      tabs: [
+        { id: 'HISTORY', icon: Calendar, label: 'Histórico', short: 'Histórico' },
+        { id: 'SETTINGS', icon: Settings, label: 'Configurações', short: 'Config.' },
+        ...(isSuperAdmin ? [{ id: 'SUPER', icon: Shield, label: 'Super Admin', short: 'Super' }] : []),
+      ],
+    },
   ];
 
+  const ALL_TABS = TAB_GROUPS.flatMap(g => g.tabs);
+  // Mobile: first 4 primary tabs pinned to bottom bar; rest in overflow drawer
+  const MOBILE_PRIMARY = ALL_TABS.slice(0, 4);
+  const MOBILE_OVERFLOW = ALL_TABS.slice(4);
+  const activeTabObj = ALL_TABS.find(t => t.id === activeTab);
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors pb-24 md:pb-8">
       <Container size="xl" className="py-4 md:py-8 space-y-6 md:space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 md:gap-6">
@@ -1270,13 +1330,13 @@ export const AdminDashboard: React.FC = () => {
             {/* Shop Selector Button */}
             <button
               onClick={() => setShowShopSelector(true)}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all border border-gray-200 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-500"
+              className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-tenant-primary/5 dark:hover:bg-tenant-primary/20/20 transition-all border border-gray-200 dark:border-gray-700 hover:border-tenant-primary dark:hover:border-tenant-primary"
             >
-              <Store size={16} className="text-gray-600 dark:text-gray-400 group-hover:text-amber-500 transition-colors" />
-              <span className="text-xs text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest group-hover:text-amber-600 dark:group-hover:text-amber-400">
+              <Store size={16} className="text-gray-600 dark:text-gray-400 group-hover:text-tenant-primary transition-colors" />
+              <span className="text-xs text-gray-700 dark:text-gray-300 font-bold uppercase tracking-widest group-hover:text-tenant-primary dark:group-hover:text-tenant-primary">
                 {currentShop.name}
               </span>
-              <ChevronDown size={14} className="text-gray-400 group-hover:text-amber-500 transition-colors" />
+              <ChevronDown size={14} className="text-gray-400 group-hover:text-tenant-primary transition-colors" />
             </button>
           </div>
           <Button
@@ -1290,33 +1350,171 @@ export const AdminDashboard: React.FC = () => {
           </Button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 md:mx-0 md:px-0 scrollbar-hide">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === tab.id
-                ? 'bg-amber-500 text-white shadow-lg'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100'
-                }`}
-              aria-label={tab.label}
-            >
-              <tab.icon size={16} className="flex-shrink-0" />
-              <span className="hidden xs:inline sm:inline">{tab.label}</span>
-            </button>
-          ))}
+        {/* ── DESKTOP NAVIGATION: grouped pill tabs ── */}
+        <nav className="hidden md:flex flex-col gap-2" aria-label="Navegação administrativa">
+          <div className="flex gap-3 flex-wrap">
+            {TAB_GROUPS.map((group, gi) => (
+              <div key={gi} className="flex items-center gap-1">
+                {/* Group label */}
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-600 pr-1 select-none">
+                  {group.label}
+                </span>
+                {group.tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    title={tab.label}
+                    aria-label={tab.label}
+                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200
+                      ${
+                        activeTab === tab.id
+                          ? 'bg-tenant-primary text-white shadow-lg shadow-tenant-primary/30 scale-105'
+                          : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105'
+                      }`}
+                  >
+                    <tab.icon size={14} className="flex-shrink-0" />
+                    {tab.short}
+                  </button>
+                ))}
+                {/* Divider between groups */}
+                {gi < TAB_GROUPS.length - 1 && (
+                  <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 ml-2" aria-hidden="true" />
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Active tab breadcrumb indicator */}
+          {activeTabObj && (
+            <div className="flex items-center gap-2 px-1">
+              <div className="h-0.5 w-4 rounded-full bg-tenant-primary" />
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {TAB_GROUPS.find(g => g.tabs.some(t => t.id === activeTab))?.label}
+                <span className="mx-1 text-gray-300 dark:text-gray-600">›</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{activeTabObj.label}</span>
+              </span>
+            </div>
+          )}
+        </nav>
+
+        {/* ── MOBILE NAVIGATION: sticky bottom bar + overflow drawer ── */}
+        {/* Overlay for drawer */}
+        {showMobileMenu && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+            onClick={() => setShowMobileMenu(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Overflow drawer (slide up) */}
+        <div
+          className={`fixed bottom-16 left-0 right-0 z-50 md:hidden transition-transform duration-300 ease-out ${
+            showMobileMenu ? 'translate-y-0' : 'translate-y-[110%]'
+          }`}
+          aria-label="Menu adicional"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="mx-3 mb-2 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                <span className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Mais opções</span>
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  aria-label="Fechar menu"
+                >
+                  <X size={16} className="text-gray-500" />
+                </button>
+              </div>
+              {TAB_GROUPS.map((group, gi) => (
+                <div key={gi} className="mb-4 last:mb-0">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-2 px-1">{group.label}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {group.tabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => { setActiveTab(tab.id); setShowMobileMenu(false); }}
+                        className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-center transition-all duration-200 ${
+                          activeTab === tab.id
+                            ? 'bg-tenant-primary text-white shadow-md shadow-tenant-primary/30'
+                            : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        aria-label={tab.label}
+                        aria-current={activeTab === tab.id ? 'page' : undefined}
+                      >
+                        <tab.icon size={20} className="flex-shrink-0" />
+                        <span className="text-[10px] font-bold leading-tight">{tab.short}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Mobile sticky bottom navigation bar */}
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 safe-area-inset-bottom"
+          aria-label="Navegação principal"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
+          <div className="flex items-stretch h-16">
+            {MOBILE_PRIMARY.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id); setShowMobileMenu(false); }}
+                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all duration-200 relative touch-manipulation ${
+                  activeTab === tab.id
+                    ? 'text-tenant-primary'
+                    : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+                aria-label={tab.label}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
+              >
+                {activeTab === tab.id && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-tenant-primary" aria-hidden="true" />
+                )}
+                <tab.icon size={20} className="transition-transform duration-200" style={{ transform: activeTab === tab.id ? 'scale(1.15)' : 'scale(1)' }} />
+                <span className="text-[9px] font-bold uppercase tracking-wide leading-none">{tab.short}</span>
+              </button>
+            ))}
+
+            {/* Mais / overflow button */}
+            <button
+              onClick={() => setShowMobileMenu(prev => !prev)}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all duration-200 relative touch-manipulation ${
+                showMobileMenu || MOBILE_OVERFLOW.some(t => t.id === activeTab)
+                  ? 'text-tenant-primary'
+                  : 'text-gray-500 dark:text-gray-500 hover:text-gray-700'
+              }`}
+              aria-label="Mais opções"
+              aria-expanded={showMobileMenu}
+            >
+              {(showMobileMenu || MOBILE_OVERFLOW.some(t => t.id === activeTab)) && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-tenant-primary" aria-hidden="true" />
+              )}
+              <MoreHorizontal size={20} className={`transition-transform duration-300 ${showMobileMenu ? 'rotate-90' : ''}`} />
+              <span className="text-[9px] font-bold uppercase tracking-wide leading-none">Mais</span>
+            </button>
+          </div>
+        </nav>
 
         {/* Histórico Tab */}
         {activeTab === 'HISTORY' && (
           <AdminAppointmentHistory />
         )}
 
+        {/* Insumos Tab */}
+        {activeTab === 'SUPPLIES' && (
+          <Supplies />
+        )}
+
         {/* Financial Health Tab - Saúde Financeira */}
         {activeTab === 'FINANCIAL' && (
           <div className="space-y-6">
-            {/* Loading State — Skeleton */}
+            {/* Loading State Skeleton */}
             {loadingAnalytics && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1332,7 +1530,7 @@ export const AdminDashboard: React.FC = () => {
                   {[...Array(2)].map((_, i) => (
                     <div key={i} className="p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
                       <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-                      {[...Array(3)].map((_, j) => <div key={j} className="h-14 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />)}
+                      {[...Array(3)].map((_, já) => <div key={já} className="h-14 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />)}
                     </div>
                   ))}
                 </div>
@@ -1366,11 +1564,11 @@ export const AdminDashboard: React.FC = () => {
                       setFinancialPeriod('TODAY');
                     }}
                     className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${financialPeriod === 'TODAY' && !useCustomRange
-                      ? 'bg-amber-500 text-white shadow-lg'
+                      ? 'bg-tenant-primary text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
-                    Hoje
+                    hoje
                   </button>
                   <button
                     onClick={() => {
@@ -1378,7 +1576,7 @@ export const AdminDashboard: React.FC = () => {
                       setFinancialPeriod('WEEK');
                     }}
                     className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${financialPeriod === 'WEEK' && !useCustomRange
-                      ? 'bg-amber-500 text-white shadow-lg'
+                      ? 'bg-tenant-primary text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
@@ -1387,7 +1585,7 @@ export const AdminDashboard: React.FC = () => {
                   <button
                     onClick={() => setRollingRange(15)}
                     className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${useCustomRange && customRange.startDate && customRange.endDate
-                      ? 'bg-amber-500 text-white shadow-lg'
+                      ? 'bg-tenant-primary text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
@@ -1399,7 +1597,7 @@ export const AdminDashboard: React.FC = () => {
                       setFinancialPeriod('MONTH');
                     }}
                     className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${financialPeriod === 'MONTH' && !useCustomRange
-                      ? 'bg-amber-500 text-white shadow-lg'
+                      ? 'bg-tenant-primary text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
@@ -1411,7 +1609,7 @@ export const AdminDashboard: React.FC = () => {
                       setFinancialPeriod('QUARTER');
                     }}
                     className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${financialPeriod === 'QUARTER' && !useCustomRange
-                      ? 'bg-amber-500 text-white shadow-lg'
+                      ? 'bg-tenant-primary text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
@@ -1420,7 +1618,7 @@ export const AdminDashboard: React.FC = () => {
                   <button
                     onClick={() => setUseCustomRange(true)}
                     className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${useCustomRange
-                      ? 'bg-amber-500 text-white shadow-lg'
+                      ? 'bg-tenant-primary text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
@@ -1477,9 +1675,9 @@ export const AdminDashboard: React.FC = () => {
                       <div>
                         <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-gray-900 dark:text-white mb-2">
                           Saúde Financeira: {
-                            analytics.margin >= 30 ? '🟢 Excelente' :
-                              analytics.margin >= 15 ? '🟡 Atenção' :
-                                '🔴 Crítico'
+                            analytics.margin >= 30 ? 'Excelente' :
+                              analytics.margin >= 15 ? 'Atenção' :
+                                'Crítico'
                           }
                         </h2>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1506,7 +1704,7 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Receita</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      R$ {showFinancialValues ? analytics.gross.toFixed(2) : '••••'}
+                      R$ {showFinancialValues ? analytics.gross.toFixed(2) : ''}
                     </p>
                     <p className="text-xs opacity-80 font-bold">Faturamento Bruto</p>
                   </Card>
@@ -1521,7 +1719,7 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Lucro</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      R$ {showFinancialValues ? analytics.net.toFixed(2) : '••••'}
+                      R$ {showFinancialValues ? analytics.net.toFixed(2) : ''}
                     </p>
                     <p className="text-xs opacity-80 font-bold">Resultado Final</p>
                   </Card>
@@ -1533,43 +1731,43 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Média</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      R$ {showFinancialValues ? analytics.avgTicket.toFixed(2) : '••••'}
+                      R$ {showFinancialValues ? analytics.avgTicket.toFixed(2) : ''}
                     </p>
                     <p className="text-xs opacity-80 font-bold">Ticket Médio</p>
                   </Card>
 
                   {/* Margem de Lucro */}
-                  <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-6">
+                  <Card className="bg-gradient-to-br from-tenant-primary to-tenant-primary text-white p-6">
                     <div className="flex justify-between items-start mb-3">
                       <PieChart size={28} className="opacity-70" />
                       <span className="text-xs font-bold opacity-80 uppercase">Margem</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      {showFinancialValues ? analytics.margin.toFixed(1) : '••'}<span className="text-2xl">%</span>
+                      {showFinancialValues ? analytics.margin.toFixed(1) : ''}<span className="text-2xl">%</span>
                     </p>
                     <p className="text-xs opacity-80 font-bold">Lucro / Receita</p>
                   </Card>
                 </Grid>
 
-                {/* BI Insight Row — Taxas e Insumos (novos campos do backend) */}
+                {/* BI Insight Row Taxas e Insumos (novos campos do backend) */}
                 {(analytics.cardFees > 0 || analytics.supplyCostsTotal > 0) && (
                   <Grid cols={3} gap="lg" className="grid-cols-1 sm:grid-cols-3">
                     {analytics.cardFees > 0 && (
                       <Card className="p-5 border-l-4 border-orange-400 bg-orange-50 dark:bg-orange-900/10">
                         <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-1">Taxas de Cartão</p>
                         <p className="text-2xl font-black text-orange-600 dark:text-orange-400">
-                          R$ {showFinancialValues ? analytics.cardFees.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.cardFees.toFixed(2) : ''}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">Crédito 4% · Débito 2%</p>
+                        <p className="text-xs text-gray-500 mt-1">Crédito 4% Débito 2%</p>
                       </Card>
                     )}
                     {analytics.supplyCostsTotal > 0 && (
                       <Card className="p-5 border-l-4 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/10">
                         <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-1">Custo de Insumos</p>
                         <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                          R$ {showFinancialValues ? analytics.supplyCostsTotal.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.supplyCostsTotal.toFixed(2) : ''}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">supplyCost por serviço × execuções</p>
+                        <p className="text-xs text-gray-500 mt-1">supplyCost por serviço  execues</p>
                       </Card>
                     )}
                     <Card className="p-5 border-l-4 border-teal-500 bg-teal-50 dark:bg-teal-900/10">
@@ -1577,9 +1775,9 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-2xl font-black text-teal-600 dark:text-teal-400">
                         {analytics.totalAppointments > 0
                           ? `${Math.min(100, Math.round((analytics.totalAppointments / Math.max(analytics.totalAppointments, 1)) * 100))}%`
-                          : '—'}
+                          : ''}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{analytics.totalAppointments} atendimentos no período</p>
+                      <p className="text-xs text-gray-500 mt-1">{analytics.totalAppointments} atendimentos não período</p>
                     </Card>
                   </Grid>
                 )}
@@ -1590,16 +1788,19 @@ export const AdminDashboard: React.FC = () => {
                     Receitas por Fonte
                   </h3>
                   <Grid cols={3} gap="lg" className="grid-cols-1 sm:grid-cols-3">
-                    {/* Serviços */}
-                    <Card className="p-5 border-l-4 border-purple-500 bg-white dark:bg-gray-800">
+                    {/* serviços */}
+                    <Card
+                      className="p-5 border-l-4 border-purple-500 bg-white dark:bg-gray-800 cursor-pointer hover:shadow-lg transition-all"
+                      onClick={() => setShowRevenueDetail(true)}
+                    >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
                           <Scissors size={24} className="text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">Serviços</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">serviços</p>
                           <p className="text-2xl font-black text-gray-900 dark:text-white">
-                            R$ {showFinancialValues ? analytics.serviceRev.toFixed(2) : '••••'}
+                            R$ {showFinancialValues ? analytics.serviceRev.toFixed(2) : ''}
                           </p>
                         </div>
                       </div>
@@ -1607,6 +1808,7 @@ export const AdminDashboard: React.FC = () => {
                         <span className="text-gray-500 dark:text-gray-400">
                           {analytics.gross > 0 ? ((analytics.serviceRev / analytics.gross) * 100).toFixed(0) : 0}% do total
                         </span>
+                        <ChevronDown size={14} className="text-gray-400" />
                       </div>
                     </Card>
 
@@ -1619,7 +1821,7 @@ export const AdminDashboard: React.FC = () => {
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">Produtos</p>
                           <p className="text-2xl font-black text-gray-900 dark:text-white">
-                            R$ {showFinancialValues ? analytics.productRev.toFixed(2) : '••••'}
+                            R$ {showFinancialValues ? analytics.productRev.toFixed(2) : ''}
                           </p>
                         </div>
                       </div>
@@ -1639,7 +1841,7 @@ export const AdminDashboard: React.FC = () => {
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase">Planos</p>
                           <p className="text-2xl font-black text-gray-900 dark:text-white">
-                            R$ {showFinancialValues ? analytics.planRev.toFixed(2) : '••••'}
+                            R$ {showFinancialValues ? analytics.planRev.toFixed(2) : ''}
                           </p>
                         </div>
                       </div>
@@ -1652,19 +1854,22 @@ export const AdminDashboard: React.FC = () => {
                   </Grid>
                 </div>
 
-                {/* Despesas e Comissões */}
+                {/* Despesas e Comissões  */}
                 <Grid cols={2} gap="lg" className="grid-cols-1 lg:grid-cols-2">
                   {/* Despesas */}
-                  <Card>
+                  <Card onClick={() => setShowExpenseDetail(true)} className="cursor-pointer hover:shadow-lg transition-all">
                     <Card.Body className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
                           <AlertCircle size={20} className="text-red-500" />
                           Despesas
                         </h3>
-                        <p className="text-2xl font-black text-red-600 dark:text-red-400">
-                          R$ {showFinancialValues ? analytics.expenses.toFixed(2) : '••••'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-2xl font-black text-red-600 dark:text-red-400">
+                            R$ {showFinancialValues ? analytics.expenses.toFixed(2) : ''}
+                          </p>
+                          <ChevronDown size={18} className="text-gray-400" />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -1673,7 +1878,7 @@ export const AdminDashboard: React.FC = () => {
                             <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Comissões</span>
                           </div>
                           <span className="text-sm font-black text-gray-900 dark:text-white">
-                            R$ {showFinancialValues ? analytics.totalCommissions.toFixed(2) : '••••'}
+                            R$ {showFinancialValues ? analytics.totalCommissions.toFixed(2) : ''}
                           </span>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -1682,7 +1887,7 @@ export const AdminDashboard: React.FC = () => {
                             <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Custos Fixos</span>
                           </div>
                           <span className="text-sm font-black text-gray-900 dark:text-white">
-                            R$ {showFinancialValues ? analytics.fixedCostsTotal.toFixed(2) : '••••'}
+                            R$ {showFinancialValues ? analytics.fixedCostsTotal.toFixed(2) : ''}
                           </span>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -1691,7 +1896,7 @@ export const AdminDashboard: React.FC = () => {
                             <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Custo de Produtos</span>
                           </div>
                           <span className="text-sm font-black text-gray-900 dark:text-white">
-                            R$ {showFinancialValues ? (analytics.productRev * 0.3).toFixed(2) : '••••'}
+                            R$ {showFinancialValues ? (analytics.productRev * 0.3).toFixed(2) : ''}
                           </span>
                         </div>
                       </div>
@@ -1699,17 +1904,20 @@ export const AdminDashboard: React.FC = () => {
                   </Card>
 
                   {/* Top Profissionais */}
-                  <Card>
+                  <Card onClick={() => setShowCommissionDetail(true)} className="cursor-pointer hover:shadow-lg transition-all">
                     <Card.Body className="space-y-4">
-                      <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
-                        <Users size={20} className="text-amber-500" />
-                        Top Profissionais
-                      </h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
+                          <Users size={20} className="text-tenant-primary" />
+                          Top Profissionais
+                        </h3>
+                        <ChevronDown size={18} className="text-gray-400" />
+                      </div>
                       <div className="space-y-2">
                         {analytics.commissionsByBarber.slice(0, 5).map((barber, index) => (
                           <div key={barber.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-white ${index === 0 ? 'bg-amber-500' :
+                              <div className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-white ${index === 0 ? 'bg-tenant-primary' :
                                 index === 1 ? 'bg-gray-400' :
                                   index === 2 ? 'bg-orange-600' : 'bg-gray-600'
                                 }`}>
@@ -1717,15 +1925,15 @@ export const AdminDashboard: React.FC = () => {
                               </div>
                               <div>
                                 <p className="font-bold text-gray-900 dark:text-white">{barber.name}</p>
-                                <p className="text-xs text-gray-500">{barber.appointments} atendimentos • {barber.commissionRate}%</p>
+                                <p className="text-xs text-gray-500">{barber.appointments} atendimentos - {barber.commissionRate}%</p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-lg font-black text-amber-500">
-                                R$ {showFinancialValues ? barber.commission.toFixed(2) : '••••'}
+                              <p className="text-lg font-black text-tenant-primary">
+                                R$ {showFinancialValues ? barber.commission.toFixed(2) : ''}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Faturou R$ {showFinancialValues ? barber.revenue.toFixed(2) : '••••'}
+                                Faturou R$ {showFinancialValues ? barber.revenue.toFixed(2) : ''}
                               </p>
                             </div>
                           </div>
@@ -1751,7 +1959,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                       <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
                         <p className="text-3xl font-black text-green-600 dark:text-green-400 mb-1">
-                          R$ {showFinancialValues ? analytics.avgTicket.toFixed(0) : '••'}
+                          R$ {showFinancialValues ? analytics.avgTicket.toFixed(0) : ''}
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400 font-bold uppercase">Ticket Médio</p>
                       </div>
@@ -1761,8 +1969,8 @@ export const AdminDashboard: React.FC = () => {
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400 font-bold uppercase">Profissionais</p>
                       </div>
-                      <div className="text-center p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
-                        <p className="text-3xl font-black text-amber-600 dark:text-amber-400 mb-1">
+                      <div className="text-center p-4 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl">
+                        <p className="text-3xl font-black text-tenant-primary dark:text-tenant-primary mb-1">
                           {analytics.margin.toFixed(0)}%
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400 font-bold uppercase">Margem</p>
@@ -1771,20 +1979,24 @@ export const AdminDashboard: React.FC = () => {
                   </Card.Body>
                 </Card>
 
-                {/* Alertas Inteligentes */}
-                {(analytics.margin < 15 || analytics.isLoss || analytics.avgTicket < 50) && (
+                {/* Alertas Inteligentes - só exibe após 7+ dias de dados */}
+                {(analytics.margin < 15 || analytics.isLoss || analytics.avgTicket < 50) &&
+                  (financialPeriod === 'WEEK' || financialPeriod === 'MONTH' || financialPeriod === 'QUARTER' ||
+                    (useCustomRange && customRange.startDate && customRange.endDate &&
+                      Math.floor((new Date(customRange.endDate).getTime() - new Date(customRange.startDate).getTime()) / (1000 * 60 * 60 * 24)) >= 7)
+                  ) && (
                   <Card className="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/10">
                     <Card.Body className="space-y-3">
                       <div className="flex items-center gap-2">
                         <AlertCircle size={24} className="text-red-600 dark:text-red-400" />
                         <h3 className="font-black text-lg text-red-900 dark:text-red-100 uppercase">
-                          ⚠️ Alertas de Gestão
+                          Alertas de Gestão
                         </h3>
                       </div>
                       <div className="space-y-2">
                         {analytics.isLoss && (
                           <Alert variant="error" className="text-sm">
-                            <strong>Prejuízo identificado:</strong> Suas despesas superam a receita. Revise custos fixos e comissões urgentemente.
+                            <strong>Prejáuízo identificado:</strong> Suas despesas superam a receita. Revise custos fixos e comissões urgentemente.
                           </Alert>
                         )}
                         {analytics.margin < 15 && !analytics.isLoss && (
@@ -1813,49 +2025,49 @@ export const AdminDashboard: React.FC = () => {
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                         <span className="font-bold text-gray-700 dark:text-gray-300">Receita Bruta</span>
                         <span className="font-black text-blue-600 dark:text-blue-400">
-                          + R$ {showFinancialValues ? analytics.gross.toFixed(2) : '••••'}
+                          + R$ {showFinancialValues ? analytics.gross.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">└ Serviços</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">+ serviços</span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          R$ {showFinancialValues ? analytics.serviceRev.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.serviceRev.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">└ Produtos</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">+ Produtos</span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          R$ {showFinancialValues ? analytics.productRev.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.productRev.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">└ Planos</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">+ Planos</span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          R$ {showFinancialValues ? analytics.planRev.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.planRev.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                         <span className="font-bold text-red-700 dark:text-red-400">(-) Despesas Totais</span>
                         <span className="font-black text-red-600 dark:text-red-400">
-                          - R$ {showFinancialValues ? analytics.expenses.toFixed(2) : '••••'}
+                          - R$ {showFinancialValues ? analytics.expenses.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">└ Comissões</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">+ Comissões</span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          R$ {showFinancialValues ? analytics.totalCommissions.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.totalCommissions.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">└ Custos Fixos</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">+ Custos Fixos</span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          R$ {showFinancialValues ? analytics.fixedCostsTotal.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.fixedCostsTotal.toFixed(2) : ''}
                         </span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">└ Custo Produtos</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-300 pl-4">+ Custo Produtos</span>
                         <span className="text-gray-600 dark:text-gray-400">
-                          R$ {showFinancialValues ? (analytics.productRev * 0.3).toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? (analytics.productRev * 0.3).toFixed(2) : ''}
                         </span>
                       </div>
                       <div className={`flex items-center justify-between py-3 mt-2 rounded-lg px-3 ${analytics.isLoss
@@ -1867,7 +2079,7 @@ export const AdminDashboard: React.FC = () => {
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-green-600 dark:text-green-400'
                           }`}>
-                          R$ {showFinancialValues ? analytics.net.toFixed(2) : '••••'}
+                          R$ {showFinancialValues ? analytics.net.toFixed(2) : ''}
                         </span>
                       </div>
                     </div>
@@ -1876,7 +2088,7 @@ export const AdminDashboard: React.FC = () => {
               </>
             )}
 
-            {/* Seção Custos Fixos / Despesas */}
+            {/* Sessão Custos Fixos / Despesas */}
             <Card className="mt-4">
               <Card.Body className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -1891,7 +2103,7 @@ export const AdminDashboard: React.FC = () => {
 
                 {loadingExpenses ? (
                   <div className="text-center py-8">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-500 border-t-transparent"></div>
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-tenant-primary border-t-transparent"></div>
                     <p className="mt-3 text-gray-500 text-sm">Carregando despesas...</p>
                   </div>
                 ) : fixedCosts.length === 0 ? (
@@ -2002,7 +2214,7 @@ export const AdminDashboard: React.FC = () => {
 
                 {loadingTeam ? (
                   <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
                     <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando equipe...</p>
                   </div>
                 ) : teamMembers.length === 0 ? (
@@ -2030,17 +2242,17 @@ export const AdminDashboard: React.FC = () => {
                               <img
                                 src={member.avatar}
                                 alt={member.name}
-                                className="w-16 h-16 rounded-full object-cover border-2 border-amber-500"
+                                className="w-16 h-16 rounded-full object-cover border-2 border-tenant-primary"
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-                                <Users size={32} className="text-amber-600 dark:text-amber-400" />
+                              <div className="w-16 h-16 rounded-full bg-tenant-primary/10 dark:bg-tenant-primary/20 flex items-center justify-center">
+                                <Users size={32} className="text-tenant-primary dark:text-tenant-primary" />
                               </div>
                             )}
 
                             <div className="flex-1">
                               <h4 className="font-bold text-gray-900 dark:text-white text-lg">{member.name}</h4>
-                              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                              <p className="text-sm font-medium text-tenant-primary dark:text-tenant-primary">
                                 {TEAM_ROLE_LABELS[member.role]}
                               </p>
                               {member.email && (
@@ -2128,22 +2340,22 @@ export const AdminDashboard: React.FC = () => {
             <Card>
               <Card.Body className="space-y-4">
                 <div className="flex justify-between items-center mb-4 gap-2">
-                  <h3 className="font-black text-base md:text-lg text-gray-900 dark:text-white uppercase">Catálogo de Serviços</h3>
+                  <h3 className="font-black text-base md:text-lg text-gray-900 dark:text-white uppercase">Catálogo de serviços</h3>
                   <Button
                     size="md"
                     variant="primary"
                     icon={<Plus size={20} />}
                     onClick={() => handleOpenServiceModal()}
                     className="flex-shrink-0 sm:w-auto w-10 h-10 !p-0 sm:!px-5 sm:!py-2.5"
-                    aria-label="Novo Serviço"
+                    aria-label="Novo serviço"
                   >
-                    <span className="hidden sm:inline">Novo Serviço</span>
+                    <span className="hidden sm:inline">Novo serviço</span>
                   </Button>
                 </div>
 
                 {loadingServices ? (
                   <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
                     <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando serviços...</p>
                   </div>
                 ) : unitServices.length === 0 ? (
@@ -2182,7 +2394,7 @@ export const AdminDashboard: React.FC = () => {
                           {/* Informações do serviço - fica em grayscale quando inativo */}
                           <div className={!service.active ? 'grayscale opacity-60' : ''}>
                             <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{service.name}</h4>
-                            <p className="text-2xl font-black text-amber-500">R$ {service.price.toFixed(2)}</p>
+                            <p className="text-2xl font-black text-tenant-primary">R$ {service.price.toFixed(2)}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">{service.duration}min</p>
                           </div>
 
@@ -2241,13 +2453,13 @@ export const AdminDashboard: React.FC = () => {
                   <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                     <button
                       onClick={() => setProductSubView('PRODUCTS')}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${productSubView === 'PRODUCTS' ? 'bg-white dark:bg-gray-700 text-amber-600 shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${productSubView === 'PRODUCTS' ? 'bg-white dark:bg-gray-700 text-tenant-primary shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                     >
                       Produtos
                     </button>
                     <button
                       onClick={() => setProductSubView('STOCK')}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${productSubView === 'STOCK' ? 'bg-white dark:bg-gray-700 text-amber-600 shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${productSubView === 'STOCK' ? 'bg-white dark:bg-gray-700 text-tenant-primary shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                     >
                       Controle de Estoque
                     </button>
@@ -2272,7 +2484,7 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500 mb-3">Visualize e edite rapidamente o estoque de todos os produtos.</p>
                     {loadingProducts ? (
                       <div className="text-center py-8">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-500 border-t-transparent"></div>
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-tenant-primary border-t-transparent"></div>
                       </div>
                     ) : products.length === 0 ? (
                       <div className="text-center py-8 text-gray-400">
@@ -2302,13 +2514,13 @@ export const AdminDashboard: React.FC = () => {
                                   </div>
                                 </td>
                                 <td className="py-2.5 px-3">
-                                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">{product.category || '—'}</span>
+                                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">{product.category || ''}</span>
                                 </td>
                                 <td className="py-2.5 px-3 text-right text-gray-900 dark:text-white font-medium text-xs">
                                   R$ {product.price.toFixed(2)}
                                 </td>
                                 <td className="py-2.5 px-3 text-right text-gray-500 dark:text-gray-400 text-xs">
-                                  {product.costPrice ? `R$ ${product.costPrice.toFixed(2)}` : '—'}
+                                  {product.costPrice ? `R$ ${product.costPrice.toFixed(2)}` : ''}
                                 </td>
                                 <td className="py-2.5 px-3 text-center">
                                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.stock === 0
@@ -2334,7 +2546,7 @@ export const AdminDashboard: React.FC = () => {
                                       className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-base"
                                       title="Remover 1 unidade"
                                     >
-                                      −
+                                      -
                                     </button>
                                     <button
                                       onClick={() => {
@@ -2361,7 +2573,7 @@ export const AdminDashboard: React.FC = () => {
                           <tfoot>
                             <tr className="border-t-2 border-gray-300 dark:border-gray-600">
                               <td colSpan={4} className="py-2.5 px-3 font-black text-gray-900 dark:text-white text-sm">Total em estoque</td>
-                              <td className="py-2.5 px-3 text-center font-black text-amber-600 dark:text-amber-400">
+                              <td className="py-2.5 px-3 text-center font-black text-tenant-primary dark:text-tenant-primary">
                                 {products.reduce((sum, p) => sum + p.stock, 0)} unid.
                               </td>
                               <td></td>
@@ -2377,7 +2589,7 @@ export const AdminDashboard: React.FC = () => {
                         {products.filter(p => p.stock > 0 && p.stock <= 5).length > 0 && (
                           <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
                             <AlertCircle size={14} />
-                            {products.filter(p => p.stock > 0 && p.stock <= 5).length} produto(s) com estoque baixo (≤ 5 unidades).
+                            {products.filter(p => p.stock > 0 && p.stock <= 5).length} produto(s) com estoque baixo (= 5 unidades).
                           </div>
                         )}
                       </div>
@@ -2390,7 +2602,7 @@ export const AdminDashboard: React.FC = () => {
                   <>
                     {loadingProducts ? (
                       <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
                         <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando produtos...</p>
                       </div>
                     ) : products.length === 0 ? (
@@ -2429,7 +2641,7 @@ export const AdminDashboard: React.FC = () => {
                               {/* Informações do produto - fica em grayscale quando inativo */}
                               <div className={!product.active ? 'grayscale opacity-60' : ''}>
                                 <h4 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm line-clamp-2">{product.name}</h4>
-                                <p className="text-base sm:text-lg font-black text-amber-500">R$ {product.price.toFixed(2)}</p>
+                                <p className="text-base sm:text-lg font-black text-tenant-primary">R$ {product.price.toFixed(2)}</p>
                                 <div className="flex items-center justify-between text-[10px] sm:text-xs">
                                   <span className="text-gray-500">Estoque: {product.stock}</span>
                                   {product.stock === 0 && (
@@ -2507,7 +2719,7 @@ export const AdminDashboard: React.FC = () => {
 
                 {loadingPlans ? (
                   <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
                     <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando planos...</p>
                   </div>
                 ) : plans.length === 0 ? (
@@ -2518,7 +2730,7 @@ export const AdminDashboard: React.FC = () => {
                 ) : (
                   <Grid cols={3} gap="lg">
                     {plans.map(plan => (
-                      <Card key={plan.id} className={`border-2 border-amber-500 hover:shadow-xl transition-shadow ${!plan.active ? 'opacity-60 grayscale' : ''}`}>
+                      <Card key={plan.id} className={`border-2 border-tenant-primary hover:shadow-xl transition-shadow ${!plan.active ? 'opacity-60 grayscale' : ''}`}>
                         {/* Badge de Status */}
                         <div className="absolute top-3 right-3 z-10">
                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${plan.active
@@ -2531,12 +2743,12 @@ export const AdminDashboard: React.FC = () => {
 
                         <Card.Body className="space-y-4">
                           <div>
-                            <h4 className="font-black text-xl text-amber-600 dark:text-amber-500 uppercase">{plan.name}</h4>
+                            <h4 className="font-black text-xl text-tenant-primary dark:text-tenant-primary uppercase">{plan.name}</h4>
                             <p className="text-3xl font-black text-gray-900 dark:text-white mt-2">
                               R$ {plan.price.toFixed(2)}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Validade: {plan.benefitMonths} mês(es)
+                              Validade: {plan.benefitMonths} ms(es)
                             </p>
                           </div>
 
@@ -2615,12 +2827,12 @@ export const AdminDashboard: React.FC = () => {
             <div className="space-y-6">
               {/* Informações do Plano da Barbearia */}
               {currentShop.subscription && (
-                <Card className="border-l-4 border-amber-500">
+                <Card className="border-l-4 border-tenant-primary">
                   <Card.Body className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase flex items-center gap-2">
-                          <Zap size={24} className="text-amber-500" />
+                          <Zap size={24} className="text-tenant-primary" />
                           Plano Atual da Barbearia
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -2630,9 +2842,9 @@ export const AdminDashboard: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 border-2 border-amber-300 dark:border-amber-700">
-                        <p className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase mb-1">Plano Contratado</p>
-                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400">
+                      <div className="bg-gradient-to-br from-tenant-primary/5 to-tenant-primary/5 dark:from-tenant-primary/10 dark:to-tenant-primary/10 rounded-xl p-4 border-2 border-tenant-primary/30 dark:border-tenant-primary/50">
+                        <p className="text-xs font-bold text-tenant-primary dark:text-tenant-primary/80 uppercase mb-1">Plano Contratado</p>
+                        <p className="text-2xl font-black text-tenant-primary dark:text-tenant-primary">
                           {currentShop.subscription.tier === 'SIMPLE' && 'Simples'}
                           {currentShop.subscription.tier === 'PLUS' && 'Plus'}
                           {currentShop.subscription.tier === 'PREMIUM' && 'Premium'}
@@ -2745,7 +2957,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <Layers size={20} className="text-amber-500" />
+                          <Layers size={20} className="text-tenant-primary" />
                           <h4 className="font-bold text-gray-900 dark:text-white">Planos para Clientes</h4>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -2759,7 +2971,7 @@ export const AdminDashboard: React.FC = () => {
                           checked={currentShop.settings.modulesEnabled?.clientPlans !== false}
                           onChange={(e) => handleModuleToggle('clientPlans', e.target.checked)}
                         />
-                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-tenant-primary dark:peer-focus:ring-tenant-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary"></div>
                       </label>
                     </div>
 
@@ -2770,7 +2982,7 @@ export const AdminDashboard: React.FC = () => {
                           <ShoppingBag size={20} className="text-blue-500" />
                           <h4 className="font-bold text-gray-900 dark:text-white">Produtos e Estoque</h4>
                           {!currentShop.subscription?.features.hasProducts && (
-                            <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full">
+                            <span className="px-2 py-0.5 bg-tenant-primary/10 dark:bg-tenant-primary/15 text-tenant-primary dark:text-tenant-primary/80 text-xs font-bold rounded-full">
                               Requer upgrade
                             </span>
                           )}
@@ -2795,7 +3007,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <MessageSquare size={20} className="text-amber-600" />
+                          <MessageSquare size={20} className="text-tenant-primary" />
                           <h4 className="font-bold text-gray-900 dark:text-white">Avaliações</h4>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -2809,7 +3021,7 @@ export const AdminDashboard: React.FC = () => {
                           checked={currentShop.settings.modulesEnabled?.reviews !== false}
                           onChange={(e) => handleModuleToggle('reviews', e.target.checked)}
                         />
-                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-tenant-primary dark:peer-focus:ring-tenant-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary"></div>
                       </label>
                     </div>
 
@@ -2848,7 +3060,7 @@ export const AdminDashboard: React.FC = () => {
                           <DollarSign size={20} className="text-purple-500" />
                           <h4 className="font-bold text-gray-900 dark:text-white">Dashboard Financeiro</h4>
                           {!currentShop.subscription?.features.hasFinancialDashboard && (
-                            <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full">
+                            <span className="px-2 py-0.5 bg-tenant-primary/10 dark:bg-tenant-primary/15 text-tenant-primary dark:text-tenant-primary/80 text-xs font-bold rounded-full">
                               Requer upgrade
                             </span>
                           )}
@@ -2881,7 +3093,7 @@ export const AdminDashboard: React.FC = () => {
                           <BarChart3 size={20} className="text-indigo-500" />
                           <h4 className="font-bold text-gray-900 dark:text-white">Relatórios Avançados</h4>
                           {!currentShop.subscription?.features.hasAdvancedReports && (
-                            <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-full">
+                            <span className="px-2 py-0.5 bg-tenant-primary/10 dark:bg-tenant-primary/15 text-tenant-primary dark:text-tenant-primary/80 text-xs font-bold rounded-full">
                               Requer upgrade
                             </span>
                           )}
@@ -2913,6 +3125,50 @@ export const AdminDashboard: React.FC = () => {
                     <strong>Nota:</strong> Algumas funcionalidades podem estar limitadas de acordo com o plano contratado.
                     Entre em contato com o suporte para fazer upgrade do seu plano.
                   </Alert>
+                </Card.Body>
+              </Card>
+
+              {/* Aparência (White Label) */}
+              <Card>
+                <Card.Body className="space-y-6">
+                  <div>
+                    <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
+                      <ImageIcon size={20} className="text-tenant-primary" />
+                      Aparência (White Label)
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Personalize as cores da barbearia para seus clientes e colaboradores.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-gray-900 dark:text-white">Cor Primária</h4>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Cor principal usada em botões, links e destaques no aplicativo.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="color"
+                          value={wlPrimaryColor}
+                          onChange={(e) => setWlPrimaryColor(e.target.value)}
+                          className="h-10 w-20 cursor-pointer rounded bg-transparent border-0 p-0"
+                          title="Escolher Cor Primária"
+                        />
+                        <Button
+                          onClick={handleSaveWhiteLabel}
+                          disabled={isSavingWl || wlPrimaryColor === (currentShop.primaryColor || '#f59e0b')}
+                          variant="primary"
+                        >
+                          {isSavingWl ? 'Salvando...' : 'Salvar Aparência'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </Card.Body>
               </Card>
             </div>
@@ -3014,7 +3270,7 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     )}
 
-                  {/* Comissão (para funções relevantes) */}
+                  {/* Comisssão (para funções relevantes) */}
                   {(teamForm.role === TeamMemberRole.BARBER ||
                     teamForm.role === TeamMemberRole.HAIRDRESSER ||
                     teamForm.role === TeamMemberRole.MANICURIST) && (
@@ -3115,13 +3371,13 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Anos de Experiência */}
+                  {/* Anãos de Experincia */}
                   {(teamForm.role === TeamMemberRole.BARBER ||
                     teamForm.role === TeamMemberRole.HAIRDRESSER ||
                     teamForm.role === TeamMemberRole.MANICURIST) && (
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Anos de Experiência
+                          Anãos de Experincia
                         </label>
                         <Input
                           type="number"
@@ -3141,7 +3397,7 @@ export const AdminDashboard: React.FC = () => {
                       type="url"
                       value={teamForm.avatar || ''}
                       onChange={(e) => setTeamForm({ ...teamForm, avatar: e.target.value })}
-                      placeholder="https://exemplo.com/foto.jpg"
+                      placeholder="https://exemplo.com/foto.jápg"
                     />
                   </div>
 
@@ -3153,9 +3409,9 @@ export const AdminDashboard: React.FC = () => {
                     <textarea
                       value={teamForm.description || ''}
                       onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
-                      placeholder="Breve descrição sobre o profissional..."
+                      placeholder="Breve Descrição sobre o profissional..."
                       rows={3}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 resize-none"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary resize-nãone"
                     />
                   </div>
                 </div>
@@ -3170,7 +3426,7 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={handleSaveTeamMember}
-                    className="w-full sm:flex-1 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-amber-500/30 transition-all"
+                    className="w-full sm:flex-1 px-6 py-3 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-tenant-primary/30 transition-all"
                   >
                     {editTeamMember ? 'Salvar Alterações' : 'Adicionar Colaborador'}
                   </button>
@@ -3261,8 +3517,8 @@ export const AdminDashboard: React.FC = () => {
                   </div>
 
                   {/* Benefícios */}
-                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 space-y-3">
-                    <h4 className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                  <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-lg p-4 space-y-3">
+                    <h4 className="font-bold text-tenant-primary dark:text-tenant-primary/80 flex items-center gap-2">
                       <Tag size={16} />
                       Benefícios do Plano
                     </h4>
@@ -3320,31 +3576,31 @@ export const AdminDashboard: React.FC = () => {
                       onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })}
                       placeholder="Descreva os benefícios e detalhes do plano..."
                       rows={3}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 resize-none"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary resize-nãone"
                     />
                   </div>
 
                   {/* Preview do Plano */}
                   {planForm.price > 0 && (
-                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-4 border-2 border-amber-300 dark:border-amber-700">
-                      <p className="text-xs font-bold text-amber-900 dark:text-amber-300 mb-2">Preview:</p>
+                    <div className="bg-gradient-to-br from-tenant-primary/5 to-tenant-primary/5 dark:from-tenant-primary/10 dark:to-tenant-primary/10 rounded-lg p-4 border-2 border-tenant-primary/30 dark:border-tenant-primary/50">
+                      <p className="text-xs font-bold text-tenant-primary dark:text-tenant-primary/80 mb-2">Preview:</p>
                       <div className="space-y-1">
-                        <p className="font-black text-xl text-amber-600 dark:text-amber-400">{planForm.name || 'Nome do Plano'}</p>
+                        <p className="font-black text-xl text-tenant-primary dark:text-tenant-primary">{planForm.name || 'Nome do Plano'}</p>
                         <p className="text-2xl font-black text-gray-900 dark:text-white">R$ {planForm.price.toFixed(2)}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {planForm.benefitServices > 0 && (
                             <span className="px-2 py-1 bg-white dark:bg-gray-800 rounded-full text-xs font-bold">
-                              ✓ {planForm.benefitServices} serviços
+                              ? {planForm.benefitServices} serviços
                             </span>
                           )}
                           {planForm.benefitProducts > 0 && (
                             <span className="px-2 py-1 bg-white dark:bg-gray-800 rounded-full text-xs font-bold">
-                              ✓ {planForm.benefitProducts} produtos
+                              ? {planForm.benefitProducts} produtos
                             </span>
                           )}
                           {planForm.benefitMoneyback > 0 && (
                             <span className="px-2 py-1 bg-white dark:bg-gray-800 rounded-full text-xs font-bold">
-                              ✓ {planForm.benefitMoneyback}% cashback
+                              ? {planForm.benefitMoneyback}% cashback
                             </span>
                           )}
                         </div>
@@ -3363,7 +3619,7 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={handleSavePlan}
-                    className="w-full sm:flex-1 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-amber-500/30 transition-all"
+                    className="w-full sm:flex-1 px-6 py-3 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-tenant-primary/30 transition-all"
                   >
                     {editPlan ? 'Salvar Alterações' : 'Criar Plano'}
                   </button>
@@ -3404,7 +3660,7 @@ export const AdminDashboard: React.FC = () => {
                       <select
                         value={serviceForm.category}
                         onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       >
                         <option value="">Selecione...</option>
                         <option value="Cabelo">Cabelo</option>
@@ -3426,7 +3682,7 @@ export const AdminDashboard: React.FC = () => {
                           setServiceForm({ ...serviceForm, price: value ? parseFloat(value) : 0 });
                         }}
                         placeholder="0.00"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       />
                     </div>
 
@@ -3438,7 +3694,7 @@ export const AdminDashboard: React.FC = () => {
                         value={serviceForm.duration > 0 ? serviceForm.duration : ''}
                         onChange={(e) => setServiceForm({ ...serviceForm, duration: Number(e.target.value) })}
                         placeholder="30"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       />
                     </div>
 
@@ -3489,7 +3745,7 @@ export const AdminDashboard: React.FC = () => {
                             onChange={handleServiceImageUpload}
                             className="hidden"
                           />
-                          <div className="w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-amber-500 dark:hover:border-amber-500 transition-colors flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/10">
+                          <div className="w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-tenant-primary dark:hover:border-tenant-primary transition-colors flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-tenant-primary/5 dark:hover:bg-tenant-primary/10">
                             <div className="p-4 bg-white dark:bg-gray-700 rounded-full">
                               <ImageIcon size={32} className="text-gray-400 dark:text-gray-500" />
                             </div>
@@ -3507,9 +3763,9 @@ export const AdminDashboard: React.FC = () => {
                       <textarea
                         value={serviceForm.description}
                         onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                        placeholder="Descreva o serviço..."
+                        placeholder="Descreva o Serviço..."
                         rows={3}
-                        className="w-full px-3 sm:px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation resize-none"
+                        className="w-full px-3 sm:px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation resize-nãone"
                       />
                     </div>
                   </div>
@@ -3527,7 +3783,7 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={handleSaveService}
-                    className="w-full sm:flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-amber-500/30 transition-all active:scale-95 touch-manipulation"
+                    className="w-full sm:flex-1 px-6 py-3.5 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-tenant-primary/30 transition-all active:scale-95 touch-manipulation"
                   >
                     {editService ? 'Salvar Alterações' : 'Criar Serviço'}
                   </button>
@@ -3565,7 +3821,7 @@ export const AdminDashboard: React.FC = () => {
                       <select
                         value={productForm.category}
                         onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       >
                         <option value="">Selecione...</option>
                         <option value="Cabelo">Cabelo</option>
@@ -3583,7 +3839,7 @@ export const AdminDashboard: React.FC = () => {
                       <select
                         value={productForm.unit}
                         onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       >
                         <option value="unidade">Unidade</option>
                         <option value="grama">Grama (g)</option>
@@ -3605,7 +3861,7 @@ export const AdminDashboard: React.FC = () => {
                           setProductForm({ ...productForm, price: value ? parseFloat(value) : 0 });
                         }}
                         placeholder="0.00"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       />
                     </div>
 
@@ -3621,7 +3877,7 @@ export const AdminDashboard: React.FC = () => {
                           setProductForm({ ...productForm, costPrice: value ? parseFloat(value) : 0 });
                         }}
                         placeholder="0.00"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       />
                     </div>
 
@@ -3637,7 +3893,7 @@ export const AdminDashboard: React.FC = () => {
                           setProductForm({ ...productForm, stock: value ? parseInt(value) : 0 });
                         }}
                         placeholder="0"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                       />
                     </div>
 
@@ -3679,7 +3935,7 @@ export const AdminDashboard: React.FC = () => {
                               onChange={handleProductImageUpload}
                               className="hidden"
                             />
-                            <div className="w-full h-44 sm:h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-amber-500 dark:hover:border-amber-500 transition-colors flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/10">
+                            <div className="w-full h-44 sm:h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-tenant-primary dark:hover:border-tenant-primary transition-colors flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-tenant-primary/5 dark:hover:bg-tenant-primary/10">
                               <div className="p-4 bg-white dark:bg-gray-700 rounded-full">
                                 <ImageIcon size={32} className="text-gray-400 dark:text-gray-500" />
                               </div>
@@ -3697,11 +3953,11 @@ export const AdminDashboard: React.FC = () => {
                             type="url"
                             value={productForm.image}
                             onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                            placeholder="https://exemplo.com/imagem.jpg"
-                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation"
+                            placeholder="https://exemplo.com/imagem.jápg"
+                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation"
                           />
                         </div>
-                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Preview aparece imediatamente após selecionar. É possível remover ou trocar antes de salvar.</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Preview aparece imediatamente aps selecionar.  possvel remover ou trocar antes de salvar.</p>
                       </div>
                     </div>
 
@@ -3713,18 +3969,18 @@ export const AdminDashboard: React.FC = () => {
                         onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                         placeholder="Descreva o produto..."
                         rows={3}
-                        className="w-full px-3 sm:px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500 touch-manipulation resize-none"
+                        className="w-full px-3 sm:px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm sm:text-base text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary touch-manipulation resize-nãone"
                       />
                     </div>
                   </div>
 
                   {/* Margem de Lucro */}
                   {productForm.price > 0 && productForm.costPrice > 0 && (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg sm:rounded-xl p-3 sm:p-4">
-                      <p className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-300">
+                    <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 border border-tenant-primary/20 dark:border-tenant-primary/30 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                      <p className="text-xs sm:text-sm font-bold text-tenant-primary dark:text-tenant-primary/80">
                         Margem de Lucro: {((productForm.price - productForm.costPrice) / productForm.price * 100).toFixed(1)}%
                       </p>
-                      <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400 mt-1">
+                      <p className="text-[10px] sm:text-xs text-tenant-primary dark:text-tenant-primary mt-1">
                         Lucro por unidade: R$ {(productForm.price - productForm.costPrice).toFixed(2)}
                       </p>
                     </div>
@@ -3740,7 +3996,7 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={handleSaveProduct}
-                    className="w-full sm:flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-amber-500/30 transition-all active:scale-95 touch-manipulation"
+                    className="w-full sm:flex-1 px-6 py-3.5 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm uppercase tracking-wide shadow-lg shadow-tenant-primary/30 transition-all active:scale-95 touch-manipulation"
                   >
                     {editProduct ? 'Salvar Alterações' : 'Criar Produto'}
                   </button>
@@ -3781,11 +4037,11 @@ export const AdminDashboard: React.FC = () => {
                       onChange={(e) => setDeleteReason(e.target.value)}
                       placeholder={`Ex: ${deleteTarget.type === 'PRODUCT' ? 'Produto descontinuado' : 'Serviço não oferecido mais'}`}
                       rows={3}
-                      className="w-full px-3 sm:px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-red-500 touch-manipulation resize-none"
+                      className="w-full px-3 sm:px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-red-500 touch-manipulation resize-nãone"
                       autoFocus
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      O motivo será registrado no histórico de auditoria
+                      O motivo será registrado não histórico de auditoria
                     </p>
                   </div>
                 </div>
@@ -3824,7 +4080,7 @@ export const AdminDashboard: React.FC = () => {
                   <select
                     value={expenseForm.type}
                     onChange={e => setExpenseForm({ ...expenseForm, type: e.target.value as any })}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary"
                   >
                     {Object.entries(EXPENSE_TYPE_LABELS).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
@@ -3838,7 +4094,7 @@ export const AdminDashboard: React.FC = () => {
                     value={expenseForm.description}
                     onChange={e => setExpenseForm({ ...expenseForm, description: e.target.value })}
                     placeholder="Ex: Aluguel sala, Conta de luz..."
-                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary"
                   />
                 </div>
                 <div>
@@ -3852,7 +4108,7 @@ export const AdminDashboard: React.FC = () => {
                       setExpenseForm({ ...expenseForm, amount: v ? parseFloat(v) : 0 });
                     }}
                     placeholder="0.00"
-                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary"
                   />
                 </div>
                 <div>
@@ -3861,7 +4117,7 @@ export const AdminDashboard: React.FC = () => {
                     type="date"
                     value={expenseForm.dueDate || ''}
                     onChange={e => setExpenseForm({ ...expenseForm, dueDate: e.target.value || undefined })}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-nãone focus:border-tenant-primary"
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -3870,7 +4126,7 @@ export const AdminDashboard: React.FC = () => {
                     id="isRecurring"
                     checked={!!expenseForm.isRecurring}
                     onChange={e => setExpenseForm({ ...expenseForm, isRecurring: e.target.checked })}
-                    className="w-4 h-4 accent-amber-500"
+                    className="w-4 h-4 accent-[var(--tenant-primary)]"
                   />
                   <label htmlFor="isRecurring" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Despesa recorrente (mensal)
@@ -3882,7 +4138,7 @@ export const AdminDashboard: React.FC = () => {
                     Cancelar
                   </button>
                   <button onClick={handleSaveExpense}
-                    className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-amber-500/30 transition-colors">
+                    className="flex-1 py-3 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm shadow-lg shadow-tenant-primary/30 transition-colors">
                     {editExpense ? 'Salvar' : 'Criar'}
                   </button>
                 </div>
@@ -3890,6 +4146,149 @@ export const AdminDashboard: React.FC = () => {
             </Modal>
           )
         }
+
+        {/* Modal de Detalhamento de Receita */}
+        <Modal
+          isOpen={showRevenueDetail}
+          onClose={() => setShowRevenueDetail(false)}
+          title="Detalhamento de Faturamento"
+        >
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 text-gray-900 dark:text-white">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-900/30">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-black uppercase text-purple-600">Serviços</span>
+                  <span className="text-lg font-black text-purple-700 dark:text-purple-400">R$ {analytics?.serviceRev.toFixed(2)}</span>
+                </div>
+                <div className="w-full bg-purple-200 dark:bg-purple-900/40 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-purple-600 h-full transition-all duration-1000"
+                    style={{ width: `${analytics ? (analytics.serviceRev / Math.max(analytics.gross, 1)) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-black uppercase text-blue-600">Produtos</span>
+                  <span className="text-lg font-black text-blue-700 dark:text-blue-400">R$ {analytics?.productRev.toFixed(2)}</span>
+                </div>
+                <div className="w-full bg-blue-200 dark:bg-blue-900/40 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-full transition-all duration-1000"
+                    style={{ width: `${analytics ? (analytics.productRev / Math.max(analytics.gross, 1)) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-2xl border border-tenant-primary/10 dark:border-tenant-primary/20">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-black uppercase text-tenant-primary">Planos / Assinaturas</span>
+                  <span className="text-lg font-black text-tenant-primary dark:text-tenant-primary">R$ {analytics?.planRev.toFixed(2)}</span>
+                </div>
+                <div className="w-full bg-tenant-primary/20 dark:bg-tenant-primary/20/40 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-tenant-primary h-full transition-all duration-1000"
+                    style={{ width: `${analytics ? (analytics.planRev / Math.max(analytics.gross, 1)) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Alert variant="info" icon={<Info size={18} />}>
+              Estes valores representam o faturamento bruto antes de descontos, taxas de cartão e comissões.
+            </Alert>
+          </div>
+        </Modal>
+
+        {/* Modal de Detalhamento de Comissões */}
+        <Modal
+          isOpen={showCommissionDetail}
+          onClose={() => setShowCommissionDetail(false)}
+          title="Extrato de Comissões por Profissional"
+        >
+          <div className="space-y-4">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-white">
+              {analytics?.commissionsByBarber.map((barber) => (
+                <div key={barber.id} className="py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700">
+                      {barber.avatar ? (
+                        <img src={barber.avatar} alt={barber.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Users size={20} className="text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white">{barber.name}</p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase">{barber.appointments} atendimentos</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-tenant-primary dark:text-tenant-primary">R$ {barber.commission.toFixed(2)}</p>
+                    <p className="text-[10px] text-gray-400">Faturamento: R$ {barber.revenue.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-gray-900 dark:text-white">
+              <span className="font-black text-sm uppercase text-gray-500">Total Comissões</span>
+              <span className="text-xl font-black text-gray-900 dark:text-white">R$ {analytics?.totalCommissions.toFixed(2)}</span>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal de Detalhamento de Despesas */}
+        <Modal
+          isOpen={showExpenseDetail}
+          onClose={() => setShowExpenseDetail(false)}
+          title="Detalhamento de Custos e Despesas"
+        >
+          <div className="space-y-6">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Totais do Período</p>
+              <div className="grid grid-cols-2 gap-3 text-gray-900 dark:text-white">
+                <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30">
+                  <p className="text-xs font-bold text-red-500 uppercase">Custos Fixos</p>
+                  <p className="text-lg font-black text-red-700 dark:text-red-400">R$ {analytics?.fixedCostsTotal.toFixed(2)}</p>
+                </div>
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/10 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                  <p className="text-xs font-bold text-orange-500 uppercase">Insumos e Taxas</p>
+                  <p className="text-lg font-black text-orange-700 dark:text-orange-400">R$ {((analytics?.supplyCostsTotal || 0) + (analytics?.cardFees || 0)).toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Resumo de Saídas</p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                  <span className="text-sm font-medium dark:text-white">Custos Fixos / Aluguel</span>
+                  <span className="font-bold dark:text-white">R$ {analytics?.fixedCostsTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                  <span className="text-sm font-medium dark:text-white">Comissões de Profissionais</span>
+                  <span className="font-bold dark:text-white">R$ {analytics?.totalCommissions.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                  <span className="text-sm font-medium dark:text-white">Custo de Insumos</span>
+                  <span className="font-bold dark:text-white">R$ {analytics?.supplyCostsTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                  <span className="text-sm font-medium dark:text-white">Taxas de Operação (Cartão)</span>
+                  <span className="font-bold dark:text-white">R$ {analytics?.cardFees.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-900 -mx-6 -mb-6 p-6">
+              <span className="font-black text-sm uppercase text-white">Custo Total Operacional</span>
+              <span className="text-2xl font-black text-red-500">
+                R$ {((analytics?.expenses || 0) + (analytics?.totalCommissions || 0)).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </Modal>
       </Container >
     </div >
   );

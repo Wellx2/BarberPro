@@ -44,7 +44,7 @@ export const productService = {
       if (storedProducts) {
         const products = JSON.parse(storedProducts);
         const filtered = products.filter((p: any) => !p.deletedAt);
-        return barbershopId 
+        return barbershopId
           ? filtered.filter((p: Product) => p.shopId === barbershopId && (showAll || p.active !== false))
           : filtered;
       }

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Toast Container - Exibe toasts na tela
  */
 
@@ -25,7 +25,7 @@ const toastStyles = {
   error:
     'bg-red-500 dark:bg-red-600 text-white border-red-600 dark:border-red-500',
   warning:
-    'bg-amber-500 dark:bg-amber-600 text-white border-amber-600 dark:border-amber-500',
+    'bg-tenant-primary dark:bg-tenant-primary text-white border-tenant-primary dark:border-tenant-primary',
   info: 'bg-blue-500 dark:bg-blue-600 text-white border-blue-600 dark:border-blue-500',
 };
 
@@ -40,7 +40,7 @@ export const ToastContainer: React.FC = () => {
 
   return (
     <div
-      className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none"
+      className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-nãone"
       style={{ maxWidth: 'calc(100vw - 2rem)' }}
     >
       {toasts.map((toast) => (

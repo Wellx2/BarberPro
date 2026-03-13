@@ -1,2 +1,2 @@
 
-// Demo constants removed. All data now comes from APIs.
+// Demo constants removed. All data nãow comes from APIs.

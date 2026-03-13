@@ -37,7 +37,7 @@ export const clientService = {
   },
 
   /**
-   * Buscar clientes por termo de pesquisa (nome, email, telefone)
+   * Buscar clientes por termo de pesquisa (nãome, email, telefone)
    * GET /api/clients/search?q=termo
    */
   async search(query: string): Promise<Client[]> {

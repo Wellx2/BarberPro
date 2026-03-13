@@ -75,7 +75,7 @@ export default function Appointments() {
   const formatDateTime = (dateStr: string) => {
     let date = new Date(dateStr);
 
-    // Fallback para datas salvas incorretamente como texto no banco (ex: "04/03/2026 Às 09:30")
+    // Fallback para datas salvas incorretamente como texto não banco (ex: "04/03/2026 Às 09:30")
     if (Number.isNaN(date.getTime()) && typeof dateStr === 'string') {
       const match = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4}).*?(\d{2}):(\d{2})/);
       if (match) {
@@ -145,7 +145,7 @@ export default function Appointments() {
       {/* Lista de Agendamentos */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tenant-primary mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Carregando agendamentos...</p>
         </div>
       ) : error ? (
@@ -229,7 +229,7 @@ export default function Appointments() {
                   )}
 
                   {/* Preço Total */}
-                  <div className="flex items-center gap-2 text-lg font-bold text-amber-600 dark:text-amber-500">
+                  <div className="flex items-center gap-2 text-lg font-bold text-tenant-primary dark:text-tenant-primary">
                     <DollarSign className="w-5 h-5" />
                     {formatCurrency(appointment.totalPrice ?? 0)}
                   </div>
@@ -290,7 +290,7 @@ export default function Appointments() {
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Ex: Cliente solicitou reagendamento"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 h-24 resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 h-24 resize-nãone bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               autoFocus
             />
             <div className="flex justify-end gap-2">

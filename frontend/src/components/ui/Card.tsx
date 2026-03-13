@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Card Component - Sistema de Design BarberPro
  * Componente de cartão com variantes e suporte a composição
  */
@@ -41,7 +41,7 @@ export const Card: React.FC<CardProps> & {
         rounded-3xl 
         shadow-sm
         transition-all duration-200
-        ${hover ? 'hover:shadow-xl hover:border-amber-500 cursor-pointer' : ''}
+        ${hover ? 'hover:shadow-xl hover:border-tenant-primary cursor-pointer' : ''}
         ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}

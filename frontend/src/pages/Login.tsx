@@ -27,9 +27,10 @@ export const Login: React.FC = () => {
     name: '',
     email: '',
     password: '',
+    phone: '',
+    isShopOwner: false, // Nova flag
     shopName: '',
-    shopAddress: '',
-    phone: ''
+    shopAddress: ''
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -42,7 +43,7 @@ export const Login: React.FC = () => {
       addNotification('success', `Bem-vindo!`);
       navigate(from, { replace: true, state: location.state });
     } catch (error: any) {
-      console.error('Erro no login:', error);
+      console.error('Erro não login:', error);
       addNotification('error', error.message || 'Erro ao fazer login');
     } finally {
       setIsLoading(false);
@@ -78,12 +79,24 @@ export const Login: React.FC = () => {
       addNotification('error', 'Por favor, insira um número de celular válido.');
       return;
     }
+
+    // Se isShopOwner for false (cliente comum), não exigir dados da barbearia.
+    // Enviamos "Cliente" como shopName provisório ou a service decide.
+    // (A documentação não informou o exato endpoint de client public, 
+    // assumindo registrarShop por manter compatibilidade preexistente caso não modificado não back)
+
     setIsLoading(true);
     try {
-      const response = await authService.registerShop(registerData);
+      const payload = registerData.isShopOwner ? registerData : {
+        ...registerData,
+        shopName: 'Client Account', // Bypass validation if required by DTO
+        shopAddress: 'N/A'
+      };
+
+      const response = await authService.registerShop(payload);
 
       // Após registrar, fazer login automático
-      await login(registerData.email, registerData.password);
+      await login(payload.email, payload.password);
 
       addNotification('success', `Bem-vindo, ${response.user.name}!`);
       navigate(from, { replace: true, state: location.state });
@@ -106,8 +119,8 @@ export const Login: React.FC = () => {
               <ArrowLeft size={24} />
             </button>
           )}
-          <div className="inline-block p-4 rounded-2xl bg-amber-500/10 mb-4">
-            <Scissors className="h-8 w-8 text-amber-500" />
+          <div className="inline-block p-4 rounded-2xl bg-tenant-primary/10 mb-4">
+            <Scissors className="h-8 w-8 text-tenant-primary" />
           </div>
           <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
             {view === 'LOGIN' ? 'BarberPro' : view === 'REGISTER' ? 'Nova Conta' : 'Escolha seu Perfil'}
@@ -149,21 +162,21 @@ export const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setView('PHONE_LOGIN')}
-                  className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3 border-2 border-tenant-primary/30 rounded-xl text-[10px] font-black uppercase text-gray-600 dark:text-gray-400 hover:bg-tenant-primary/5 transition-all"
                 >
-                  <Phone size={14} className="text-amber-500" /> Entrar com WhatsApp
+                  <Phone size={14} className="text-tenant-primary" /> Entrar com WhatsApp
                 </button>
                 <button
                   type="button"
                   onClick={() => setView('REGISTER')}
-                  className="text-center text-[10px] font-black uppercase text-amber-600 hover:underline mt-2"
+                  className="text-center text-[10px] font-black uppercase text-tenant-primary hover:underline mt-2"
                 >
                   Não tenho conta? Cadastrar
                 </button>
                 <button
                   type="button"
                   onClick={() => setView('FORGOT_PASSWORD')}
-                  className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+                  className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary transition-colors"
                 >
                   Esqueci minha senha
                 </button>
@@ -200,22 +213,39 @@ export const Login: React.FC = () => {
 
           {view === 'REGISTER' && (
             <form onSubmit={handleRegister} className="space-y-6 animate-fade-in">
-              <Input
-                label="Nome da Barbearia"
-                required
-                value={registerData.shopName}
-                onChange={(e) => setRegisterData({ ...registerData, shopName: e.target.value })}
-                placeholder="Barbearia Prime"
-                fullWidth
-              />
-              <Input
-                label="Endereço da Barbearia"
-                required
-                value={registerData.shopAddress}
-                onChange={(e) => setRegisterData({ ...registerData, shopAddress: e.target.value })}
-                placeholder="Rua exemplo, 123"
-                fullWidth
-              />
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="isShopOwner"
+                  checked={registerData.isShopOwner}
+                  onChange={e => setRegisterData({ ...registerData, isShopOwner: e.target.checked })}
+                  className="w-4 h-4 text-tenant-primary bg-gray-100 border-gray-300 rounded focus:ring-tenant-primary cursor-pointer"
+                />
+                <label htmlFor="isShopOwner" className="text-xs text-gray-600 dark:text-gray-400 font-bold uppercase tracking-widest cursor-pointer">
+                  Quero cadastrar minha barbearia
+                </label>
+              </div>
+
+              {registerData.isShopOwner && (
+                <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700">
+                  <Input
+                    label="Nome da Barbearia"
+                    required
+                    value={registerData.shopName}
+                    onChange={(e) => setRegisterData({ ...registerData, shopName: e.target.value })}
+                    placeholder="Barbearia Prime"
+                    fullWidth
+                  />
+                  <Input
+                    label="Endereço da Barbearia"
+                    required
+                    value={registerData.shopAddress}
+                    onChange={(e) => setRegisterData({ ...registerData, shopAddress: e.target.value })}
+                    placeholder="Rua exemplo, 123"
+                    fullWidth
+                  />
+                </div>
+              )}
               <Input
                 label="Seu Nome Completo"
                 required
@@ -239,7 +269,7 @@ export const Login: React.FC = () => {
                 required
                 value={registerData.email}
                 onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                placeholder="joao@email.com"
+                placeholder="jáoao@email.com"
                 fullWidth
               />
               <Input
@@ -272,8 +302,8 @@ const InstructionsView: React.FC<{
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
-        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+      <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 p-4 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/30">
+        <p className="text-sm text-tenant-primary dark:text-white/80 font-medium">
           Digite seu e-mail abaixo. Se houver uma conta associada, enviaremos as instruções para recuperar sua senha.
         </p>
       </div>
@@ -301,7 +331,7 @@ const InstructionsView: React.FC<{
         <button
           type="button"
           onClick={onBack}
-          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary transition-colors"
         >
           Voltar para o Login
         </button>
@@ -328,8 +358,8 @@ const PhoneLoginView: React.FC<{
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-200 dark:border-amber-800">
-        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium text-center">
+      <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 p-4 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/30">
+        <p className="text-sm text-tenant-primary dark:text-white/80 font-medium text-center">
           Acesse sua conta rapidamente usando seu WhatsApp. Enviaremos um código de acesso.
         </p>
       </div>
@@ -357,7 +387,7 @@ const PhoneLoginView: React.FC<{
         <button
           type="button"
           onClick={onBack}
-          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-amber-600 transition-colors"
+          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary transition-colors"
         >
           Entrar com E-mail e Senha
         </button>

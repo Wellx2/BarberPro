@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsInt, Min, Max, IsArray } from 'class-validator';
 
 export class UpdateBarbershopDto {
   @IsOptional()
@@ -54,4 +54,9 @@ export class UpdateBarbershopDto {
   @IsOptional()
   @IsBoolean()
   subscriptionEnabled?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
 }

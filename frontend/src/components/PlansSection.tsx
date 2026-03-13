@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { PlanCard } from './PlanCard';
 import { SectionHeader } from './SectionHeader';
 import { planService } from '../services';
@@ -17,37 +17,37 @@ export const PlansSection: React.FC<PlansSectionProps> = ({ simple = false }) =>
   const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false);
   const lastShopId = useRef<string | null>(null);
-  
+
   useEffect(() => {
-    
-    // âœ… PROTEÃ‡ÃƒO 1: Aguardar shop.id válido
+
+    // ✅ PROTEÇÃO 1: Aguardar shop.id válido
     if (!shop.id || shop.id.startsWith('shop-') || shop.id.length < 10) {
       setLoading(false);
       return;
     }
-    
-    // âœ… PROTEÃ‡ÃƒO 2: Evitar recarregar para o mesmo shop
+
+    // ✅ PROTEÇÃO 2: Evitar recarregar para o mesmo shop
     if (hasFetched.current && lastShopId.current === shop.id) {
       return;
     }
-    
+
     lastShopId.current = shop.id;
     hasFetched.current = true;
-    
+
     const fetchPlans = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        const shopPlans = await planService.getPublicPlans(shop.id);
-        
-        
+        const shopPlans = await planService.listPublic(shop.id);
+
+
         // Filtrar apenas planos ativos
         const activePlans = shopPlans.filter(p => p.active);
         setPlans(activePlans);
-        
+
       } catch (error: any) {
-        console.error('âŒ PlansSection: Erro ao carregar planos:', error);
+        console.error('❌ PlansSection: Erro ao carregar planos:', error);
         setError('Não foi possível carregar os planos');
         setPlans([]);
       } finally {
@@ -81,14 +81,14 @@ export const PlansSection: React.FC<PlansSectionProps> = ({ simple = false }) =>
     <section className="py-20 bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {!simple && (
-          <SectionHeader 
+          <SectionHeader
             title="Planos de Assinatura"
             description="Escolha o plano ideal para o seu estilo nesta unidade. Economize e mantenha o visual sempre em dia."
           />
         )}
 
         {/* Layout adaptativo: usa Grid com centralização para 1-2 itens */}
-        <Grid 
+        <Grid
           cols={getCols()}
           gap="lg"
           className={plans.length <= 2 ? 'justify-items-center' : ''}

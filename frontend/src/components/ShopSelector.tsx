@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
 import { MapPin, Navigation, Check, X, Store, ArrowRight, Compass, AlertCircle, Lock } from 'lucide-react';
@@ -34,9 +34,9 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                             Nenhuma Barbearia Disponível
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mb-6">
-                            O backend não retornou nenhuma barbearia. Verifique:
+                            O backend não retornãou nenhuma barbearia. Verifique:
                         </p>
-                        <div className="text-left bg-gray-100 dark:bg-gray-900 rounded p-4 mb-4 text-xs font-mono">
+                        <div className="text-left bg-gray-100 dark:bg-gray-900 rounded p-4 mb-4 text-xs font-monão">
                             <p className="text-red-600 dark:text-red-400 mb-2">Backend rodando?</p>
                             <code className="text-gray-700 dark:text-gray-300">
                                 curl http://localhost:3000/api/barbershops/public

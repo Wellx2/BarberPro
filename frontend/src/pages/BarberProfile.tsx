@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import '../constants'; // Import types only
 import { Appointment, BlockedPeriod, Review, Barber } from '../types';
-import { Star, Scissors, Calendar as CalendarIcon, ChevronLeft, MapPin, Award, Lock, AlertCircle } from 'lucide-react';
+import { Star, Scissors, Calendar as CalendarIcon, ChevronLeft, MapPin, Award, Lock, AlertCircle, MessageSquare } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Calendar } from '../components/Calendar';
 import { Button } from '../components/ui/Button';
@@ -27,15 +27,16 @@ export const BarberProfile: React.FC = () => {
     useEffect(() => {
         if (id) {
             setLoading(true);
-            // Sequencial ou paralelo, mas aqui vamos tentar buscar o barbeiro primeiro
-            barberService.getById(id)
-                .then(data => {
-                    setBarber(data);
-                    // Opcional: buscar agendamentos e bloqueios reais se houver serviço para isso
-                    // Por enquanto, vamos manter como vázio ou buscar de onde deveria vir
+            Promise.all([
+                barberService.getById(id),
+                barberService.getPublicReviews(id).catch(() => [])
+            ])
+                .then(([barberData, reviewsData]) => {
+                    setBarber(barberData);
+                    setReviews(reviewsData);
                 })
                 .catch(err => {
-                    console.error('Erro ao buscar barbeiro:', err);
+                    console.error('Erro ao buscar dados do barbeiro:', err);
                 })
                 .finally(() => setLoading(false));
         }
@@ -44,7 +45,7 @@ export const BarberProfile: React.FC = () => {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#111827]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tenant-primary"></div>
             </div>
         );
     }
@@ -56,7 +57,7 @@ export const BarberProfile: React.FC = () => {
                     <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>
                 <h2 className="text-xl font-bold mb-2 uppercase tracking-tighter">Barbeiro não encontrado</h2>
-                <p className="text-gray-400 mb-6 text-sm">O perfil deste profissional não está disponível no momento.</p>
+                <p className="text-gray-400 mb-6 text-sm">O perfil deste profissional não está disponível não momento.</p>
                 <Button onClick={() => navigate('/')}>Voltar ao Início</Button>
             </div>
         );
@@ -130,7 +131,7 @@ export const BarberProfile: React.FC = () => {
                     alt="Barbershop Background"
                     className="w-full h-full object-cover opacity-30"
                 />
-                <Link to="/" className="absolute top-6 left-6 z-20 text-white flex items-center gap-2 bg-gray-900/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-amber-500 hover:text-white transition-all shadow-lg active:scale-95 group">
+                <Link to="/" className="absolute top-6 left-6 z-20 text-white flex items-center gap-2 bg-gray-900/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-tenant-primary hover:text-white transition-all shadow-lg active:scale-95 group">
                     <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                     <span className="font-bold text-sm uppercase tracking-tight">Voltar</span>
                 </Link>
@@ -145,17 +146,17 @@ export const BarberProfile: React.FC = () => {
                                 alt={barber.name}
                                 className="w-40 h-40 rounded-[45px] border-4 border-[#1f2937] shadow-2xl object-cover relative z-10"
                             />
-                            <div className="absolute -inset-1 bg-gradient-to-tr from-amber-500 to-amber-300 rounded-[46px] blur-sm opacity-30"></div>
+                            <div className="absolute -inset-1 bg-gradient-to-tr from-tenant-primary to-tenant-primary/80 rounded-[46px] blur-sm opacity-30"></div>
                         </div>
 
                         <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none mb-3">{barber.name}</h1>
                         <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] flex items-center justify-center gap-2 mb-6">
-                            <Scissors size={14} className="text-amber-500" />
+                            <Scissors size={14} className="text-tenant-primary" />
                             Profissional de Elite
                         </p>
 
                         <div className="bg-[#2d1e16] border border-[#3d2b1f] px-6 py-3 rounded-full flex items-center justify-center gap-3 mb-8 shadow-inner">
-                            <Star size={18} className="text-amber-500 fill-current" />
+                            <Star size={18} className="text-tenant-primary fill-current" />
                             <div className="flex items-center gap-1.5 leading-none">
                                 <span className="text-xl font-black text-white">{barber.rating}</span>
                                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">/ 5.0</span>
@@ -165,7 +166,7 @@ export const BarberProfile: React.FC = () => {
                         <div className="flex flex-wrap gap-2 justify-center mb-6">
                             {barber.specialties.map((spec, index) => (
                                 <div key={index} className="flex items-center px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest bg-gray-900/50 text-gray-400 border border-gray-700 shadow-sm">
-                                    <Scissors size={12} className="mr-2 text-amber-500" />
+                                    <Scissors size={12} className="mr-2 text-tenant-primary" />
                                     {spec}
                                 </div>
                             ))}
@@ -198,10 +199,67 @@ export const BarberProfile: React.FC = () => {
                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">Experiência</div>
                         </div>
                         <div className="p-8 text-center group">
-                            <div className="text-3xl font-black text-white leading-none truncate px-2">{barber.unit || 'BarberPro'}</div>
+                            <div className="text-3xl font-black text-white leading-nãone truncate px-2">{barber.unit || 'BarberPro'}</div>
                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">Unidade Sede</div>
                         </div>
                     </div>
+                </div>
+
+                {/* Seção de Avaliações */}
+                <div className="mt-12">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Avaliações dos Clientes</h2>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">O que dizem sobre o trabalho de {barber.name.split(' ')[0]}</p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-tenant-primary/10 px-4 py-2 rounded-full border border-tenant-primary/20">
+                            <Star size={16} className="text-tenant-primary fill-current" />
+                            <span className="text-tenant-primary font-black">{barber.rating}</span>
+                        </div>
+                    </div>
+
+                    {reviews.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {reviews.map((review) => (
+                                <div key={review.id} className="bg-[#1f2937] p-6 rounded-[30px] border border-gray-700/50 shadow-xl">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-tenant-primary flex items-center justify-center text-white font-black text-sm">
+                                                {(review.client?.name || 'C').charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-white">{review.client?.name || 'Cliente'}</p>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Cliente Verificado</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-0.5">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    size={12}
+                                                    className={i < review.rating ? 'text-tenant-primary fill-current' : 'text-gray-700'}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-400 text-sm leading-relaxed italic">
+                                        "{review.comment || 'Nenhum comentário deixado, apenas avaliação por estrelas.'}"
+                                    </p>
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <span className="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em]">
+                                            {new Date(review.createdAt || Date.now()).toLocaleDateString('pt-BR')}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-[#1f2937] p-12 rounded-[40px] border border-dashed border-gray-700 text-center">
+                            <MessageSquare className="w-12 h-12 text-gray-800 mx-auto mb-4" />
+                            <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">Ainda não há avaliações para este profissional.</p>
+                            <p className="text-gray-600 text-xs mt-2">Agende um horário e sejá o primeiro a avaliar!</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

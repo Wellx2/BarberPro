@@ -21,6 +21,7 @@ import { Plans } from './pages/Plans';
 import { Terms } from './pages/Terms';
 import { Privacy } from './pages/Privacy';
 import { Contact } from './pages/Contact';
+import { Explore } from './pages/Explore';
 import { Appointment, UserRole } from './types';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Appointments from './pages/admin/Appointments';
@@ -66,7 +67,7 @@ const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           if (apt.status === 'SCHEDULED' && !notified.includes(apt.id)) {
             const aptDate = new Date(apt.date || apt.scheduledFor);
 
-            // Check se agendamento está dentro da janela de lembrete
+            // Check se agendamento está dentro da jánela de lembrete
             if (aptDate > now && aptDate <= timeWindowDate) {
               const tempKey = `${apt.barberId}_${aptDate.toISOString().split('T')[0]}_${String(aptDate.getHours()).padStart(2, '0')}:${String(aptDate.getMinutes()).padStart(2, '0')}`;
               const isRemindersDisabledLocally = disabledList.includes(apt.id) || disabledList.includes(tempKey);
@@ -89,7 +90,7 @@ const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 }
               }
 
-              // Marcar como notificado (ou silenciado permanentemente) para não reavaliar
+              // Marcar como notified (ou silenciado permanentemente) para não reavaliar
               notified.push(apt.id);
               newNotified = true;
             }
@@ -173,6 +174,7 @@ const App: React.FC = () => {
                     <Route path="/products" element={<Products />} />
                     <Route path="/plans" element={<Plans />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/explore" element={<Explore />} />
 
                     {/* Rotas Protegidas */}
                     <Route path="/dashboard" element={

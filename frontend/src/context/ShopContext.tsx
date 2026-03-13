@@ -1,4 +1,4 @@
-﻿
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { Shop } from '../types';
 import { barbershopService, Barbershop } from '../services/barbershopService';
@@ -8,7 +8,7 @@ interface ShopContextType {
   shops: Shop[];
   shop: Shop; // Currently selected shop
   setShop: (shop: Shop) => void;
-  switchShop: (shopId: string) => Promise<void>; // â† Nova função
+  switchShop: (shopId: string) => Promise<void>; // ← Nova função
   updateShopSettings: (settings: Shop) => void;
   createShop: (newShop: Shop) => void;
   generateTimeSlots: () => string[];
@@ -30,7 +30,7 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
     address: barbershop.address,
     phone: barbershop.phone,
     image: barbershop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800',
-    openingTime: '09:00', // Backend pode não ter isso, usar padrão
+    openingTime: '09:00', // Backend pode não ter isso, usar padrão 
     closingTime: '20:00',
     intervalMinutes: 30,
     loyaltyEnabled: false,
@@ -38,9 +38,12 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
     coordinates: barbershop.latitude && barbershop.longitude
       ? { lat: barbershop.latitude, lng: barbershop.longitude }
       : { lat: 0, lng: 0 },
+    logoUrl: barbershop.logoUrl,
+    bannerUrl: barbershop.bannerUrl,
+    primaryColor: barbershop.primaryColor,
     settings: {
       showBarbers: true,
-      subscriptionEnabled: barbershop.settings?.subscriptionEnabled ?? true, // âœ… Default true para mostrar planos
+      subscriptionEnabled: barbershop.settings?.subscriptionEnabled ?? true, // ✅ Default true para mostrar planos
       allowPayOnLocation: true,
       modulesEnabled: {
         clientPlans: barbershop.settings?.modulesEnabled?.clientPlans ?? barbershop.settings?.subscriptionEnabled ?? true,
@@ -55,7 +58,7 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
 };
 
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth(); // â† Observar mudanças no usuário autenticado
+  const { user } = useAuth(); // ← Observar mudanças não usuário autenticado
   const [isLoadingShops, setIsLoadingShops] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const hasFetchedShops = useRef(false);
@@ -72,7 +75,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const parsedShops = JSON.parse(stored);
 
-        // Verificar se são dados reais do backend (têm UUIDs, não 'shop-1')
+        // Verificar se são dados reais do backend (tem UUIDs, não 'shop-1')
         const hasRealData = parsedShops.length > 0 &&
           parsedShops[0].id.length > 10 &&
           !parsedShops[0].id.startsWith('shop-');
@@ -82,7 +85,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return parsedShops;
         }
       } catch (e) {
-        console.error('âŒ ShopContext: Erro ao parsear cache:', e);
+        console.error('❌ ShopContext: Erro ao parsear cache:', e);
       }
     }
 
@@ -107,8 +110,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
       if (!barbershops || barbershops.length === 0) {
-        console.error('âŒ ShopContext: Nenhuma barbearia retornada');
-        setFetchError('Nenhuma barbearia encontrada no backend');
+        console.error('❌ ShopContext: Nenhuma barbearia retornada');
+        setFetchError('Nenhuma barbearia encontrada não backend');
         fetchFailedPermanently.current = true;
         setIsLoadingShops(false);
         return;
@@ -173,7 +176,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         abortControllerRef.current.abort();
       }
     };
-  }, []); // ✅ Array vazio - executa APENAS uma vez na montagem
+  }, []); // ? Array vazio - executa APENAS uma vez na montagem
 
   // Load selected shop (vazio inicialmente, backend vai preencher)
   const [shop, setShop] = useState<Shop>(() => {
@@ -196,14 +199,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch (error) {
-      console.error('âŒ ShopContext: Erro ao buscar shop do usuário:', error);
+      console.error('❌ ShopContext: Erro ao buscar shop do usuário:', error);
     }
 
     // 2. Check Subdomain (Deep Linking) - paulista.barberpro.com
     const hostname = window.location.hostname;
     const subdomain = hostname.split('.')[0];
 
-    // Slugify function para comparar subdomínios com nomes de loja
+    // Slugify function para comparar subdomínios 
     const slugify = (str: string) => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
     const stored = localStorage.getItem('shops');
@@ -275,14 +278,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   });
 
-  // ✅ useEffect para definir shop quando shops é carregado ou atualizado do backend
+  // ? useEffect para definir shop quando shops é carregado ou atualizado do backend
   useEffect(() => {
     // Se shops ainda está vazio, aguardar
     if (shops.length === 0) {
       return;
     }
 
-    // ✅ Verificar se o shop atual EXISTE na nova lista (IDs podem ter mudado no banco)
+    // ? Verificar se o shop atual EXISTE na nova lista (IDs podem ter mudado no banco)
     const shopExistsInList = shop.id && shops.some(s => s.id === shop.id);
 
     if (shopExistsInList) {
@@ -294,14 +297,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
-    // Shop inválido (ID não existe no banco) - tentar recuperar seleção anterior por ID salvo
+    // Shop inválido (ID não existe não banco) - tentar recuperar seleção anterior por ID salvo
     const storedId = localStorage.getItem('selected_shop_id');
     const savedShop = storedId ? shops.find(s => s.id === storedId) : null;
     const shopToSet = savedShop || shops[0];
 
     setShop(shopToSet);
     localStorage.setItem('selected_shop_id', shopToSet.id);
-  }, [shops, shop.id]); // ✅ Executa quando shops ou shop.id mudar
+  }, [shops, shop.id]); // ? Executa quando shops ou shop.id mudar
 
   // Sincronizar shopId quando usuário faz login
   useEffect(() => {
@@ -319,7 +322,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Marcar como processado IMEDIATAMENTE para evitar reprocessamento
     lastSyncedUserId.current = user.id;
 
-    // Buscar a barbearia no localStorage primeiro
+    // Buscar a barbearia não localStorage primeiro
     const storedShops = localStorage.getItem('shops');
     if (storedShops) {
       try {
@@ -357,7 +360,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [shops]);
 
-  // Salvar shop selecionado no localStorage e atualizar título
+  // Salvar shop selecionado não localStorage e atualizar título
   useEffect(() => {
     if (shop.id && !shop.id.startsWith('shop-')) {
       localStorage.setItem('selected_shop_id', shop.id);
@@ -365,9 +368,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [shop.id, shop.name]);
 
-  // 🎨 White Label: Injetar cor primária do tenant como CSS variable
   useEffect(() => {
-    const raw = (shop as any).primaryColor;
+    const raw = shop.primaryColor;
     const color = raw && /^#[0-9A-Fa-f]{3,6}$/.test(raw) ? raw : '#f59e0b'; // amber-500 padrão
     document.documentElement.style.setProperty('--tenant-primary', color);
     // Versão translúcida para hover/glassmorphism
@@ -375,7 +377,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const g = parseInt(color.slice(3, 5), 16);
     const b = parseInt(color.slice(5, 7), 16);
     document.documentElement.style.setProperty('--tenant-primary-rgb', `${r},${g},${b}`);
-  }, [(shop as any).primaryColor, shop.id]);
+  }, [shop.primaryColor, shop.id]);
 
   const updateShopSettings = (updatedShop: Shop) => {
     setShops(prev => prev.map(s => s.id === updatedShop.id ? updatedShop : s));
@@ -453,7 +455,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 1. Chamar backend para trocar de loja
       const response = await barbershopService.switch(shopId);
 
-      // 2. Atualizar tokens no localStorage
+      // 2. Atualizar tokens não localStorage
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.user));

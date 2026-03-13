@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Serviço de Agendamentos
  * Integração com API backend real (Prisma + NestJS)
  * 
@@ -54,33 +54,33 @@ export const appointmentService = {
  * BARBER: { clientId, serviceIds, date, notes?, products? } (barberId inferido do JWT)
  * ADMIN/SUPER_ADMIN: { clientId, barberId, serviceIds, date, notes?, products? }
  */
-async create(data: CreateAppointmentDto): Promise<Appointment> {
+  async create(data: CreateAppointmentDto): Promise<Appointment> {
 
-  // Montar payload conforme esperado pelo backend
-  // Para CLIENT: clientId é inferido do JWT pelo backend (omitir)
-  // Para BARBER: barberId é inferido do JWT pelo backend (omitir), clientId obrigatório
-  // Para ADMIN/SUPER_ADMIN: clientId e barberId são obrigatórios
-  const payload = {
-    ...(data.barberId && { barberId: data.barberId }),
-    serviceIds: data.serviceIds,
-    date: data.date,
-    ...(data.clientId && { clientId: data.clientId }),
-    ...(data.notes && { notes: data.notes }),
-    ...(data.products && { products: data.products })
-  };
-  
-  
-  try {
-    const response = await api.post<Appointment>('/appointments', payload);
-    return response.data;
-  } catch (error: any) {
-    // Tratar erro 403 (vínculo) de forma específica
-    if (error?.statusCode === 403 || error?.status === 403) {
-      const vinculoError = error?.message?.includes('próprio')
-        ? 'Você só pode agendar para seu próprio perfil (cliente/barbeiro).'
-        : 'Seu usuário não está vinculado ao perfil de cliente/barbeiro nesta barbearia. Contate o administrador.';
-      console.warn('âš ï¸ Erro de vínculo de identidade (403):', error?.message);
-      throw { ...error, message: vinculoError };
+    // Montar payload conforme esperado pelo backend
+    // Para CLIENT: clientId é inferido do JWT pelo backend (omitir)
+    // Para BARBER: barberId é inferido do JWT pelo backend (omitir), clientId obrigatório
+    // Para ADMIN/SUPER_ADMIN: clientId e barberId são obrigatórios
+    const payload = {
+      ...(data.barberId && { barberId: data.barberId }),
+      serviceIds: data.serviceIds,
+      date: data.date,
+      ...(data.clientId && { clientId: data.clientId }),
+      ...(data.notes && { notes: data.notes }),
+      ...(data.products && { products: data.products })
+    };
+
+
+    try {
+      const response = await api.post<Appointment>('/appointments', payload);
+      return response.data;
+    } catch (error: any) {
+      // Tratar erro 403 (vínculo) de forma específica
+      if (error?.statusCode === 403 || error?.status === 403) {
+        const vinculoError = error?.message?.includes('próprio')
+          ? 'Você só pode agendar para seu próprio perfil (cliente/barbeiro).'
+          : 'Seu usuário não está vinculado ao perfil de cliente/barbeiro nesta barbearia. Contate o administrador.';
+        console.warn('âš ï¸ Erro de vínculo de identidade (403):', error?.message);
+        throw { ...error, message: vinculoError };
       }
 
       console.error('âŒ Erro ao criar agendamento:', {
@@ -170,7 +170,7 @@ async create(data: CreateAppointmentDto): Promise<Appointment> {
   /**
    * Buscar agenda do barbeiro em uma data específica
    * @param barberId - ID do barbeiro (opcional: se null, backend filtra por JWT)
-   * @param date - Data no formato Date
+   * @param date - Data não formato Date
    */
   async getBarberSchedule(barberId: string | null, date: Date): Promise<Appointment[]> {
     const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -180,7 +180,7 @@ async create(data: CreateAppointmentDto): Promise<Appointment> {
 
   /**
    * Buscar agendamentos do dia
-   * @param date - Data no formato Date
+   * @param date - Data não formato Date
    */
   async getAppointmentsByDate(date: Date): Promise<Appointment[]> {
     const dateStr = date.toISOString().split('T')[0];
@@ -220,12 +220,12 @@ async create(data: CreateAppointmentDto): Promise<Appointment> {
       if (date.includes('T')) {
         formattedDate = date.split('T')[0];
       }
-      
+
       let url = `/barbers/${barberId}/available-slots?date=${formattedDate}`;
       if (durationMinutes && durationMinutes > 0) {
         url += `&duration=${durationMinutes}`;
       }
-      
+
       const response = await api.get<string[]>(url);
       return response.data;
     } catch (error: any) {

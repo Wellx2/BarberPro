@@ -1,6 +1,6 @@
 /**
  * SectionHeader Component
- * Cabeçalho padronizado para seções da aplicação
+ * Cabeçalho padrãonizado para seções da aplicação
  */
 
 import React from 'react';
@@ -25,7 +25,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   return (
     <div className={`${centered ? 'text-center' : ''} mb-16 ${className}`}>
       {icon && (
-        <div className="inline-block p-4 bg-amber-500/10 text-amber-500 rounded-2xl mb-8">
+        <div className="inline-block p-4 bg-tenant-primary/10 text-tenant-primary rounded-2xl mb-8">
           {icon}
         </div>
       )}

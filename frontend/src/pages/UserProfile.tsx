@@ -61,7 +61,7 @@ export const UserProfile: React.FC = () => {
     [UserRole.SUPER_ADMIN]: 'Super Admin',
   };
 
-  // Ícone baseado no role
+  // Ícone baseado não role
   const RoleIcon = user.role === UserRole.BARBER ? Scissors :
     user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN ? Shield :
       UserCircle2;
@@ -84,7 +84,7 @@ export const UserProfile: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        addNotification('error', 'A imagem deve ter no máximo 5MB', 'Erro');
+        addNotification('error', 'A imagem deve ter não máximo 5MB', 'Erro');
         return;
       }
 
@@ -99,7 +99,7 @@ export const UserProfile: React.FC = () => {
   const handleSave = () => {
     // Validações
     if (!formData.name.trim()) {
-      addNotification('error', 'O nome é obrigatório', 'Erro de Validação');
+      addNotification('error', 'O nãome é obrigatório', 'Erro de Validação');
       return;
     }
 
@@ -123,7 +123,7 @@ export const UserProfile: React.FC = () => {
       }
 
       if (formData.newPassword.length < 6) {
-        addNotification('error', 'A nova senha deve ter no mínimo 6 caracteres', 'Erro de Validação');
+        addNotification('error', 'A nova senha deve ter não mínimo 6 caracteres', 'Erro de Validação');
         return;
       }
 
@@ -133,7 +133,7 @@ export const UserProfile: React.FC = () => {
       }
     }
 
-    // Atualizar usuário no backend
+    // Atualizar usuário não backend
     setIsSaving(true);
 
     // Preparar DTO para o backend
@@ -212,7 +212,7 @@ export const UserProfile: React.FC = () => {
         {/* Profile Card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
           {/* Cover & Avatar Section */}
-          <div className="relative h-32 bg-gradient-to-br from-amber-500 to-orange-600">
+          <div className="relative h-32 bg-gradient-to-br from-tenant-primary to-orange-600">
             <div className="absolute -bottom-16 left-8">
               <div className="relative">
                 <div
@@ -226,7 +226,7 @@ export const UserProfile: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-br from-tenant-primary to-tenant-primary flex items-center justify-center">
                       <User size={48} className="text-white" />
                     </div>
                   )}
@@ -235,7 +235,7 @@ export const UserProfile: React.FC = () => {
                 {isEditing && (
                   <button
                     onClick={handleAvatarClick}
-                    className="absolute bottom-2 right-2 bg-amber-500 text-white rounded-full p-2 shadow-lg hover:bg-amber-600 transition-colors"
+                    className="absolute bottom-2 right-2 bg-tenant-primary text-white rounded-full p-2 shadow-lg hover:opacity-90 transition-colors"
                   >
                     <Camera size={18} />
                   </button>
@@ -293,7 +293,7 @@ export const UserProfile: React.FC = () => {
                     {user.name}
                   </h1>
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <RoleIcon size={20} className="text-amber-500" />
+                    <RoleIcon size={20} className="text-tenant-primary" />
                     <span className="font-semibold">{roleLabels[user.role]}</span>
                   </div>
                 </>
@@ -310,7 +310,7 @@ export const UserProfile: React.FC = () => {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Seu nome completo"
                       />
                     </div>
@@ -339,7 +339,7 @@ export const UserProfile: React.FC = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="seu@email.com"
                     />
                   </div>
@@ -361,7 +361,7 @@ export const UserProfile: React.FC = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="(00) 00000-0000"
                   />
                 )}
@@ -372,7 +372,7 @@ export const UserProfile: React.FC = () => {
             {isEditing && (
               <div className="border-t border-gray-200 dark:border-gray-700 pt-8 mt-8">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                  <Lock size={24} className="text-amber-500" />
+                  <Lock size={24} className="text-tenant-primary" />
                   Alterar Senha
                 </h3>
 
@@ -389,7 +389,7 @@ export const UserProfile: React.FC = () => {
                         name="currentPassword"
                         value={formData.currentPassword}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Digite sua senha atual"
                       />
                       <button
@@ -414,7 +414,7 @@ export const UserProfile: React.FC = () => {
                         name="newPassword"
                         value={formData.newPassword}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Digite a nova senha (mínimo 6 caracteres)"
                       />
                       <button
@@ -439,7 +439,7 @@ export const UserProfile: React.FC = () => {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Confirme a nova senha"
                       />
                     </div>
@@ -478,7 +478,7 @@ export const UserProfile: React.FC = () => {
             {/* Preferências LGPD */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 mt-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                {globalPushEnabled ? <Bell size={18} className="text-amber-500" /> : <BellOff size={18} className="text-gray-400" />}
+                {globalPushEnabled ? <Bell size={18} className="text-tenant-primary" /> : <BellOff size={18} className="text-gray-400" />}
                 Preferências de Privacidade
               </h3>
               <div className="flex items-center justify-between">
@@ -513,7 +513,7 @@ export const UserProfile: React.FC = () => {
                       }
                     }}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500 disabled:opacity-50"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary disabled:opacity-50"></div>
                 </label>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">

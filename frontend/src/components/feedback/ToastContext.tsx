@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Toast Context e Hook para notificações
  */
 

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Alert Component - Sistema de Design BarberPro
  * Alertas informativos com 4 variantes
  */
@@ -49,10 +49,10 @@ const variantConfig: Record<
   },
   warning: {
     icon: <AlertTriangle size={24} />,
-    bgColor: 'bg-amber-50 dark:bg-amber-900/20',
-    borderColor: 'border-amber-500 dark:border-amber-600',
-    textColor: 'text-amber-800 dark:text-amber-300',
-    iconColor: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-tenant-primary/5 dark:bg-tenant-primary/10',
+    borderColor: 'border-tenant-primary dark:border-tenant-primary',
+    textColor: 'text-tenant-primary dark:text-tenant-primary/80',
+    iconColor: 'text-tenant-primary dark:text-tenant-primary',
   },
   info: {
     icon: <Info size={24} />,
@@ -87,7 +87,7 @@ export const Alert: React.FC<AlertProps> = ({
       role="alert"
     >
       <div className={`${config.iconColor} flex-shrink-0`}>{config.icon}</div>
-      
+
       <div className="flex-1">
         {title && (
           <h4 className={`font-bold text-sm uppercase tracking-wide mb-1 ${config.textColor}`}>

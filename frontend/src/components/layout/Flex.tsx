@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Flex Component - Sistema de Design BarberPro
  * Flexbox utilitário com props semânticas
  */

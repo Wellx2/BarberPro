@@ -10,17 +10,17 @@ export const Contact: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Entre em Contato</h1>
-        <p className="text-gray-500 max-w-2xl mx-auto">Estamos prontos para atender você. Tire suas dúvidas, envie sugestões ou venha nos visitar.</p>
+        <p className="text-gray-500 max-w-2xl mx-auto">Estamos prontos para atender você. Tire suas dúvidas, envie sugestões ou venha nãos visitar.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         {/* Contact Info Card */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Informações</h2>
-          
+
           <div className="space-y-6">
             <div className="flex items-start gap-4">
-              <div className="bg-amber-100 p-3 rounded-lg text-amber-600">
+              <div className="bg-tenant-primary/10 p-3 rounded-lg text-tenant-primary">
                 <MapPin size={24} />
               </div>
               <div>
@@ -47,7 +47,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">WhatsApp</h3>
-                  <a href={`https://wa.me/${shop.socialWhatsapp}`} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-green-600 hover:underline">
+                  <a href={`https://wa.me/${shop.socialWhatsapp}`} target="_blank" rel="nãoreferrer" className="text-gray-600 hover:text-green-600 hover:underline">
                     {shop.socialWhatsapp}
                   </a>
                 </div>
@@ -62,7 +62,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">Instagram</h3>
-                  <a href={`https://instagram.com/${shop.socialInstagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-pink-600 hover:underline">
+                  <a href={`https://instagram.com/${shop.socialInstagram.replace('@', '')}`} target="_blank" rel="nãoreferrer" className="text-gray-600 hover:text-pink-600 hover:underline">
                     {shop.socialInstagram}
                   </a>
                 </div>
@@ -90,19 +90,19 @@ export const Contact: React.FC = () => {
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Mensagem enviada com sucesso!'); }}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-              <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Seu nome completo" required />
+              <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tenant-primary outline-nãone" placeholder="Seu nãome completo" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="seu@email.com" required />
+              <input type="email" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tenant-primary outline-nãone" placeholder="seu@email.com" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Assunto</label>
-              <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Motivo do contato" required />
+              <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tenant-primary outline-nãone" placeholder="Motivo do contato" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mensagem</label>
-              <textarea className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none h-32 resize-none" placeholder="Como podemos ajudar?" required></textarea>
+              <textarea className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tenant-primary outline-nãone h-32 resize-nãone" placeholder="Como podemos ajáudar?" required></textarea>
             </div>
             <button type="submit" className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors">
               Enviar Mensagem

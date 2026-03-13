@@ -15,7 +15,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   const location = useLocation();
 
   if (!isAuthenticated) {
-    // Redireciona para login mantendo a origem para retorno posterior
+    // Redireciona para login mantendo a origem para retornão posterior
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 

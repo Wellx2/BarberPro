@@ -134,7 +134,7 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-500 text-white p-6 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-tenant-primary to-tenant-primary text-white p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">{shopName}</h2>
             <p className="text-sm text-orange-100 mt-1">Gerar QR Code para agendamentos</p>
@@ -166,14 +166,14 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
           {/* Link Display */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-xs text-blue-600 font-semibold mb-2">LINK CODIFICADO</p>
-            <p className="text-xs text-gray-700 break-all font-mono bg-white p-2 rounded">{deepLink}</p>
+            <p className="text-xs text-gray-700 break-all font-monão bg-white p-2 rounded">{deepLink}</p>
           </div>
 
           {/* Action Buttons */}
           <div className="space-y-3">
             <button
               onClick={handleDownload}
-              className="w-full bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-700 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
+              className="w-full bg-gradient-to-r from-tenant-primary to-tenant-primary hover:opacity-90 hover:to-tenant-primary text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
             >
               <Download size={18} />
               Baixar QR Code (PNG)
@@ -181,7 +181,7 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
 
             <button
               onClick={handlePrint}
-              className="w-full bg-white border-2 border-amber-600 text-amber-600 hover:bg-amber-50 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
+              className="w-full bg-white border-2 border-tenant-primary text-tenant-primary hover:bg-tenant-primary/5 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
             >
               <Printer size={18} />
               Imprimir
@@ -197,12 +197,12 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
           </div>
 
           {/* Tips Section */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <h4 className="font-bold text-amber-900 mb-2 text-sm">💡 Dicas de Uso</h4>
-            <ul className="text-xs text-amber-800 space-y-1">
+          <div className="bg-tenant-primary/5 border border-tenant-primary/20 rounded-lg p-4">
+            <h4 className="font-bold text-tenant-primary mb-2 text-sm">💡 Dicas de Uso</h4>
+            <ul className="text-xs text-tenant-primary space-y-1">
               <li>✓ Imprima em tamanho 15x15cm a 50x50cm para melhor leitura</li>
               <li>✓ Cole em local bem visível na barbearia (entrada, recepção)</li>
-              <li>✓ Certifique-se de boa iluminação no local</li>
+              <li>✓ Certifique-se de boa iluminação não local</li>
               <li>✓ Teste a leitura do QR em um smartphone antes de usar</li>
               <li>✓ Considere plastificar para proteger a impressão</li>
             </ul>
@@ -213,13 +213,13 @@ export const QRCodeGenerator: React.FC<QRCodeGeneratorProps> = ({
             <h4 className="font-bold text-gray-900 mb-3 text-sm">📏 Tamanhos Recomendados</h4>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="text-center">
-                <div className="w-16 h-16 border-2 border-amber-400 mx-auto mb-1 flex items-center justify-center">
+                <div className="w-16 h-16 border-2 border-tenant-primary/40 mx-auto mb-1 flex items-center justify-center">
                   <span className="text-gray-500 text-[10px]">15cm</span>
                 </div>
-                <p className="text-gray-600 font-semibold">Pequeno<br/>(Adesivos)</p>
+                <p className="text-gray-600 font-semibold">Pequenão<br/>(Adesivos)</p>
               </div>
               <div className="text-center">
-                <div className="w-24 h-24 border-2 border-amber-500 mx-auto mb-1 flex items-center justify-center">
+                <div className="w-24 h-24 border-2 border-tenant-primary mx-auto mb-1 flex items-center justify-center">
                   <span className="text-gray-500 text-[10px]">30cm</span>
                 </div>
                 <p className="text-gray-600 font-semibold">Médio<br/>(Recomendado)</p>

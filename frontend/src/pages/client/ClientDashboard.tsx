@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, X, Star, Edit2, AlertCircle, Scissors, User as UserIcon } from 'lucide-react';
 import { useClientAppointments } from '../../hooks/useAppointments';
@@ -55,7 +55,7 @@ export const ClientDashboard: React.FC = () => {
     loadBarbers();
   }, []);
 
-  // ─── Helpers ────────────────────────────────────────────────────────────────
+  // --- Helpers ----------------------------------------------------------------
 
   const canEdit = (appointment: any): boolean => {
     const rawDate = appointment.date || appointment.scheduledFor;
@@ -67,9 +67,9 @@ export const ClientDashboard: React.FC = () => {
   };
 
   const formatDateTime = (dateValue?: any) => {
-    if (!dateValue) return 'Data não informada';
+    if (!dateValue) return 'Data no informada';
     if (typeof dateValue === 'object' && !(dateValue instanceof Date) && Object.keys(dateValue || {}).length === 0) {
-      return 'Data não informada';
+      return 'Data no informada';
     }
     let parsedDate = new Date(dateValue);
     if (Number.isNaN(parsedDate.getTime()) && typeof dateValue === 'string') {
@@ -111,7 +111,7 @@ export const ClientDashboard: React.FC = () => {
     return labels[status] ?? status;
   };
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // --- Handlers ----------------------------------------------------------------
 
   const handleCancel = async () => {
     if (!cancelModalId || !cancelReason.trim()) return;
@@ -167,7 +167,7 @@ export const ClientDashboard: React.FC = () => {
       return;
     }
     if (newDate <= new Date()) {
-      setRescheduleError('Selecione uma data e horário no futuro.');
+      setRescheduleError('Selecione uma data e horário não futuro.');
       return;
     }
 
@@ -187,7 +187,7 @@ export const ClientDashboard: React.FC = () => {
     }
   };
 
-  // ─── Time slots ──────────────────────────────────────────────────────────────
+  // --- Time slots --------------------------------------------------------------
 
   const timeSlots: string[] = [];
   for (let h = 8; h <= 20; h++) {
@@ -195,17 +195,17 @@ export const ClientDashboard: React.FC = () => {
     if (h < 20) timeSlots.push(`${String(h).padStart(2, '0')}:30`);
   }
 
-  // ─── Loading ──────────────────────────────────────────────────────────────────
+  // --- Loading ------------------------------------------------------------------
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tenant-primary"></div>
       </div>
     );
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  // --- Render -------------------------------------------------------------------
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -216,7 +216,7 @@ export const ClientDashboard: React.FC = () => {
         </h1>
         <button
           onClick={() => navigate('/book')}
-          className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors shadow-md"
+          className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold transition-colors shadow-md"
         >
           <Calendar size={18} />
           Novo Agendamento
@@ -237,7 +237,7 @@ export const ClientDashboard: React.FC = () => {
             </p>
             <button
               onClick={() => navigate('/book')}
-              className="mt-4 px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+              className="mt-4 px-6 py-2 bg-tenant-primary text-white rounded-lg hover:opacity-90 transition-colors"
             >
               Fazer Agendamento
             </button>
@@ -303,7 +303,7 @@ export const ClientDashboard: React.FC = () => {
                           }
                         }}
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-nãone rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary"></div>
                     </label>
                   </div>
                 )}
@@ -317,12 +317,12 @@ export const ClientDashboard: React.FC = () => {
                       {canEdit(appointment) ? (
                         <button
                           onClick={() => openReschedule(appointment)}
-                          className="flex items-center gap-1 px-3 py-1.5 border border-amber-500 text-amber-600 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors text-sm font-semibold"
+                          className="flex items-center gap-1 px-3 py-1.5 border border-tenant-primary text-tenant-primary rounded-lg hover:bg-tenant-primary/10 transition-colors text-sm font-semibold"
                         >
                           <Edit2 size={14} /> Editar
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-400 italic self-center">Edição não disponível</span>
+                        <span className="text-xs text-gray-400 italic self-center">Edição não disponivel</span>
                       )}
                       <button
                         onClick={() => setCancelModalId(appointment.id)}
@@ -409,7 +409,7 @@ export const ClientDashboard: React.FC = () => {
                         setRating(5);
                         setReviewComment('');
                       }}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-semibold text-sm flex items-center gap-2"
+                      className="px-4 py-2 bg-tenant-primary hover:opacity-90 text-white rounded-lg transition-colors font-semibold text-sm flex items-center gap-2"
                     >
                       <Star size={16} className="fill-current" /> Avaliar
                     </button>
@@ -430,7 +430,7 @@ export const ClientDashboard: React.FC = () => {
         )}
       </section>
 
-      {/* ── Cancel Modal ─────────────────────────────────────────────────── */}
+      {/* -- Cancel Modal --------------------------------------------------- */}
       {
         cancelModalId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -445,7 +445,7 @@ export const ClientDashboard: React.FC = () => {
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
                 rows={3}
                 placeholder="Digite o motivo do cancelamento..."
               />
@@ -469,7 +469,7 @@ export const ClientDashboard: React.FC = () => {
         )
       }
 
-      {/* ── Review Modal ─────────────────────────────────────────────────── */}
+      {/* -- Review Modal --------------------------------------------------- */}
       {
         reviewModalId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -486,7 +486,7 @@ export const ClientDashboard: React.FC = () => {
                   <button
                     key={starValue}
                     onClick={() => setRating(starValue)}
-                    className={`p-1 transition-colors ${rating >= starValue ? 'text-amber-500' : 'text-gray-300 hover:text-amber-400'}`}
+                    className={`p-1 transition-colors ${rating >= starValue ? 'text-tenant-primary' : 'text-gray-300 hover:text-tenant-primary/80'}`}
                   >
                     <Star size={28} className={rating >= starValue ? 'fill-current' : ''} />
                   </button>
@@ -495,7 +495,7 @@ export const ClientDashboard: React.FC = () => {
               <textarea
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-tenant-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4 text-sm"
                 rows={3}
                 placeholder="Deixe um comentário (opcional)..."
               />
@@ -508,7 +508,7 @@ export const ClientDashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={handleReview}
-                  className="flex-1 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-semibold text-sm"
+                  className="flex-1 px-3 py-2 bg-tenant-primary hover:opacity-90 text-white rounded-lg transition-colors font-semibold text-sm"
                 >
                   Enviar Avaliação
                 </button>
@@ -518,7 +518,7 @@ export const ClientDashboard: React.FC = () => {
         )
       }
 
-      {/* ── Reschedule Modal ─────────────────────────────────────────────── */}
+      {/* -- Reschedule Modal ----------------------------------------------- */}
       {
         rescheduleAppt && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -530,8 +530,8 @@ export const ClientDashboard: React.FC = () => {
                 </button>
               </div>
 
-              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <p className="text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+              <div className="mb-4 p-3 bg-tenant-primary/10 border border-tenant-primary/20 rounded-lg">
+                <p className="text-xs text-tenant-primary flex items-start gap-2">
                   <AlertCircle size={14} className="mt-0.5 shrink-0" />
                   Você pode editar o horário até <strong>2 horas antes</strong> do agendamento. Para alterar o serviço, fale diretamente com o barbeiro.
                 </p>
@@ -544,7 +544,7 @@ export const ClientDashboard: React.FC = () => {
                   value={rescheduleDate}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setRescheduleDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary focus:outline-nãone"
                 />
               </div>
 
@@ -556,8 +556,8 @@ export const ClientDashboard: React.FC = () => {
                       key={time}
                       onClick={() => setRescheduleTime(time)}
                       className={`py-2 rounded-lg text-xs font-bold transition-colors ${rescheduleTime === time
-                        ? 'bg-amber-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                        ? 'bg-tenant-primary text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-tenant-primary/10'
                         }`}
                     >
                       {time}
@@ -582,7 +582,7 @@ export const ClientDashboard: React.FC = () => {
                 <button
                   onClick={handleReschedule}
                   disabled={!rescheduleDate || !rescheduleTime || rescheduleLoading}
-                  className="flex-1 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-sm"
+                  className="flex-1 px-3 py-2 bg-tenant-primary hover:opacity-90 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-sm"
                 >
                   {rescheduleLoading ? 'Salvando...' : 'Confirmar'}
                 </button>

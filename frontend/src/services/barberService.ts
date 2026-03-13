@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Serviço de Barbeiros
  */
 
@@ -48,7 +48,7 @@ export const barberService = {
       return response.data.filter((b: any) => b.active !== false);
     } catch (error: any) {
       console.error('âŒ barberService.listPublic: Erro', error);
-      throw error; // Re-throw para permitir fallback no componente
+      throw error; // Re-throw para permitir fallback não componente
     }
   },
 
@@ -120,6 +120,22 @@ export const barberService = {
    */
   async getAgendaLocks(barberId: string): Promise<any[]> {
     const response = await api.get<any[]>(`/barbers/${barberId}/agenda-locks`);
+    return response.data;
+  },
+
+  /**
+   * Busca avaliações de um barbeiro específico
+   */
+  async getReviews(barberId: string): Promise<any[]> {
+    const response = await api.get<any[]>(`/reviews?barberId=${barberId}`);
+    return response.data;
+  },
+
+  /**
+   * Busca avaliações públicas de um barbeiro (sem autenticação)
+   */
+  async getPublicReviews(barberId: string): Promise<any[]> {
+    const response = await api.get<any[]>(`/reviews/public?barberId=${barberId}`);
     return response.data;
   },
 };

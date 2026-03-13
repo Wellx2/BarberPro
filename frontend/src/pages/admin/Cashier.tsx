@@ -260,7 +260,7 @@ export const Cashier: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">Verifique sua conexão e tente novamente.</p>
             <button
               onClick={loadDailyAnalytics}
-              className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-colors"
+              className="px-6 py-3 bg-tenant-primary text-white rounded-xl font-bold hover:opacity-90 transition-colors"
             >
               Tentar Novamente
             </button>
@@ -281,7 +281,7 @@ export const Cashier: React.FC = () => {
             <h2 className="text-3xl font-black uppercase tracking-tighter dark:text-white">Caixa Operacional</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">
               {dailyAnalytics.isToday
-                ? 'Operação de Hoje'
+                ? 'Operação de hoje'
                 : `Relatório de ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}`}
             </p>
           </div>
@@ -301,7 +301,7 @@ export const Cashier: React.FC = () => {
               <ChevronRight size={20} className="rotate-180 text-white" />
             </button>
             <div className="flex items-center px-6 py-3 bg-gray-800 min-w-[180px] justify-center gap-3">
-              <CalendarIcon size={18} className="text-amber-500" />
+              <CalendarIcon size={18} className="text-tenant-primary" />
               <span className="text-white font-black text-base">
                 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', {
                   day: '2-digit', month: '2-digit', year: 'numeric'
@@ -323,28 +323,28 @@ export const Cashier: React.FC = () => {
           <button
             onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
             disabled={dailyAnalytics.isToday}
-            className="px-6 py-3 text-sm font-bold uppercase bg-amber-500 text-white rounded-2xl hover:bg-amber-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="px-6 py-3 text-sm font-bold uppercase bg-tenant-primary text-white rounded-2xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            Hoje
+            hoje
           </button>
 
           <div className="flex gap-3 ml-auto">
             <button
               onClick={() => setShowValues(!showValues)}
-              className="p-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-amber-500 transition-colors"
+              className="p-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-tenant-primary transition-colors"
               title={showValues ? 'Ocultar valores' : 'Mostrar valores'}
             >
               {showValues ? <Eye size={20} /> : <EyeOff size={20} />}
             </button>
             <button
               onClick={() => addNotification('info', 'Gerando relatório...', 'Impressão')}
-              className="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-amber-500 transition-colors flex items-center gap-2 font-bold text-sm"
+              className="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-tenant-primary transition-colors flex items-center gap-2 font-bold text-sm"
             >
               <Printer size={18} /> Imprimir
             </button>
             <button
               onClick={() => setShowHistory(true)}
-              className="px-4 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors flex items-center gap-2 font-bold text-sm uppercase"
+              className="px-4 py-2 rounded-xl bg-tenant-primary text-white hover:opacity-90 transition-colors flex items-center gap-2 font-bold text-sm uppercase"
             >
               <History size={18} /> Histórico
             </button>
@@ -419,7 +419,7 @@ export const Cashier: React.FC = () => {
       {/* BI — Inteligência de Vendas */}
       {dailyAnalytics.isToday && (opportunities.length > 0 || retention) && (
         <div className="space-y-4 animate-fade-in-up">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-tenant-primary to-tenant-primary p-4 rounded-2xl text-white shadow-lg">
             <BrainCircuit size={28} />
             <div>
               <h3 className="text-xl font-black uppercase tracking-tighter">Inteligência de Vendas</h3>
@@ -429,14 +429,14 @@ export const Cashier: React.FC = () => {
 
           <Grid cols={2} gap="lg" className="grid-cols-1 lg:grid-cols-2">
             {/* Oportunidades preditivas */}
-            <Card className="border-2 border-amber-500/20">
+            <Card className="border-2 border-tenant-primary/20">
               <Card.Body className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
-                    <Target size={20} className="text-amber-500" />
+                    <Target size={20} className="text-tenant-primary" />
                     Sugestões Preditivas
                   </h3>
-                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-full">
+                  <span className="px-3 py-1 bg-tenant-primary/10 dark:bg-tenant-primary/15 text-tenant-primary dark:text-tenant-primary text-xs font-bold rounded-full">
                     {opportunities.length} sugestões
                   </span>
                 </div>
@@ -446,15 +446,15 @@ export const Cashier: React.FC = () => {
                       <div
                         key={idx}
                         className={`p-4 rounded-xl border-l-4 transition-colors ${opp.urgency === 'HIGH'
-                            ? 'bg-red-50 dark:bg-red-900/10 border-red-500'
-                            : 'bg-amber-50 dark:bg-amber-900/10 border-amber-500'
+                          ? 'bg-red-50 dark:bg-red-900/10 border-red-500'
+                          : 'bg-tenant-primary/5 dark:bg-tenant-primary/10 border-tenant-primary'
                           }`}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <p className="font-bold text-gray-900 dark:text-white leading-tight text-sm">
-                            💡 Oferecer <span className="text-amber-600 dark:text-amber-400">{opp.productName}</span> para {opp.clientName}
+                            💡 Oferecer <span className="text-tenant-primary dark:text-tenant-primary">{opp.productName}</span> para {opp.clientName}
                           </p>
-                          <span className="font-black text-amber-600 dark:text-amber-400 text-sm shrink-0 ml-2">
+                          <span className="font-black text-tenant-primary dark:text-tenant-primary text-sm shrink-0 ml-2">
                             R$ {opp.productPrice.toFixed(2)}
                           </span>
                         </div>
@@ -468,7 +468,7 @@ export const Cashier: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-gray-400 py-10 text-sm">Nenhuma sugestão no momento.</p>
+                  <p className="text-center text-gray-400 py-10 text-sm">Nenhuma sugestão não momento.</p>
                 )}
               </Card.Body>
             </Card>
@@ -484,9 +484,9 @@ export const Cashier: React.FC = () => {
                   <div className="flex flex-col items-center gap-6">
                     <div className="relative w-44 h-44 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="88" cy="88" r="80" fill="none" stroke="currentColor" strokeWidth="14" className="text-gray-200 dark:text-gray-700" />
+                        <circle cx="88" cy="88" r="80" fill="nãone" stroke="currentColor" strokeWidth="14" className="text-gray-200 dark:text-gray-700" />
                         <circle
-                          cx="88" cy="88" r="80" fill="none" stroke="currentColor" strokeWidth="14"
+                          cx="88" cy="88" r="80" fill="nãone" stroke="currentColor" strokeWidth="14"
                           strokeDasharray="502.65"
                           strokeDashoffset={502.65 - (502.65 * retention.retentionRate) / 100}
                           className="text-rose-500 transition-all duration-1000 ease-out"
@@ -583,7 +583,7 @@ export const Cashier: React.FC = () => {
       <Card>
         <Card.Body className="space-y-4">
           <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
-            <Users size={20} className="text-amber-500" />
+            <Users size={20} className="text-tenant-primary" />
             Comissões do Dia
           </h3>
           {dailyAnalytics.barberCommissions.length > 0 ? (
@@ -591,7 +591,7 @@ export const Cashier: React.FC = () => {
               {dailyAnalytics.barberCommissions.map((barber, index) => (
                 <div key={barber.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex items-center gap-4">
-                    <div className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-white text-sm ${index === 0 ? 'bg-amber-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-600'
+                    <div className={`w-8 h-8 flex items-center justify-center rounded-full font-black text-white text-sm ${index === 0 ? 'bg-tenant-primary' : index === 1 ? 'bg-gray-400' : 'bg-orange-600'
                       }`}>{index + 1}</div>
                     {barber.avatar && <img src={barber.avatar} alt={barber.name} className="w-10 h-10 rounded-full object-cover" />}
                     <div>
@@ -600,14 +600,14 @@ export const Cashier: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-black text-amber-500">R$ {showValues ? barber.commission.toFixed(2) : '••••'}</p>
+                    <p className="text-lg font-black text-tenant-primary">R$ {showValues ? barber.commission.toFixed(2) : '••••'}</p>
                     <p className="text-xs text-gray-500">de R$ {showValues ? barber.revenue.toFixed(2) : '••••'}</p>
                   </div>
                 </div>
               ))}
-              <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border-2 border-amber-500 mt-2">
+              <div className="flex items-center justify-between p-4 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl border-2 border-tenant-primary mt-2">
                 <span className="font-black text-gray-900 dark:text-white uppercase">Total Comissões</span>
-                <span className="text-2xl font-black text-amber-600 dark:text-amber-400">
+                <span className="text-2xl font-black text-tenant-primary dark:text-tenant-primary">
                   R$ {showValues ? dailyAnalytics.totalCommissions.toFixed(2) : '••••'}
                 </span>
               </div>
@@ -619,7 +619,7 @@ export const Cashier: React.FC = () => {
               </div>
             </div>
           ) : (
-            <p className="text-center text-gray-400 text-sm py-8">Nenhum atendimento no dia selecionado</p>
+            <p className="text-center text-gray-400 text-sm py-8">Nenhum atendimento não dia selecionado</p>
           )}
         </Card.Body>
       </Card>
@@ -640,7 +640,7 @@ export const Cashier: React.FC = () => {
                   placeholder="Buscar cliente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-amber-500 focus:outline-none"
+                  className="pl-10 pr-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-tenant-primary focus:outline-nãone"
                 />
               </div>
             </div>
@@ -666,7 +666,7 @@ export const Cashier: React.FC = () => {
                     </p>
                     <button
                       onClick={() => openPayment(inv)}
-                      className="px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold uppercase text-xs transition-all flex items-center gap-2"
+                      className="px-5 py-3 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold uppercase text-xs transition-all flex items-center gap-2"
                     >
                       <Check size={16} /> Receber
                     </button>
@@ -684,18 +684,18 @@ export const Cashier: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col relative border dark:border-gray-700/50">
             <button
               onClick={closePayment}
-              className="absolute top-6 right-6 text-gray-400 hover:text-amber-500 transition-colors z-20"
+              className="absolute top-6 right-6 text-gray-400 hover:text-tenant-primary transition-colors z-20"
             >
               <X size={28} />
             </button>
 
             {/* Modal header */}
             <div className="p-8 bg-gray-900 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-tenant-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
               <h3 className="text-2xl font-black uppercase tracking-tighter mb-1 relative z-10">Finalizar Recebimento</h3>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest relative z-10">Cliente: {selectedInvoice.clientName}</p>
               <div className="mt-6 p-5 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center">
-                <span className="text-xs font-black uppercase text-amber-500 tracking-widest">Valor Total</span>
+                <span className="text-xs font-black uppercase text-tenant-primary tracking-widest">Valor Total</span>
                 <span className="text-3xl font-black">R$ {selectedInvoice.amount.toFixed(2)}</span>
               </div>
             </div>
@@ -704,15 +704,15 @@ export const Cashier: React.FC = () => {
 
               {/* Cross-sell suggestion */}
               {crossSellItems.length > 0 && (
-                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800">
-                  <p className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-2">
+                <div className="p-4 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-2xl border border-tenant-primary/20 dark:border-tenant-primary/30">
+                  <p className="text-xs font-black uppercase tracking-widest text-tenant-primary dark:text-tenant-primary mb-3 flex items-center gap-2">
                     <BrainCircuit size={14} /> Venda Casada — Recomendado para o serviço
                   </p>
                   <div className="space-y-2">
                     {crossSellItems.map((item, i) => (
                       <div key={i} className="flex items-center justify-between bg-white dark:bg-gray-900 p-3 rounded-xl">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{item.emoji} {item.label}</span>
-                        <button className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline">
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{item.emojái} {item.label}</span>
+                        <button className="text-xs font-bold text-tenant-primary dark:text-tenant-primary hover:underline">
                           + Adicionar
                         </button>
                       </div>
@@ -727,8 +727,8 @@ export const Cashier: React.FC = () => {
                 <button
                   onClick={() => setSplitMode(!splitMode)}
                   className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${splitMode
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-amber-100'
+                    ? 'bg-tenant-primary text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-tenant-primary/10'
                     }`}
                 >
                   {splitMode ? '✓ Dividindo' : '÷ Dividir pagamento'}
@@ -746,7 +746,7 @@ export const Cashier: React.FC = () => {
                         <select
                           value={entry.method}
                           onChange={(e) => updateSplitEntry(idx, 'method', e.target.value)}
-                          className="flex-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg py-2 px-3 text-sm font-bold focus:border-amber-500 focus:outline-none"
+                          className="flex-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg py-2 px-3 text-sm font-bold focus:border-tenant-primary focus:outline-nãone"
                         >
                           <option value="PIX">PIX</option>
                           <option value="CASH">Dinheiro</option>
@@ -762,7 +762,7 @@ export const Cashier: React.FC = () => {
                             placeholder="0,00"
                             value={entry.amount}
                             onChange={(e) => updateSplitEntry(idx, 'amount', e.target.value)}
-                            className="pl-9 pr-3 py-2 w-28 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:border-amber-500 focus:outline-none"
+                            className="pl-9 pr-3 py-2 w-28 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:border-tenant-primary focus:outline-nãone"
                           />
                         </div>
                         {fee > 0 && (
@@ -779,7 +779,7 @@ export const Cashier: React.FC = () => {
 
                   <button
                     onClick={addSplitEntry}
-                    className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:border-amber-500 hover:text-amber-500 transition-colors text-sm font-bold flex items-center justify-center gap-2"
+                    className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:border-tenant-primary hover:text-tenant-primary transition-colors text-sm font-bold flex items-center justify-center gap-2"
                   >
                     <Plus size={16} /> Adicionar método
                   </button>
@@ -796,7 +796,7 @@ export const Cashier: React.FC = () => {
                         <span className="font-bold">-R$ {splitFees.toFixed(2)}</span>
                       </div>
                     )}
-                    <div className={`flex justify-between text-sm font-black ${remainingAmount < -0.01 ? 'text-red-500' : remainingAmount > 0.01 ? 'text-amber-500' : 'text-green-500'}`}>
+                    <div className={`flex justify-between text-sm font-black ${remainingAmount < -0.01 ? 'text-red-500' : remainingAmount > 0.01 ? 'text-tenant-primary' : 'text-green-500'}`}>
                       <span>Restante:</span>
                       <span>R$ {remainingAmount.toFixed(2)}</span>
                     </div>
@@ -825,7 +825,7 @@ export const Cashier: React.FC = () => {
                         key={method.id}
                         disabled={loading}
                         onClick={() => handleSinglePayment(method.id)}
-                        className="flex flex-col items-center justify-center gap-3 p-6 rounded-[28px] border-2 border-gray-100 dark:border-gray-700 hover:border-amber-500 dark:hover:border-amber-500 bg-gray-50 dark:bg-gray-900/40 transition-all group"
+                        className="flex flex-col items-center justify-center gap-3 p-6 rounded-[28px] border-2 border-gray-100 dark:border-gray-700 hover:border-tenant-primary dark:hover:border-tenant-primary bg-gray-50 dark:bg-gray-900/40 transition-all group"
                       >
                         <div className="p-4 bg-white rounded-2xl shadow-md group-hover:scale-110 transition-transform flex items-center justify-center">
                           <method.icon size={26} className="text-gray-900" />
@@ -843,7 +843,7 @@ export const Cashier: React.FC = () => {
               )}
 
               {loading && (
-                <div className="flex items-center justify-center gap-3 text-amber-500 font-bold text-xs uppercase tracking-widest animate-pulse">
+                <div className="flex items-center justify-center gap-3 text-tenant-primary font-bold text-xs uppercase tracking-widest animate-pulse">
                   <Clock size={16} className="animate-spin" /> Processando Transação...
                 </div>
               )}

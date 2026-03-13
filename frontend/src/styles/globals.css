@@ -62,6 +62,201 @@
   .premium-gradient {
     background: var(--premium-gold);
   }
+
+  /* ===== Tenant Primary Utilities (White Label) ===== */
+  .bg-tenant-primary {
+    background-color: var(--tenant-primary);
+  }
+
+  .text-tenant-primary {
+    color: var(--tenant-primary);
+  }
+
+  .border-tenant-primary {
+    border-color: var(--tenant-primary);
+  }
+
+  /* Opacity variants */
+  .bg-tenant-primary\/5 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.05);
+  }
+  .bg-tenant-primary\/10 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.1);
+  }
+  .bg-tenant-primary\/15 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.15);
+  }
+  .bg-tenant-primary\/20 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.2);
+  }
+  .bg-tenant-primary\/30 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
+  .bg-tenant-primary\/40 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.4);
+  }
+
+  .text-tenant-primary\/80 {
+    color: rgba(var(--tenant-primary-rgb), 0.8);
+  }
+
+  .border-tenant-primary\/20 {
+    border-color: rgba(var(--tenant-primary-rgb), 0.2);
+  }
+  .border-tenant-primary\/30 {
+    border-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
+  .border-tenant-primary\/50 {
+    border-color: rgba(var(--tenant-primary-rgb), 0.5);
+  }
+
+  /* Hover variants */
+  .hover\:bg-tenant-primary:hover {
+    background-color: var(--tenant-primary);
+  }
+  .hover\:bg-tenant-primary\/10:hover {
+    background-color: rgba(var(--tenant-primary-rgb), 0.1);
+  }
+  .hover\:bg-tenant-primary\/5:hover {
+    background-color: rgba(var(--tenant-primary-rgb), 0.05);
+  }
+  .hover\:text-tenant-primary:hover {
+    color: var(--tenant-primary);
+  }
+  .hover\:border-tenant-primary:hover {
+    border-color: var(--tenant-primary);
+  }
+  .hover\:border-tenant-primary\/30:hover {
+    border-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
+
+  /* Group-hover variants */
+  .group-hover\:bg-tenant-primary {
+    /* handled by group:hover .group-hover\:bg-tenant-primary */
+  }
+  .group:hover .group-hover\:bg-tenant-primary {
+    background-color: var(--tenant-primary);
+  }
+  .group:hover .group-hover\:text-tenant-primary {
+    color: var(--tenant-primary);
+  }
+
+  /* Focus / Ring */
+  .focus\:ring-tenant-primary:focus {
+    --tw-ring-color: rgba(var(--tenant-primary-rgb), 0.5);
+  }
+  .ring-tenant-primary {
+    --tw-ring-color: var(--tenant-primary);
+  }
+  .peer-focus\:ring-tenant-primary:is(.peer:focus ~ *) {
+    --tw-ring-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
+
+  /* Shadow */
+  .shadow-tenant-primary {
+    --tw-shadow-color: rgba(var(--tenant-primary-rgb), 0.25);
+    --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+  .shadow-tenant-primary\/20 {
+    --tw-shadow-color: rgba(var(--tenant-primary-rgb), 0.2);
+  }
+  .shadow-tenant-primary\/30 {
+    --tw-shadow-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
+  .shadow-tenant-primary\/40 {
+    --tw-shadow-color: rgba(var(--tenant-primary-rgb), 0.4);
+  }
+  .hover\:shadow-tenant-primary\/40:hover {
+    --tw-shadow-color: rgba(var(--tenant-primary-rgb), 0.4);
+  }
+
+  /* Peer-checked (for toggles/switches) */
+  .peer:checked ~ .peer-checked\:bg-tenant-primary {
+    background-color: var(--tenant-primary);
+  }
+
+  /* Gradient utilities */
+  .from-tenant-primary {
+    --tw-gradient-from: var(--tenant-primary) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .from-tenant-primary\/5 {
+    --tw-gradient-from: rgba(var(--tenant-primary-rgb), 0.05) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .from-tenant-primary\/10 {
+    --tw-gradient-from: rgba(var(--tenant-primary-rgb), 0.1) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .to-tenant-primary {
+    --tw-gradient-to: var(--tenant-primary) var(--tw-gradient-to-position);
+  }
+  .to-tenant-primary\/5 {
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0.05) var(--tw-gradient-to-position);
+  }
+  .to-tenant-primary\/10 {
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0.1) var(--tw-gradient-to-position);
+  }
+  .to-tenant-primary\/80 {
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0.8) var(--tw-gradient-to-position);
+  }
+  .dark\:from-tenant-primary\/10 {
+    /* activated via .dark parent */
+  }
+  .dark .dark\:from-tenant-primary\/10 {
+    --tw-gradient-from: rgba(var(--tenant-primary-rgb), 0.1) var(--tw-gradient-from-position);
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .dark .dark\:to-tenant-primary\/10 {
+    --tw-gradient-to: rgba(var(--tenant-primary-rgb), 0.1) var(--tw-gradient-to-position);
+  }
+
+  /* Dark mode bg/text/border overrides */
+  .dark .dark\:bg-tenant-primary\/10 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.1);
+  }
+  .dark .dark\:bg-tenant-primary\/15 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.15);
+  }
+  .dark .dark\:bg-tenant-primary\/20 {
+    background-color: rgba(var(--tenant-primary-rgb), 0.2);
+  }
+  .dark .dark\:text-tenant-primary {
+    color: var(--tenant-primary);
+  }
+  .dark .dark\:text-tenant-primary\/80 {
+    color: rgba(var(--tenant-primary-rgb), 0.8);
+  }
+  .dark .dark\:border-tenant-primary\/20 {
+    border-color: rgba(var(--tenant-primary-rgb), 0.2);
+  }
+  .dark .dark\:border-tenant-primary\/30 {
+    border-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
+  .dark .dark\:border-tenant-primary\/50 {
+    border-color: rgba(var(--tenant-primary-rgb), 0.5);
+  }
+  .dark .dark\:hover\:border-tenant-primary:hover {
+    border-color: var(--tenant-primary);
+  }
+  .dark .dark\:hover\:bg-tenant-primary\/10:hover {
+    background-color: rgba(var(--tenant-primary-rgb), 0.1);
+  }
+
+  /* Fill (SVG icons) */
+  .fill-tenant-primary {
+    fill: var(--tenant-primary);
+  }
+
+  /* Scrollbar thumb */
+  .scrollbar-thumb-tenant-primary::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--tenant-primary-rgb), 0.3);
+  }
 }
 
 @keyframes fadeIn {

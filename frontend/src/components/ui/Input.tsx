@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Input Component - Sistema de Design BarberPro
  * Input acessível com suporte a ícones, labels e estados de erro
  */
@@ -54,15 +54,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               ${icon ? 'pl-12' : ''}
               text-base
               bg-white dark:bg-gray-800
-              border-2 ${
-                error
-                  ? 'border-red-500 dark:border-red-500'
-                  : 'border-gray-200 dark:border-gray-700'
+              border-2 ${error
+                ? 'border-red-500 dark:border-red-500'
+                : 'border-gray-200 dark:border-gray-700'
               }
               rounded-2xl
               text-gray-900 dark:text-white
               placeholder:text-gray-400 dark:placeholder:text-gray-500
-              focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent
+              focus:outline-none focus:ring-2 focus:ring-tenant-primary focus:border-transparent
               disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-50
               transition-all duration-200
               ${className}

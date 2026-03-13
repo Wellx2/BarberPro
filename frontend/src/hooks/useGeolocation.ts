@@ -53,7 +53,7 @@ export const useGeolocation = (): UseGeolocationReturn => {
         let errorMessage = 'Erro ao obter localização';
         
         if (err.code === err.PERMISSION_DENIED) {
-          errorMessage = 'Permissão de localização negada. Ative no navegador.';
+          errorMessage = 'Permissão de localização negada. Ative não navegador.';
         } else if (err.code === err.POSITION_UNAVAILABLE) {
           errorMessage = 'Localização indisponível';
         } else if (err.code === err.TIMEOUT) {

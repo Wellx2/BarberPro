@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  ShieldCheck, Store, Users, Settings, Plus, Edit3, Trash2, 
-  Check, X, Search, Smartphone, MapPin, Layers, 
-  ShoppingBag, Package, PieChart, ArrowRight, UserPlus, 
-  ChevronRight, Save, Shield, Info, Lock
+import {
+    ShieldCheck, Store, Users, Settings, Plus, Edit3, Trash2,
+    Check, X, Search, Smartphone, MapPin, Layers,
+    ShoppingBag, Package, PieChart, ArrowRight, UserPlus,
+    ChevronRight, Save, Shield, Info, Lock
 } from 'lucide-react';
 import { Shop, User, UserRole } from '../../types';
 import { useNotification } from '../../context/NotificationContext';
@@ -13,7 +13,7 @@ import { Button, Card, Input, Select } from '../../components/ui';
 export const SuperAdminDashboard: React.FC = () => {
     const { addNotification } = useNotification();
     const { updateShopSettings, createShop } = useShop();
-    // ⚠️ FASE 2: Implementar shopService.list() no backend
+    // ⚠️ FASE 2: Implementar shopService.list() não backend
     // Por enquanto usa localStorage com fallback para array vazio
     const [shops, setShops] = useState<Shop[]>(() => JSON.parse(localStorage.getItem('shops') || '[]'));
     const [users, setUsers] = useState<User[]>(() => {
@@ -32,11 +32,11 @@ export const SuperAdminDashboard: React.FC = () => {
 
         const isNew = editShop.id.startsWith('new-');
         const updatedShop = isNew ? { ...editShop, id: `shop-${Date.now()}` } : editShop;
-        
+
         const newShopsList = isNew ? [...shops, updatedShop] : shops.map(s => s.id === updatedShop.id ? updatedShop : s);
         setShops(newShopsList);
         localStorage.setItem('shops', JSON.stringify(newShopsList));
-        
+
         if (isNew) createShop(updatedShop);
         else updateShopSettings(updatedShop);
 
@@ -61,17 +61,17 @@ export const SuperAdminDashboard: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-16">
                 <div className="flex items-center gap-6">
-                    <div className="p-6 bg-gray-900 rounded-[35px] shadow-2xl border-4 border-amber-500/20">
-                        <ShieldCheck size={42} className="text-amber-500" />
+                    <div className="p-6 bg-gray-900 rounded-[35px] shadow-2xl border-4 border-tenant-primary/20">
+                        <ShieldCheck size={42} className="text-tenant-primary" />
                     </div>
                     <div>
                         <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter dark:text-white leading-none">Console Master</h1>
-                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-2">Gestão de SaaS & Multi-Tenancy</p>
+                        <p className="text-[10px] font-black text-tenant-primary uppercase tracking-widest mt-2">Gestão de SaaS & Multi-Tenancy</p>
                     </div>
                 </div>
                 <div className="flex items-center bg-white dark:bg-gray-800 p-2 rounded-[30px] shadow-xl border dark:border-gray-700">
-                    <button onClick={() => setActiveTab('SHOPS')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'SHOPS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-amber-500'}`}>Unidades</button>
-                    <button onClick={() => setActiveTab('USERS')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'USERS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-amber-500'}`}>Operadores</button>
+                    <button onClick={() => setActiveTab('SHOPS')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'SHOPS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-tenant-primary'}`}>Unidades</button>
+                    <button onClick={() => setActiveTab('USERS')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'USERS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-tenant-primary'}`}>Operadores</button>
                 </div>
             </div>
 
@@ -98,7 +98,7 @@ export const SuperAdminDashboard: React.FC = () => {
                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{s.address}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => setEditShop(s)} className="p-4 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-amber-500 rounded-2xl transition-all">
+                                    <button onClick={() => setEditShop(s)} className="p-4 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-tenant-primary rounded-2xl transition-all">
                                         <Settings size={22} />
                                     </button>
                                 </div>
@@ -112,7 +112,7 @@ export const SuperAdminDashboard: React.FC = () => {
                                         <Package size={20} className="mb-2" />
                                         <span className="text-[8px] font-black uppercase tracking-widest">Estoque</span>
                                     </div>
-                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${s.settings.subscriptionEnabled ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
+                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${s.settings.subscriptionEnabled ? 'bg-tenant-primary/5 border-tenant-primary/10 text-tenant-primary' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
                                         <Layers size={20} className="mb-2" />
                                         <span className="text-[8px] font-black uppercase tracking-widest">Planos</span>
                                     </div>
@@ -123,7 +123,7 @@ export const SuperAdminDashboard: React.FC = () => {
                                         <div><p className="text-[8px] font-black text-gray-400 uppercase mb-0.5 tracking-tighter">Limite Serviços</p><p className="font-black dark:text-white">{s.settings.maxServices}</p></div>
                                         <div><p className="text-[8px] font-black text-gray-400 uppercase mb-0.5 tracking-tighter">Limite Loja</p><p className="font-black dark:text-white">{s.settings.maxProducts}</p></div>
                                     </div>
-                                    <span className="text-[10px] font-black uppercase text-amber-500 bg-amber-50 px-4 py-2 rounded-full border border-amber-100">Ativa no Portal</span>
+                                    <span className="text-[10px] font-black uppercase text-tenant-primary bg-tenant-primary/5 px-4 py-2 rounded-full border border-tenant-primary/10">Ativa no Portal</span>
                                 </div>
                             </Card>
                         ))}
@@ -163,13 +163,13 @@ export const SuperAdminDashboard: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="p-6">
-                                            <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${u.role === UserRole.SUPER_ADMIN ? 'bg-black text-white' : u.role === UserRole.ADMIN ? 'bg-amber-500 text-white' : 'bg-blue-100 text-blue-600'}`}>{u.role}</span>
+                                            <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${u.role === UserRole.SUPER_ADMIN ? 'bg-black text-white' : u.role === UserRole.ADMIN ? 'bg-tenant-primary text-white' : 'bg-blue-100 text-blue-600'}`}>{u.role}</span>
                                         </td>
                                         <td className="p-6 text-sm font-bold text-gray-500 dark:text-gray-400">
                                             {u.shopId ? shops.find(s => s.id === u.shopId)?.name : 'Acesso Global'}
                                         </td>
                                         <td className="p-6 text-center">
-                                            <button onClick={() => setEditUser(u)} className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-amber-500 rounded-xl transition-all"><Edit3 size={18} /></button>
+                                            <button onClick={() => setEditUser(u)} className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-tenant-primary rounded-xl transition-all"><Edit3 size={18} /></button>
                                         </td>
                                     </tr>
                                 ))}
@@ -185,7 +185,7 @@ export const SuperAdminDashboard: React.FC = () => {
                     <form onSubmit={handleSaveShop} className="bg-white dark:bg-gray-800 rounded-[50px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col border dark:border-gray-700 max-h-[95vh]">
                         <div className="p-8 bg-gray-900 text-white flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-4">
-                                <div className="p-4 bg-amber-500 rounded-[20px]"><Settings size={28} /></div>
+                                <div className="p-4 bg-tenant-primary rounded-[20px]"><Settings size={28} /></div>
                                 <div>
                                     <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Configuração de Unidade</h3>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Tenant Level Settings</p>
@@ -193,19 +193,31 @@ export const SuperAdminDashboard: React.FC = () => {
                             </div>
                             <button type="button" onClick={() => setEditShop(null)}><X size={32} /></button>
                         </div>
-                        
+
                         <div className="p-10 space-y-12 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
                             <div className="space-y-8">
-                                <h4 className="text-xs font-black uppercase text-amber-500 tracking-[0.3em]">1. Informações Básicas</h4>
+                                <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">1. Informações Básicas</h4>
                                 <div className="space-y-4">
-                                    <Input placeholder="Nome da Unidade" required value={editShop.name} onChange={e => setEditShop({...editShop, name: e.target.value})} fullWidth />
-                                    <Input placeholder="Endereço Completo" required value={editShop.address} onChange={e => setEditShop({...editShop, address: e.target.value})} fullWidth />
-                                    <Input placeholder="URL da Imagem de Capa" value={editShop.image} onChange={e => setEditShop({...editShop, image: e.target.value})} fullWidth />
+                                    <Input placeholder="Nome da Unidade" required value={editShop.name} onChange={e => setEditShop({ ...editShop, name: e.target.value })} fullWidth />
+                                    <Input placeholder="Endereço Completo" required value={editShop.address} onChange={e => setEditShop({ ...editShop, address: e.target.value })} fullWidth />
+                                    <Input placeholder="URL da Imagem de Capa" value={editShop.image} onChange={e => setEditShop({ ...editShop, image: e.target.value })} fullWidth />
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-gray-400 block mb-1">Cor Primária (White Label)</label>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="color"
+                                                value={editShop.primaryColor || '#f59e0b'}
+                                                onChange={e => setEditShop({ ...editShop, primaryColor: e.target.value })}
+                                                className="h-10 w-20 cursor-pointer rounded bg-transparent border-0 p-0"
+                                            />
+                                            <span className="text-sm font-bold text-gray-400">{editShop.primaryColor || '#f59e0b'}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="space-y-8">
-                                <h4 className="text-xs font-black uppercase text-amber-500 tracking-[0.3em]">2. Liberação de Recursos</h4>
+                                <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">2. Liberação de Recursos</h4>
                                 <div className="grid grid-cols-1 gap-4">
                                     {[
                                         { label: 'Loja de Produtos', key: 'productsEnabled', icon: ShoppingBag },
@@ -213,37 +225,37 @@ export const SuperAdminDashboard: React.FC = () => {
                                         { label: 'Planos de Assinatura', key: 'subscriptionEnabled', icon: Layers },
                                         { label: 'Agendamento por Barbeiro', key: 'showBarbers', icon: Users }
                                     ].map(feature => (
-                                        <button 
-                                            key={feature.key} 
-                                            type="button" 
-                                            onClick={() => setEditShop({...editShop, settings: { ...editShop.settings, [feature.key]: !((editShop.settings as any)[feature.key]) }})}
-                                            className={`p-5 rounded-3xl border-2 transition-all flex items-center justify-between group ${((editShop.settings as any)[feature.key]) ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-900/10' : 'border-gray-50 dark:border-gray-750 grayscale opacity-60'}`}
+                                        <button
+                                            key={feature.key}
+                                            type="button"
+                                            onClick={() => setEditShop({ ...editShop, settings: { ...editShop.settings, [feature.key]: !((editShop.settings as any)[feature.key]) } })}
+                                            className={`p-5 rounded-3xl border-2 transition-all flex items-center justify-between group ${((editShop.settings as any)[feature.key]) ? 'border-tenant-primary bg-tenant-primary/5/50 dark:bg-tenant-primary/10' : 'border-gray-50 dark:border-gray-750 grayscale opacity-60'}`}
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className={`p-3 rounded-2xl ${((editShop.settings as any)[feature.key]) ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-400'}`}><feature.icon size={20} /></div>
+                                                <div className={`p-3 rounded-2xl ${((editShop.settings as any)[feature.key]) ? 'bg-tenant-primary text-white' : 'bg-gray-100 text-gray-400'}`}><feature.icon size={20} /></div>
                                                 <span className="font-black uppercase text-[10px] tracking-widest dark:text-white">{feature.label}</span>
                                             </div>
-                                            {((editShop.settings as any)[feature.key]) ? <Check size={20} className="text-amber-500" /> : <Lock size={20} className="text-gray-300" />}
+                                            {((editShop.settings as any)[feature.key]) ? <Check size={20} className="text-tenant-primary" /> : <Lock size={20} className="text-gray-300" />}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="space-y-8 lg:col-span-2 pt-10 border-t dark:border-gray-700">
-                                <h4 className="text-xs font-black uppercase text-amber-500 tracking-[0.3em]">3. Limites de Escopo</h4>
+                                <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">3. Limites de Escopo</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="p-8 bg-gray-50 dark:bg-gray-900 rounded-[35px] space-y-4">
                                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4">Max. Serviços no Catálogo</p>
                                         <div className="flex items-center gap-6">
-                                            <input type="range" min="0" max="100" className="flex-1 accent-amber-500" value={editShop.settings.maxServices} onChange={e => setEditShop({...editShop, settings: {...editShop.settings, maxServices: parseInt(e.target.value)}})} />
-                                            <span className="text-2xl font-black text-amber-500">{editShop.settings.maxServices}</span>
+                                            <input type="range" min="0" max="100" className="flex-1 accent-[var(--tenant-primary)]" value={editShop.settings.maxServices} onChange={e => setEditShop({ ...editShop, settings: { ...editShop.settings, maxServices: parseInt(e.target.value) } })} />
+                                            <span className="text-2xl font-black text-tenant-primary">{editShop.settings.maxServices}</span>
                                         </div>
                                     </div>
                                     <div className="p-8 bg-gray-50 dark:bg-gray-900 rounded-[35px] space-y-4">
                                         <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-4">Max. Produtos na Loja</p>
                                         <div className="flex items-center gap-6">
-                                            <input type="range" min="0" max="200" className="flex-1 accent-amber-500" value={editShop.settings.maxProducts} onChange={e => setEditShop({...editShop, settings: {...editShop.settings, maxProducts: parseInt(e.target.value)}})} />
-                                            <span className="text-2xl font-black text-amber-500">{editShop.settings.maxProducts}</span>
+                                            <input type="range" min="0" max="200" className="flex-1 accent-[var(--tenant-primary)]" value={editShop.settings.maxProducts} onChange={e => setEditShop({ ...editShop, settings: { ...editShop.settings, maxProducts: parseInt(e.target.value) } })} />
+                                            <span className="text-2xl font-black text-tenant-primary">{editShop.settings.maxProducts}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -270,14 +282,14 @@ export const SuperAdminDashboard: React.FC = () => {
                             </div>
                             <button type="button" onClick={() => setEditUser(null)}><X size={32} /></button>
                         </div>
-                        
+
                         <div className="p-10 space-y-8">
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-1 block">Nome do Operador</label>
-                                <Input required value={editUser.name} onChange={e => setEditUser({...editUser, name: e.target.value})} fullWidth />
-                                
+                                <Input required value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} fullWidth />
+
                                 <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-1 block">Role (Nível de Acesso)</label>
-                                <Select value={editUser.role} onChange={e => setEditUser({...editUser, role: e.target.value as any})} fullWidth>
+                                <Select value={editUser.role} onChange={e => setEditUser({ ...editUser, role: e.target.value as any })} fullWidth>
                                     <option value={UserRole.ADMIN}>Administrador de Unidade</option>
                                     <option value={UserRole.BARBER}>Barbeiro Profissional</option>
                                     <option value={UserRole.CLIENT}>Cliente Comum</option>
@@ -287,7 +299,7 @@ export const SuperAdminDashboard: React.FC = () => {
                                 {editUser.role !== UserRole.SUPER_ADMIN && (
                                     <>
                                         <label className="text-[10px] font-black uppercase text-gray-400 ml-4 mb-1 block">Vincular à Unidade</label>
-                                        <Select value={editUser.shopId || ''} onChange={e => setEditUser({...editUser, shopId: e.target.value})} fullWidth>
+                                        <Select value={editUser.shopId || ''} onChange={e => setEditUser({ ...editUser, shopId: e.target.value })} fullWidth>
                                             <option value="">Sem vínculo específico</option>
                                             {shops.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                         </Select>
@@ -296,7 +308,7 @@ export const SuperAdminDashboard: React.FC = () => {
                             </div>
 
                             <Button type="submit" variant="secondary" size="lg" fullWidth>
-                                <Shield className="text-amber-500" size={20} /> Aplicar Permissões
+                                <Shield className="text-tenant-primary" size={20} /> Aplicar Permissões
                             </Button>
                         </div>
                     </form>

@@ -1,0 +1,53 @@
+# Walkthrough: Correções de Agendamentos e Trancamento de Agenda
+
+Este documento detalha as soluções implementadas para os bugs de agendamento e a nova funcionalidade de bloqueio de horário para barbeiros.
+
+## 1. Correções Técnicas (Bugs)
+
+### **Erro 500 no Cancelamento**
+- **Causa**: O middleware de multi-tenancy injetava `shopId` em tabelas de junção ([AppointmentProduct](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/types.ts#581-587), `AppointmentService`) que não possuíam essa coluna.
+- **Solução**: Removidas essas tabelas da lista de `tenantModels` no [prisma.service.ts](file:///d:/Meus%20docs/Curso%20IA/barberpro/backend/src/prisma/prisma.service.ts).
+
+### **Erro 403 em Módulos Habilitados**
+- **Causa**: A rota `/api/barbershop-modules/shop/:id/enabled` estava restrita apenas a `ADMIN`.
+- **Solução**: Expandido acesso para `BARBER` e `CLIENT` no [barbershop-modules.controller.ts](file:///d:/Meus%20docs/Curso%20IA/barberpro/backend/src/barbershop-modules/barbershop-modules.controller.ts).
+
+### **Exibição de Horários (--:-- ou Data Inválida)**
+- **Causa**: O formatador anterior falhava ao lidar com agendamentos cujas datas vinham como strings ISO ou falhavam no parse inicial do `new Date()`.
+- **Solução**: Substituído o `formatTime` pelo [safeFormatTime](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/pages/barber/BarberDashboard.tsx#475-503) em todo o [BarberDashboard.tsx](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/pages/barber/BarberDashboard.tsx). Esta função agora conta com Regex para tratar formatos locais e objetos vazios, garantindo que o horário real apareça.
+
+### **Botão "Trancar Agenda" Inoperativo**
+- **Causa**: O modal estava condicionado à existência de um `barberId` populado no estado local, que às vezes demorava a sincronizar.
+- **Solução**: Removida a trava condicional no render do modal, permitindo que ele abra e busque os dados necessários de forma assíncrona.
+
+### **Agendamentos do Cliente (Sumiço e Data Inválida)**
+- **Causa**: O filtro de agendamentos "Próximos" falhava ao processar formatos de data inconsistentes vindo do banco (Strings vs ISO).
+- **Solução**:
+  - Atualizado o hook [useClientAppointments](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/hooks/useAppointments.ts#177-272) para usar parse robusto com Regex.
+  - Atualizado o [ClientDashboard.tsx](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/pages/client/ClientDashboard.tsx) para usar lógica de parse local, eliminando o erro "Data inválida".
+  - Implementada a paginação no Histórico: inicializa com 4 itens e expande com o botão **"Ver Mais Histórico"**.
+
+---
+
+## 2. Nova Funcionalidade: Trancar Agenda (Barbeiro)
+
+O barbeiro agora pode bloquear horários diretamente de seu Dashboard.
+
+### **Fluxo de Trabalho:**
+1. **Botão "Trancar Horário"**: Adicionado ao cabeçalho do [BarberDashboard](file:///d:/Meus%20docs/Curso%20IA/barberpro/frontend/src/pages/barber/BarberDashboard.tsx#456-863).
+2. **Verificação de Conflitos**: O modal consulta o backend em tempo real enquanto o barbeiro escolhe o horário.
+3. **Aviso de Cancelamento**: Se houver clientes no horário, o sistema lista os nomes e exige a marcação de "Cancelar agendamentos e trancar".
+4. **Persistência**: O bloqueio é salvo como um [BlockedTime](file:///d:/Meus%20docs/Curso%20IA/barberpro/backend/src/appointments/appointments.service.ts#680-716) no banco e os clientes afetados têm seus agendamentos marcados como `CANCELLED` com o motivo do bloqueio.
+
+---
+
+## 3. Demonstração Visual
+
+![Interface de Trancamento](file:///C:/Users/wsilv/.gemini/antigravity/brain/0a2db80e-9606-48d2-aace-9e290172534a/agenda_lock_demo.png)
+*Nota: A imagem acima representa a nova UI do modal de bloqueio.*
+
+---
+
+## 4. Próximos Passos
+- [ ] Implementar sistema de SMS/WhatsApp automático no backend para clientes cujos horários foram trancados.
+- [ ] Adicionar botão para "Liberar Horário" (Excluir bloqueio) diretamente da lista no Dashboard do Barbeiro.

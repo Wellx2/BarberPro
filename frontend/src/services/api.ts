@@ -2,7 +2,11 @@
  * Configuração base da API
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+if (!API_BASE_URL && import.meta.env.PROD) {
+  console.warn('VITE_API_URL não está definida em ambiente de produção!');
+}
 
 interface ApiError {
   message: string;

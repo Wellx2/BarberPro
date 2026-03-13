@@ -49,9 +49,9 @@ export function PWABadge() {
     if (!showInstallBanner) return null;
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-2 border-amber-500 p-4 z-50 animate-fade-in flex items-start gap-4">
-            <div className="bg-amber-100 dark:bg-amber-900/40 p-3 rounded-xl shrink-0">
-                <Download className="text-amber-600 dark:text-amber-400" size={24} />
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-2 border-tenant-primary p-4 z-50 animate-fade-in flex items-start gap-4">
+            <div className="bg-tenant-primary/10 dark:bg-tenant-primary/20/40 p-3 rounded-xl shrink-0">
+                <Download className="text-tenant-primary dark:text-tenant-primary" size={24} />
             </div>
             <div className="flex-1">
                 <h4 className="font-bold text-gray-900 dark:text-white text-sm uppercase tracking-wider mb-1">Instalar BarberPro</h4>
@@ -61,7 +61,7 @@ export function PWABadge() {
                 <div className="flex gap-2">
                     <button
                         onClick={handleInstallClick}
-                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors uppercase"
+                        className="flex-1 bg-tenant-primary hover:opacity-90 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors uppercase"
                     >
                         Instalar
                     </button>

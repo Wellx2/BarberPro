@@ -11,9 +11,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { 
-  getFinancialAnalytics, 
-  getDailyCashierAnalytics, 
+import {
+  getFinancialAnalytics,
+  getDailyCashierAnalytics,
   processInvoicePayment,
   type FinancialAnalytics,
   type DailyCashierAnalytics,
@@ -76,13 +76,13 @@ describe('Financial Service', () => {
 
     it('deve incluir startDate e endDate opcionais na query', async () => {
       // Arrange
-      vi.mocked(api.get).mockResolvedValueOnce({ 
-        data: {} as FinancialAnalytics 
+      vi.mocked(api.get).mockResolvedValueOnce({
+        data: {} as FinancialAnalytics
       });
 
       // Act
       await getFinancialAnalytics(
-        'shop-1', 
+        'shop-1',
         'ALL',
         '2026-01-01T00:00:00.000Z',
         '2026-01-31T23:59:59.999Z'
@@ -252,7 +252,7 @@ describe('Financial Service', () => {
 
       // Assert
       const sumPaymentMethods = Object.values(result.paymentMethods).reduce(
-        (sum, value) => sum + value, 
+        (sum, value) => sum + value,
         0
       );
       expect(sumPaymentMethods).toBe(result.totalReceived);
@@ -331,7 +331,7 @@ describe('Financial Service', () => {
       // Assert
       const callArgs = vi.mocked(api.patch).mock.calls[0][1] as any;
       const afterTimestamp = new Date().toISOString();
-      
+
       expect(callArgs.paidAt).toBeDefined();
       expect(new Date(callArgs.paidAt).getTime()).toBeGreaterThanOrEqual(
         new Date(beforeTimestamp).getTime()

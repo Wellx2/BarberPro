@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ServiceGrid } from '../components/ServiceGrid';
 import { serviceService } from '../services/serviceService';
@@ -16,7 +16,7 @@ export const Services: React.FC = () => {
     const { shop, fetchError } = useShop();
     const lastLoadedShopId = React.useRef<string | null>(null);
     const abortControllerRef = React.useRef<AbortController | null>(null);
-    
+
     // Verificar autenticação ANTES de carregar dados
     useEffect(() => {
         if (!isAuthenticated) {
@@ -25,41 +25,41 @@ export const Services: React.FC = () => {
     }, [isAuthenticated, navigate]);
 
     useEffect(() => {
-        // ✅ PROTEÇÃO 1: Se ShopContext tem erro, não tentar carregar
+        // ? Proteção 1: Se ShopContext tem erro, não tentar carregar
         if (fetchError) {
             setLoading(false);
             return;
         }
-        
-        // ✅ PROTEÇÃO 2: Aguardar shop.id válido
+
+        // ? Proteção 2: Aguardar shop.id válido
         if (!shop.id || shop.id.startsWith('shop-')) {
             setLoading(false);
             return;
         }
-        
-        // ✅ PROTEÇÃO 3: Evitar recarregar para o mesmo shop SE já tem dados
+
+        // ? Proteção 3: Evitar recarregar para o mesmo shop SE já os tem dados
         if (lastLoadedShopId.current === shop.id && services.length > 0) {
             return;
         }
-        
+
         lastLoadedShopId.current = shop.id;
-        
+
         const loadServices = async () => {
-            // ✅ PROTEÇÃO 4: Cancelar requisições anteriores
+            // ? Proteção 4: Cancelar requisições anteriores
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
             }
             abortControllerRef.current = new AbortController();
-            
+
             try {
                 setLoading(true);
                 const data = await serviceService.list(shop.id);
-                
-                // ✅ PROTEÇÃO 5: Verificar se foi abortado
+
+                // ? Proteção 5: Verificar se foi abortado
                 if (abortControllerRef.current?.signal.aborted) {
                     return;
                 }
-                
+
                 setServices(data.filter((s: Service) => s.active));
             } catch (error) {
                 console.error('Erro ao carregar serviços:', error);
@@ -71,8 +71,8 @@ export const Services: React.FC = () => {
         };
 
         loadServices();
-        
-        // ✅ Cleanup: Abortar requisição ao desmontar
+
+        // ? Cleanup: Abortar requisição ao desmontar
         return () => {
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
@@ -102,23 +102,23 @@ export const Services: React.FC = () => {
 
                 {loading ? (
                     <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-amber-500 border-t-transparent"></div>
+                        <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-tenant-primary border-t-transparent"></div>
                         <p className="mt-6 text-gray-500 dark:text-gray-400 font-medium">Carregando serviços...</p>
                     </div>
                 ) : services.length > 0 ? (
                     <>
-                        <ServiceGrid 
+                        <ServiceGrid
                             services={displayedServices}
                             searchTerm={searchTerm}
                             onSearchChange={setSearchTerm}
                             showSearch={true}
                         />
-                        
+
                         {hasMore && (
                             <div className="text-center mt-12">
                                 <button
                                     onClick={() => setDisplayCount(prev => prev + 6)}
-                                    className="px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase text-sm tracking-wider rounded-full transition-colors"
+                                    className="px-8 py-3 bg-tenant-primary hover:opacity-90 text-white font-bold uppercase text-sm tracking-wider rounded-full transition-colors"
                                 >
                                     Carregar Mais Serviços
                                 </button>
@@ -127,7 +127,7 @@ export const Services: React.FC = () => {
                     </>
                 ) : (
                     <div className="text-center py-12">
-                        <p className="text-gray-500 dark:text-gray-400 text-lg">Nenhum serviço disponível no momento.</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg">Nenhum serviço disponível não momento.</p>
                         <p className="text-gray-400 text-sm mt-2">Entre em contato com a barbearia para mais informações.</p>
                     </div>
                 )}
