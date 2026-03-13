@@ -1,4 +1,4 @@
-﻿
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, UserRole, Appointment } from '../types';
 import { authService } from '../services/authService';
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loyaltyStamps: 0
     };
 
-    // LÃ“GICA DE VÍNCULO DE HISTÃ“RICO
+    // LÓGICA DE VÍNCULO DE HISTÓRICO
     try {
       const storedAppointments = localStorage.getItem('appointments');
       if (storedAppointments) {
