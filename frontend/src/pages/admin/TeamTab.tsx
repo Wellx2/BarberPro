@@ -1,38 +1,142 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Users, Edit3, Power, Lock, Trash2 } from 'lucide-react';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, Input, Select } from '../../components/ui';
+import { Modal } from '../../components/feedback';
+import { 
+  TeamMember, 
+  TeamMemberRole, 
+  TEAM_ROLE_LABELS, 
+  BarberWorkModel, 
+  WORK_MODEL_LABELS, 
+  CreateTeamMemberDto 
+} from '../../types';
+import { teamService } from '../../services/teamService';
+import { useShop } from '../../context/ShopContext';
+import { useNotification } from '../../context/NotificationContext';
+import { AgendaLockModal } from '../../components/modals/AgendaLockModal';
 
-interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  email?: string;
-  phone?: string;
-  avatar?: string;
-  active: boolean;
-  specialties?: string[];
-  commissionRate?: number;
-}
+export const TeamTab: React.FC = () => {
+  const { shop: currentShop } = useShop();
+  const { addNotification } = useNotification();
 
-interface TeamTabProps {
-  teamMembers: TeamMember[];
-  loadingTeam: boolean;
-  handleOpenTeamModal: (member?: TeamMember) => void;
-  handleToggleTeamMemberActive: (id: string) => void;
-  handleOpenLockAgendaModal: (member: TeamMember) => void;
-  handleDeleteTeamMember: (id: string, name: string) => void;
-  TEAM_ROLE_LABELS: Record<string, string>;
-}
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loadingTeam, setLoadingTeam] = useState(true);
+  const [editTeamMember, setEditTeamMember] = useState<TeamMember | null>(null);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [teamForm, setTeamForm] = useState<CreateTeamMemberDto>({
+    name: '',
+    email: '',
+    phone: '',
+    role: TeamMemberRole.BARBER,
+    specialties: [],
+    description: '',
+    commissionRate: 50,
+    workModel: BarberWorkModel.COMMISSION_ONLY,
+    active: true,
+  });
 
-export const TeamTab: React.FC<TeamTabProps> = ({
-  teamMembers,
-  loadingTeam,
-  handleOpenTeamModal,
-  handleToggleTeamMemberActive,
-  handleOpenLockAgendaModal,
-  handleDeleteTeamMember,
-  TEAM_ROLE_LABELS
-}) => {
+  const [showLockAgendaModal, setShowLockAgendaModal] = useState(false);
+  const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
+
+  useEffect(() => {
+    if (!currentShop?.id) return;
+
+    const loadTeam = async () => {
+      try {
+        setLoadingTeam(true);
+        const data = await teamService.list(true);
+        setTeamMembers(data);
+      } catch (error) {
+        console.error('Erro ao carregar equipe:', error);
+        addNotification('error', 'Erro ao carregar equipe');
+      } finally {
+        setLoadingTeam(false);
+      }
+    };
+
+    loadTeam();
+  }, [currentShop?.id, addNotification]);
+
+  const handleOpenTeamModal = (member?: TeamMember) => {
+    if (member) {
+      setEditTeamMember(member);
+      setTeamForm({
+        name: member.name,
+        email: member.email || '',
+        phone: member.phone || '',
+        role: member.role as TeamMemberRole,
+        specialties: member.specialties || [],
+        description: member.description || '',
+        commissionRate: member.commissionRate || 50,
+        workModel: (member as any).workModel || BarberWorkModel.COMMISSION_ONLY,
+        active: member.active,
+        avatar: member.avatar
+      });
+    } else {
+      setEditTeamMember(null);
+      setTeamForm({
+        name: '', email: '', phone: '',
+        role: TeamMemberRole.BARBER,
+        specialties: [], description: '',
+        commissionRate: 50,
+        workModel: BarberWorkModel.COMMISSION_ONLY,
+        active: true
+      });
+    }
+    setShowTeamModal(true);
+  };
+
+  const handleSaveTeamMember = async () => {
+    if (!teamForm.name.trim()) {
+      addNotification('error', 'Nome é obrigatário');
+      return;
+    }
+    try {
+      if (editTeamMember) {
+        await teamService.update(editTeamMember.id, teamForm);
+        addNotification('success', 'Profissional atualizado com sucesso!');
+      } else {
+        await teamService.create(teamForm);
+        addNotification('success', 'Profissional adicionado com sucesso!');
+      }
+      setShowTeamModal(false);
+      const data = await teamService.list(true);
+      setTeamMembers(data);
+    } catch (error: any) {
+      addNotification('error', error.response?.data?.message || 'Erro ao salvar colaborador');
+    }
+  };
+
+  const handleToggleTeamMemberActive = async (id: string) => {
+    try {
+      await teamService.toggleActive(id);
+      setTeamMembers(prev => prev.map(m => m.id === id ? { ...m, active: !m.active } : m));
+      addNotification('success', 'Status atualizado!');
+    } catch (error) {
+      addNotification('error', 'Erro ao alterar status');
+    }
+  };
+
+  const handleDeleteTeamMember = async (id: string, name: string) => {
+    const reason = window.prompt(`Tem certeza que deseja remover ${name}? Por favor, informe o motivo:`);
+    if (reason === null) return;
+    if (!reason.trim()) {
+      addNotification('error', 'O motivo da remoção é obrigatório');
+      return;
+    }
+    try {
+      await teamService.remove(id, reason);
+      setTeamMembers(prev => prev.filter(m => m.id !== id));
+      addNotification('success', 'Profissional removido');
+    } catch (error) {
+      addNotification('error', 'Erro ao remover profissional');
+    }
+  };
+
+  const handleOpenLockAgendaModal = (member: TeamMember) => {
+    setSelectedTeamMember(member);
+    setShowLockAgendaModal(true);
+  };
   return (
     <Card>
       <Card.Body className="space-y-4">
@@ -166,6 +270,93 @@ export const TeamTab: React.FC<TeamTabProps> = ({
           </div>
         )}
       </Card.Body>
+
+      {/* Modais */}
+      {showTeamModal && (
+        <Modal
+          isOpen={showTeamModal}
+          onClose={() => setShowTeamModal(false)}
+          size="lg"
+          title={editTeamMember ? 'Editar Colaborador' : 'Novo Colaborador'}
+        >
+          <div className="flex flex-col gap-5 pb-2">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nome Completo *</label>
+                <Input value={teamForm.name} onChange={e => setTeamForm({ ...teamForm, name: e.target.value })} placeholder="João Silva" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Função/Cargo *</label>
+                <Select value={teamForm.role} onChange={e => setTeamForm({ ...teamForm, role: e.target.value as TeamMemberRole })}>
+                  {Object.entries(TEAM_ROLE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">E-mail</label>
+                  <Input type="email" value={teamForm.email || ''} onChange={e => setTeamForm({ ...teamForm, email: e.target.value })} placeholder="joao@email.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Telefone</label>
+                  <Input type="tel" value={teamForm.phone || ''} onChange={e => setTeamForm({ ...teamForm, phone: e.target.value })} placeholder="(11) 99999-9999" />
+                </div>
+              </div>
+
+              {(teamForm.role === TeamMemberRole.BARBER || teamForm.role === TeamMemberRole.HAIRDRESSER) && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Taxa de Comissão (%)</label>
+                    <Input type="number" min="0" max="100" value={teamForm.commissionRate} onChange={e => setTeamForm({ ...teamForm, commissionRate: parseFloat(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Modelo de Trabalho *</label>
+                    <Select value={teamForm.workModel} onChange={e => setTeamForm({ ...teamForm, workModel: e.target.value as BarberWorkModel })}>
+                      {Object.entries(WORK_MODEL_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </Select>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">URL da Foto</label>
+                <Input type="url" value={teamForm.avatar || ''} onChange={e => setTeamForm({ ...teamForm, avatar: e.target.value })} placeholder="https://exemplo.com/foto.jpg" />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button onClick={() => setShowTeamModal(false)} variant="outline" className="flex-1">Cancelar</Button>
+              <Button onClick={handleSaveTeamMember} variant="primary" className="flex-1">
+                {editTeamMember ? 'Salvar Alterações' : 'Adicionar Colaborador'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showLockAgendaModal && selectedTeamMember && (
+        <AgendaLockModal
+          memberId={selectedTeamMember.id}
+          selectedDate={new Date()}
+          shop={currentShop!}
+          onClose={() => setShowLockAgendaModal(false)}
+          onCheckConflicts={(data) => teamService.checkConflicts(data)}
+          onConfirm={async (data) => {
+            try {
+              await teamService.createLock({ teamMemberId: selectedTeamMember.id, ...data });
+              setShowLockAgendaModal(false);
+              addNotification('success', 'Agenda bloqueada com sucesso!');
+            } catch (error: any) {
+              addNotification('error', error.response?.data?.message || 'Erro ao bloquear agenda');
+            }
+          }}
+        />
+      )}
     </Card>
   );
 };

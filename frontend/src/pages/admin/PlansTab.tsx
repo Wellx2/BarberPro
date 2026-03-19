@@ -1,22 +1,115 @@
-import React from 'react';
-import { Plus, Layers, Check } from 'lucide-react';
-import { Card, Button } from '../../components/ui';
+import React, { useState, useEffect } from 'react';
+import { Plus, Layers, Check, Trash2, Edit3 } from 'lucide-react';
+import { Card, Button, Input } from '../../components/ui';
+import { Modal } from '../../components/feedback';
+import { planService } from '../../services/planService';
+import { useNotification } from '../../context/NotificationContext';
+import { Plan } from '../../types';
 
-interface PlansTabProps {
-  plans: any[];
-  loadingPlans: boolean;
-  handleOpenPlanModal: (plan?: any) => void;
-  handleTogglePlanActive: (id: string) => void;
-  handleDeletePlan: (id: string, name: string) => void;
-}
+export const PlansTab: React.FC = () => {
+  const { addNotification } = useNotification();
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editPlan, setEditPlan] = useState<Plan | null>(null);
+  const [planForm, setPlanForm] = useState({
+    name: '',
+    price: 0,
+    benefitMonths: 1,
+    benefitServices: 0,
+    benefitProducts: 0,
+    benefitMoneyback: 0,
+    description: '',
+    benefits: [] as string[],
+    discount: 0,
+    active: true,
+  });
 
-export const PlansTab: React.FC<PlansTabProps> = ({
-  plans,
-  loadingPlans,
-  handleOpenPlanModal,
-  handleTogglePlanActive,
-  handleDeletePlan
-}) => {
+  useEffect(() => {
+    loadPlans();
+  }, []);
+
+  const loadPlans = async () => {
+    try {
+      setLoadingPlans(true);
+      const data = await planService.getAll();
+      setPlans(data);
+    } catch (error) {
+      console.error('Erro ao carregar planos:', error);
+      addNotification('error', 'Erro ao carregar planos');
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  const handleOpenPlanModal = (plan?: Plan) => {
+    if (plan) {
+      setEditPlan(plan);
+      setPlanForm({
+        name: plan.name,
+        price: plan.price,
+        benefitMonths: plan.benefitMonths || 1,
+        benefitServices: plan.benefitServices || 0,
+        benefitProducts: plan.benefitProducts || 0,
+        benefitMoneyback: plan.benefitMoneyback || 0,
+        description: plan.description || '',
+        benefits: plan.benefits || [],
+        discount: plan.discount || 0,
+        active: plan.active,
+      });
+    } else {
+      setEditPlan(null);
+      setPlanForm({
+        name: '', price: 0, benefitMonths: 1, benefitServices: 0,
+        benefitProducts: 0, benefitMoneyback: 0, description: '',
+        benefits: [], discount: 0, active: true
+      });
+    }
+    setShowPlanModal(true);
+  };
+
+  const handleSavePlan = async () => {
+    if (!planForm.name.trim()) {
+      addNotification('error', 'Nome do plano é obrigatório');
+      return;
+    }
+    try {
+      if (editPlan) {
+        await planService.update(editPlan.id, planForm);
+        addNotification('success', 'Plano atualizado!');
+      } else {
+        await planService.create(planForm);
+        addNotification('success', 'Plano criado!');
+      }
+      setShowPlanModal(false);
+      loadPlans();
+    } catch (error) {
+      addNotification('error', 'Erro ao salvar plano');
+    }
+  };
+
+  const handleTogglePlanActive = async (id: string) => {
+    try {
+      const plan = plans.find(p => p.id === id);
+      if (!plan) return;
+      await planService.update(id, { active: !plan.active });
+      setPlans(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+      addNotification('success', 'Status atualizado!');
+    } catch (error) {
+      addNotification('error', 'Erro ao atualizar status');
+    }
+  };
+
+  const handleDeletePlan = async (id: string, name: string) => {
+    if (!window.confirm(`Tem certeza que deseja remover o plano ${name}?`)) return;
+    try {
+      await planService.delete(id);
+      setPlans(prev => prev.filter(p => p.id !== id));
+      addNotification('success', 'Plano removido');
+    } catch (error) {
+      addNotification('error', 'Erro ao remover plano');
+    }
+  };
   return (
     <Card>
       <Card.Body className="space-y-4">
@@ -134,6 +227,69 @@ export const PlansTab: React.FC<PlansTabProps> = ({
           </div>
         )}
       </Card.Body>
+
+      {/* Plan Modal */}
+      {showPlanModal && (
+        <Modal
+          isOpen={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          title={editPlan ? 'Editar Plano' : 'Novo Plano'}
+          size="lg"
+        >
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nome do Plano *</label>
+                  <Input value={planForm.name} onChange={e => setPlanForm({ ...planForm, name: e.target.value })} placeholder="Ex: Trimestral VIP" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço (R$) *</label>
+                  <Input type="number" value={planForm.price} onChange={e => setPlanForm({ ...planForm, price: parseFloat(e.target.value) })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Duração (Meses)</label>
+                  <Input type="number" min="1" value={planForm.benefitMonths} onChange={e => setPlanForm({ ...planForm, benefitMonths: parseInt(e.target.value) })} />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Serviços Inclusos</label>
+                    <Input type="number" value={planForm.benefitServices} onChange={e => setPlanForm({ ...planForm, benefitServices: parseInt(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Produtos Inclusos</label>
+                    <Input type="number" value={planForm.benefitProducts} onChange={e => setPlanForm({ ...planForm, benefitProducts: parseInt(e.target.value) })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Cashback (%)</label>
+                  <Input type="number" max="100" value={planForm.benefitMoneyback} onChange={e => setPlanForm({ ...planForm, benefitMoneyback: parseFloat(e.target.value) })} />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descrição / Benefícios</label>
+              <textarea
+                value={planForm.description}
+                onChange={e => setPlanForm({ ...planForm, description: e.target.value })}
+                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 outline-none focus:border-tenant-primary transition-colors min-h-[100px]"
+                placeholder="Detalhes sobre as vantagens do plano..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <Button onClick={() => setShowPlanModal(false)} variant="outline" className="flex-1">Cancelar</Button>
+              <Button onClick={handleSavePlan} variant="primary" className="flex-1">
+                {editPlan ? 'Salvar Alterações' : 'Criar Plano'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Card>
   );
 };

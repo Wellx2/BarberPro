@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Utilitários para decodificar e debugar JWT
  */
 
@@ -79,29 +79,5 @@ export function validateJWTForAppointments(token: string): {
  * Debug completo do JWT atual
  */
 export function debugCurrentJWT(): void {
-  const token = localStorage.getItem('accessToken');
-
-  console.group('🔍 DEBUG JWT');
-
-  if (!token) {
-    console.error('Nenhum token encontrado não localStorage');
-    console.groupEnd();
-    return;
-  }
-
-
-  const validation = validateJWTForAppointments(token);
-
-
-  if (validation.errors.length > 0) {
-    console.group('Problemas encontrados:');
-    validation.errors.forEach(error => console.error(error));
-    console.groupEnd();
-  }
-
-  if (validation.payload) {
-    console.groupEnd();
-  }
-
-  console.groupEnd();
+  // Desativado para produção
 }

@@ -1,22 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layers, AlertCircle } from 'lucide-react';
 import { Card } from '../../components/ui';
+import { productService } from '../../services/productService';
+import { useShop } from '../../context/ShopContext';
+import { Product } from '../../types';
 
-interface StockTabProps {
-  products: any[];
-  setProducts: (products: any[]) => void;
-  loadingProducts: boolean;
-  currentShopId: string;
-  productService: any;
-}
+export const StockTab: React.FC = () => {
+  const { shop: currentShop } = useShop();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-export const StockTab: React.FC<StockTabProps> = ({
-  products,
-  setProducts,
-  loadingProducts,
-  currentShopId,
-  productService
-}) => {
+  useEffect(() => {
+    if (!currentShop?.id) return;
+    loadProducts();
+  }, [currentShop?.id]);
+
+  const loadProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      const data = await productService.list(currentShop.id, true);
+      setProducts(data);
+    } catch (error) {
+      console.error('Erro ao carregar estoque:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const updateStock = async (id: string, newStock: number) => {
+    try {
+      await productService.update(id, { stock: newStock });
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, stock: newStock } : p));
+    } catch (error) {
+      console.error('Erro ao atualizar estoque:', error);
+    }
+  };
   return (
     <Card>
       <Card.Body className="space-y-4">
@@ -66,9 +84,7 @@ export const StockTab: React.FC<StockTabProps> = ({
                         <button
                           onClick={() => {
                             const v = Math.max(0, product.stock - 1);
-                            productService.update(product.id, { stock: v })
-                              .then(() => productService.list(currentShopId, true))
-                              .then((d: any) => setProducts(d));
+                            updateStock(product.id, v);
                           }}
                           disabled={product.stock === 0}
                           className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-all font-black text-2xl disabled:opacity-20"
@@ -78,9 +94,7 @@ export const StockTab: React.FC<StockTabProps> = ({
                         <button
                           onClick={() => {
                             const v = product.stock + 1;
-                            productService.update(product.id, { stock: v })
-                              .then(() => productService.list(currentShopId, true))
-                              .then((d: any) => setProducts(d));
+                            updateStock(product.id, v);
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-50 dark:bg-green-500/10 text-green-500 hover:bg-green-100 transition-all font-black text-2xl"
                         >

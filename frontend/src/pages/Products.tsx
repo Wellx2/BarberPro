@@ -430,13 +430,13 @@ export const Products: React.FC = () => {
                   const price = getActualPrice(item);
                   return (
                     <div key={item.id} className="flex gap-6 items-start">
-                      <div className="w-24 h-24 rounded-[20px] overflow-hidden border border-gray-100 dark:border-gray-700 shrink-0">
+                      <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-700 shrink-0 shadow-sm bg-gray-50 dark:bg-gray-900">
                         <img 
-                          src={item.image || 'https://images.unsplash.com/photo-1599351431247-f10b21ce9e13?q=80&w=2670&auto=format&fit=crop'} 
+                          src={item.image || 'https://images.unsplash.com/photo-1512690196236-d5a23223044b?w=800&q=80'} 
                           alt={item.name} 
-                          className="w-full h-full object-cover" 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-110" 
                           onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1599351431247-f10b21ce9e13?q=80&w=2670&auto=format&fit=crop';
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1512690196236-d5a23223044b?w=800&q=80';
                           }}
                         />
                       </div>
@@ -499,9 +499,9 @@ export const Products: React.FC = () => {
                       <span>- R$ {cartSavings.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Total</span>
-                    <span className="text-4xl font-black text-tenant-primary dark:text-tenant-primary tracking-tighter leading-none">R$ {cartTotal.toFixed(2)}</span>
+                  <div className="flex justify-between items-end bg-tenant-primary/5 dark:bg-tenant-primary/10 p-5 rounded-3xl border border-tenant-primary/20">
+                    <span className="text-[10px] font-black uppercase text-gray-400 dark:text-gray-300 tracking-widest">Total</span>
+                    <span className="text-4xl font-black text-tenant-primary dark:text-white tracking-tighter leading-none">R$ {cartTotal.toFixed(2)}</span>
                   </div>
                   <Button
                     onClick={handleCheckout}

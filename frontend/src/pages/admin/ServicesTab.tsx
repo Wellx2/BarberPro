@@ -1,24 +1,155 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Scissors, Eye, EyeOff, Edit3, Power, Trash2 } from 'lucide-react';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, Input } from '../../components/ui';
+import { Modal } from '../../components/feedback';
+import { serviceService } from '../../services/serviceService';
+import { useShop } from '../../context/ShopContext';
+import { useNotification } from '../../context/NotificationContext';
+import { Service } from '../../types';
 
-interface ServiceTabProps {
-  unitServices: any[];
-  loadingServices: boolean;
-  handleOpenServiceModal: (service?: any) => void;
-  toggleActive: (id: string, type: 'SERVICE' | 'PRODUCT') => void;
-  deleteItem: (id: string, type: 'SERVICE' | 'PRODUCT') => void;
-  fallbackImage: string;
-}
+export const ServicesTab: React.FC = () => {
+  const { shop: currentShop } = useShop();
+  const { addNotification } = useNotification();
+  const [unitServices, setUnitServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [editService, setEditService] = useState<Service | null>(null);
+  const [serviceImagePreview, setServiceImagePreview] = useState<string>('');
+  const [serviceForm, setServiceForm] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    duration: 30,
+    category: '',
+    image: ''
+  });
 
-export const ServicesTab: React.FC<ServiceTabProps> = ({
-  unitServices,
-  loadingServices,
-  handleOpenServiceModal,
-  toggleActive,
-  deleteItem,
-  fallbackImage
-}) => {
+  const fallbackImage = 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80';
+
+  useEffect(() => {
+    if (!currentShop?.id) return;
+    loadServices();
+  }, [currentShop?.id]);
+
+  const loadServices = async () => {
+    try {
+      setLoadingServices(true);
+      const data = await serviceService.list(currentShop.id);
+      setUnitServices(data);
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
+      addNotification('error', 'Erro ao carregar serviços');
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 600;
+          if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(compressedBase64);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file);
+        setServiceForm({ ...serviceForm, image: compressedBase64 });
+        setServiceImagePreview(compressedBase64);
+      } catch (error) {
+        addNotification('error', 'Erro ao processar imagem');
+      }
+    }
+  };
+
+  const handleOpenServiceModal = (service?: Service) => {
+    if (service) {
+      setEditService(service);
+      setServiceForm({
+        name: service.name || '',
+        description: service.description || '',
+        price: service.price || 0,
+        duration: service.duration || 30,
+        category: service.category || '',
+        image: service.image || ''
+      });
+      setServiceImagePreview(service.image || '');
+    } else {
+      setEditService(null);
+      setServiceForm({ name: '', description: '', price: 0, duration: 30, category: '', image: '' });
+      setServiceImagePreview('');
+    }
+    setShowServiceModal(true);
+  };
+
+  const handleSaveService = async () => {
+    if (!serviceForm.name.trim()) {
+      addNotification('error', 'Nome do serviço é obrigatório');
+      return;
+    }
+    try {
+      if (editService) {
+        await serviceService.update(editService.id, serviceForm);
+        addNotification('success', 'Serviço atualizado!');
+      } else {
+        await serviceService.create(serviceForm);
+        addNotification('success', 'Serviço criado!');
+      }
+      setShowServiceModal(false);
+      loadServices();
+    } catch (error) {
+      addNotification('error', 'Erro ao salvar serviço');
+    }
+  };
+
+  const toggleActive = async (id: string) => {
+    try {
+      const service = unitServices.find(s => s.id === id);
+      if (!service) return;
+      await serviceService.update(id, { active: !service.active });
+      setUnitServices(prev => prev.map(s => s.id === id ? { ...s, active: !s.active } : s));
+      addNotification('success', 'Status atualizado!');
+    } catch (error) {
+      addNotification('error', 'Erro ao atualizar status');
+    }
+  };
+
+  const deleteItem = async (id: string, name: string) => {
+    const reason = window.prompt(`Tem certeza que deseja excluir ${name}? Por favor, informe o motivo:`);
+    if (!reason) return;
+    try {
+      await serviceService.remove(id, reason);
+      setUnitServices(prev => prev.filter(s => s.id !== id));
+      addNotification('success', 'Serviço excluído');
+    } catch (error) {
+      addNotification('error', 'Erro ao excluir serviço');
+    }
+  };
   return (
     <Card>
       <Card.Body className="space-y-4">
@@ -95,7 +226,7 @@ export const ServicesTab: React.FC<ServiceTabProps> = ({
 
                     {/* Botão Ativar/Desativar - SEMPRE colorido */}
                     <button
-                      onClick={() => toggleActive(service.id, 'SERVICE')}
+                      onClick={() => toggleActive(service.id)}
                       className={`flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${service.active
                         ? 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 active:bg-orange-200 dark:hover:bg-orange-900/30 text-orange-600 dark:text-orange-400'
                         : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 active:bg-green-200 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400'
@@ -107,7 +238,7 @@ export const ServicesTab: React.FC<ServiceTabProps> = ({
                     </button>
 
                     <button
-                      onClick={() => deleteItem(service.id, 'SERVICE')}
+                      onClick={() => deleteItem(service.id, service.name)}
                       disabled={!service.active}
                       className={`flex-1 p-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 active:bg-red-200 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${!service.active ? 'grayscale opacity-40 cursor-not-allowed' : ''}`}
                       title={service.active ? 'Excluir permanentemente' : 'Ative o serviço para poder excluir'}
@@ -122,6 +253,68 @@ export const ServicesTab: React.FC<ServiceTabProps> = ({
           </div>
         )}
       </Card.Body>
+
+      {/* Service Modal */}
+      {showServiceModal && (
+        <Modal
+          isOpen={showServiceModal}
+          onClose={() => setShowServiceModal(false)}
+          title={editService ? 'Editar Serviço' : 'Novo Serviço'}
+          size="lg"
+        >
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nome do Serviço *</label>
+                  <Input value={serviceForm.name} onChange={e => setServiceForm({ ...serviceForm, name: e.target.value })} placeholder="Ex: Corte de Cabelo" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço (R$) *</label>
+                  <Input type="number" value={serviceForm.price} onChange={e => setServiceForm({ ...serviceForm, price: parseFloat(e.target.value) })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Duração (Minutos)</label>
+                  <Input type="number" step="5" value={serviceForm.duration} onChange={e => setServiceForm({ ...serviceForm, duration: parseInt(e.target.value) })} />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Imagem do Serviço</label>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-full h-32 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                      {serviceImagePreview ? (
+                        <img src={serviceImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Scissors className="text-gray-300" size={40} />
+                      )}
+                    </div>
+                    <Input type="file" accept="image/*" onChange={handleImageUpload} className="w-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descrição</label>
+              <textarea
+                value={serviceForm.description}
+                onChange={e => setServiceForm({ ...serviceForm, description: e.target.value })}
+                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 outline-nãone focus:border-tenant-primary transition-colors min-h-[100px]"
+                placeholder="Descreva o que está incluso no serviço..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <Button onClick={() => setShowServiceModal(false)} variant="outline" className="flex-1">Cancelar</Button>
+              <Button onClick={handleSaveService} variant="primary" className="flex-1">
+                {editService ? 'Salvar Alterações' : 'Criar Serviço'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Card>
   );
 };

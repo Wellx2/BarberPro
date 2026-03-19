@@ -148,7 +148,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
               <div className="p-4 bg-tenant-primary/5 border border-tenant-primary/20 rounded-lg">
                 <h3 className="text-xs font-bold uppercase text-tenant-primary mb-3 tracking-widest">💡 Dicas</h3>
                 <ul className="text-xs text-tenant-primary space-y-2">
-                  <li>✓ Compartilhe não WhatsApp, SMS ou redes sociais</li>
+                  <li>✓ Compartilhe nas redes sociais e SMS</li>
                   <li>✓ Envie para sua lista de clientes por e-mail</li>
                   <li>✓ Cole em sua bio do Instagram</li>
                   <li>✓ Gere QR Code para imprimir na barbearia</li>

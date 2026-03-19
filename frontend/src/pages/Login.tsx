@@ -162,15 +162,7 @@ export const Login: React.FC = () => {
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
               <div className="flex flex-col gap-2 mt-4">
-                {/* 
-                <button
-                  type="button"
-                  onClick={() => setView('PHONE_LOGIN')}
-                  className="flex items-center justify-center gap-2 w-full py-3 border-2 border-tenant-primary/30 rounded-xl text-[10px] font-black uppercase text-gray-600 dark:text-gray-400 hover:bg-tenant-primary/5 transition-all"
-                >
-                  <Phone size={14} className="text-tenant-primary" /> Entrar com WhatsApp
-                </button>
-                */}
+                {/* Ocultando login por WhatsApp temporariamente */}
                 <button
                   type="button"
                   onClick={() => setView('REGISTER')}

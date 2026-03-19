@@ -1,22 +1,157 @@
-import React from 'react';
-import { Plus, ShoppingBag, Edit3, Power } from 'lucide-react';
-import { Card, Button } from '../../components/ui';
+import React, { useState, useEffect } from 'react';
+import { Plus, ShoppingBag, Edit3, Power, Trash2 } from 'lucide-react';
+import { Card, Button, Input } from '../../components/ui';
+import { Modal } from '../../components/feedback';
+import { productService } from '../../services/productService';
+import { useShop } from '../../context/ShopContext';
+import { useNotification } from '../../context/NotificationContext';
+import { Product } from '../../types';
 
-interface ProductsTabProps {
-  products: any[];
-  loadingProducts: boolean;
-  handleOpenProductModal: (product?: any) => void;
-  toggleActive: (id: string, type: 'SERVICE' | 'PRODUCT') => void;
-  fallbackImage: string;
-}
+export const ProductsTab: React.FC = () => {
+  const { shop: currentShop } = useShop();
+  const { addNotification } = useNotification();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    costPrice: 0,
+    image: '',
+    category: '',
+    stock: 0,
+    unit: 'unidade'
+  });
 
-export const ProductsTab: React.FC<ProductsTabProps> = ({
-  products,
-  loadingProducts,
-  handleOpenProductModal,
-  toggleActive,
-  fallbackImage
-}) => {
+  const fallbackImage = 'https://images.unsplash.com/photo-1512690196236-d5a23223044b?w=800&q=80';
+
+  useEffect(() => {
+    if (!currentShop?.id) return;
+    loadProducts();
+  }, [currentShop?.id]);
+
+  const loadProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      const data = await productService.list(currentShop.id, true);
+      setProducts(data);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+      addNotification('error', 'Erro ao carregar catálogo de produtos');
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 600;
+          if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(compressedBase64);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file);
+        setProductForm({ ...productForm, image: compressedBase64 });
+        addNotification('success', 'Imagem carregada com sucesso!');
+      } catch (error) {
+        addNotification('error', 'Erro ao processar imagem');
+      }
+    }
+  };
+
+  const handleOpenProductModal = (product?: Product) => {
+    if (product) {
+      setEditProduct(product);
+      setProductForm({
+        name: product.name,
+        description: product.description || '',
+        price: product.price,
+        costPrice: product.costPrice || 0,
+        image: product.image || '',
+        category: product.category || '',
+        stock: product.stock || 0,
+        unit: product.unit || 'unidade'
+      });
+    } else {
+      setEditProduct(null);
+      setProductForm({
+        name: '', description: '', price: 0, costPrice: 0,
+        image: '', category: '', stock: 0, unit: 'unidade'
+      });
+    }
+    setShowProductModal(true);
+  };
+
+  const handleSaveProduct = async () => {
+    if (!productForm.name.trim()) {
+      addNotification('error', 'Nome do produto é obrigatório');
+      return;
+    }
+    try {
+      if (editProduct) {
+        await productService.update(editProduct.id, productForm);
+        addNotification('success', 'Produto atualizado!');
+      } else {
+        await productService.create(productForm);
+        addNotification('success', 'Produto criado!');
+      }
+      setShowProductModal(false);
+      loadProducts();
+    } catch (error) {
+      addNotification('error', 'Erro ao salvar produto');
+    }
+  };
+
+  const toggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      await productService.update(id, { active: !currentStatus });
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+      addNotification('success', 'Status atualizado!');
+    } catch (error) {
+      addNotification('error', 'Erro ao atualizar status');
+    }
+  };
+
+  const deleteProduct = async (id: string, name: string) => {
+    const reason = window.prompt(`Deseja excluir ${name}? Informe o motivo:`);
+    if (!reason) return;
+    try {
+      await productService.remove(id, reason);
+      setProducts(prev => prev.filter(p => p.id !== id));
+      addNotification('success', 'Produto removido');
+    } catch (error) {
+      addNotification('error', 'Erro ao remover produto');
+    }
+  };
   return (
     <Card>
       <Card.Body className="space-y-4">
@@ -92,11 +227,17 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                       <span className="text-[10px] font-black uppercase">Editar</span>
                     </button>
                     <button
-                      onClick={() => toggleActive(product.id, 'PRODUCT')}
+                      onClick={() => toggleActive(product.id, product.active)}
                       className={`w-full sm:flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${product.active ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400' : 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}
                     >
                       <Power size={14} />
                       <span className="text-[10px] font-black uppercase">{product.active ? 'Pausar' : 'Ativar'}</span>
+                    </button>
+                    <button
+                      onClick={() => deleteProduct(product.id, product.name)}
+                      className="w-full sm:w-10 p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </Card.Body>
@@ -105,6 +246,80 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
           </div>
         )}
       </Card.Body>
+
+      {/* Product Modal */}
+      {showProductModal && (
+        <Modal
+          isOpen={showProductModal}
+          onClose={() => setShowProductModal(false)}
+          title={editProduct ? 'Editar Produto' : 'Novo Produto'}
+          size="lg"
+        >
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nome do Produto *</label>
+                  <Input value={productForm.name} onChange={e => setProductForm({ ...productForm, name: e.target.value })} placeholder="Ex: Pomada Efeito Matte" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço Venda *</label>
+                    <Input type="number" value={productForm.price} onChange={e => setProductForm({ ...productForm, price: parseFloat(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço Custo</label>
+                    <Input type="number" value={productForm.costPrice} onChange={e => setProductForm({ ...productForm, costPrice: parseFloat(e.target.value) })} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Estoque Inicial</label>
+                    <Input type="number" value={productForm.stock} onChange={e => setProductForm({ ...productForm, stock: parseInt(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Unidade</label>
+                    <Input value={productForm.unit} onChange={e => setProductForm({ ...productForm, unit: e.target.value })} placeholder="un, ml, g" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Imagem do Produto</label>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-full h-32 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                      {productForm.image ? (
+                        <img src={productForm.image} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <ShoppingBag className="text-gray-300" size={40} />
+                      )}
+                    </div>
+                    <Input type="file" accept="image/*" onChange={handleImageUpload} className="w-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descrição</label>
+              <textarea
+                value={productForm.description}
+                onChange={e => setProductForm({ ...productForm, description: e.target.value })}
+                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 outline-none focus:border-tenant-primary transition-colors min-h-[100px]"
+                placeholder="Detalhes sobre o produto..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <Button onClick={() => setShowProductModal(false)} variant="outline" className="flex-1">Cancelar</Button>
+              <Button onClick={handleSaveProduct} variant="primary" className="flex-1">
+                {editProduct ? 'Salvar Alterações' : 'Criar Produto'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Card>
   );
 };
