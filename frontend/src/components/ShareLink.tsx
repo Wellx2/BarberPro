@@ -20,7 +20,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
   const shopSlug = slugify(shop.name);
 
   // URLs de compartilhamento
-  const subdomainUrl = `https://${shopSlug}.barberpro.com`;
+  const subdomainUrl = `https://${shopSlug}.klypbarber.com`;
   const queryParamUrl = `${window.location.origin}?shopId=${shop.id}`;
   const whatsappMessage = `Olá! Agende seu corte comigo aqui: ${subdomainUrl}`;
   const emailSubjáect = `Agende seu corte em ${shop.name}`;
@@ -119,6 +119,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
 
               {/* Botões de Compartilhamento */}
               <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+                {/* 
                 <button
                   onClick={handleShareWhatsapp}
                   className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all"
@@ -126,6 +127,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
                   <MessageCircle size={18} />
                   WhatsApp
                 </button>
+                */}
                 <button
                   onClick={handleShareEmail}
                   className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all"

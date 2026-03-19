@@ -1,5 +1,5 @@
 /**
- * Modal Component - Sistema de Design BarberPro
+ * Modal Component - Sistema de Design Klypbarber
  * Modal acessível com backdrop e animações
  */
 

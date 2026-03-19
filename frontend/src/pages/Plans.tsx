@@ -66,7 +66,7 @@ export const Plans: React.FC = () => {
                 <div className="space-y-4">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                         <h4 className="font-bold text-gray-900 dark:text-white mb-2">Posso usar em qualquer unidade?</h4>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">Sim! Sua assinatura BarberPro é válida em todas as unidades da nossa rede.</p>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm">Sim! Sua assinatura Klypbarber é válida em todas as unidades da nossa rede.</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                         <h4 className="font-bold text-gray-900 dark:text-white mb-2">Como funciona a renovação?</h4>

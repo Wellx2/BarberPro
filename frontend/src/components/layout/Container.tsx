@@ -1,5 +1,5 @@
 /**
- * Container Component - Sistema de Design BarberPro
+ * Container Component - Sistema de Design Klypbarber
  * Container responsivo com max-width
  */
 

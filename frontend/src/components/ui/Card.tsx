@@ -1,5 +1,5 @@
 /**
- * Card Component - Sistema de Design BarberPro
+ * Card Component - Sistema de Design Klypbarber
  * Componente de cartão com variantes e suporte a composição
  */
 

@@ -217,7 +217,7 @@ const App: React.FC = () => {
                         <StockMovements />
                       </ProtectedRoute>
                     } />
-
+                    {/* Profile Público */}
                     <Route path="/barber/:id" element={<BarberProfile />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/privacy" element={<Privacy />} />

@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Calendar as CalendarIcon, Clock, Check, User, AlertCircle, ChevronLeft, Scissors, ChevronDown, Search } from 'lucide-react';
@@ -24,7 +24,7 @@ export const Booking: React.FC = () => {
   const [allBarbers, setAllBarbers] = useState<Barber[]>([]);
   const [allServices, setAllServices] = useState<Service[]>([]);
   const [allClients, setAllClients] = useState<Client[]>([]);
-  const [blockedPeriods] = useState<BlockedPeriod[]>(() => JSON.parse(localStorage.getItem('blocked_periods') || '[]'));
+  const [blockedPeriods] = useState<BlockedPeriod[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filtrar barbeiros da loja atual
@@ -238,7 +238,11 @@ export const Booking: React.FC = () => {
 
     try {
       let finalBarberId = selectedBarber === 'any' ? shopBarbers[0].id : selectedBarber;
-      const appointmentDate = new Date(`${selectedDate}T${selectedTime}:00`);
+      
+      // Fix: Use local date parts to avoid timezone shift to 23:59/00:00 UTC
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const [hour, minute] = selectedTime.split(':').map(Number);
+      const appointmentDate = new Date(year, month - 1, day, hour, minute);
 
       if (Number.isNaN(appointmentDate.getTime())) {
         addNotification('error', 'Data ou horário inválido para agendamento', 'Erro não Agendamento');

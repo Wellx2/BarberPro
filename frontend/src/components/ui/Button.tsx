@@ -1,5 +1,5 @@
 /**
- * Button Component - Sistema de Design BarberPro
+ * Button Component - Sistema de Design Klypbarber
  * Mobile-first, acessível e com suporte a white label
  */
 

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Plus, User, Scissors, DollarSign, X } from 'lucide-react';
 import { useAppointments } from '../../hooks/useAppointments';
 import { Button } from '../../components/ui';
 
 export default function Appointments() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export default function Appointments() {
             Gerencie os agendamentos da barbearia
           </p>
         </div>
-        <Button onClick={() => setShowNewModal(true)}>
+        <Button onClick={() => navigate('/book')}>
           <Plus className="w-5 h-5 mr-2" />
           Novo Agendamento
         </Button>
@@ -156,7 +158,7 @@ export default function Appointments() {
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
           <Calendar className="w-16 h-16 mx-auto text-gray-400" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Nenhum agendamento encontrado</p>
-          <Button onClick={() => setShowNewModal(true)} className="mt-4">
+          <Button onClick={() => navigate('/book')} className="mt-4">
             Criar Primeiro Agendamento
           </Button>
         </div>

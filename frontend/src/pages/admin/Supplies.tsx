@@ -162,7 +162,7 @@ export const Supplies: React.FC = () => {
                                 <Package size={24} />
                             </div>
                         </div>
-                        <p className="text-blue-100 text-xs mt-4 font-bold">Insumos cadastrados não sistema</p>
+                        <p className="text-blue-100 text-xs mt-4 font-bold">Insumos cadastrados no sistema</p>
                     </Card.Body>
                 </Card>
 
@@ -196,7 +196,7 @@ export const Supplies: React.FC = () => {
                                 <ArrowUpRight size={24} />
                             </div>
                         </div>
-                        <p className="text-white/90 text-xs mt-4 font-bold">Baseado não custo unitário médio</p>
+                        <p className="text-white/90 text-xs mt-4 font-bold">Baseado no custo unitário médio</p>
                     </Card.Body>
                 </Card>
             </Grid>
@@ -389,6 +389,14 @@ export const Supplies: React.FC = () => {
                             value={form.unitCost}
                             onChange={e => setForm({ ...form, unitCost: Number(e.target.value) })}
                         />
+                    </div>
+                    
+                    {/* Exibição do Custo Total Calculado */}
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <span className="text-xs font-black uppercase tracking-widest text-gray-400">Custo Total Previsto</span>
+                        <span className="text-lg font-black text-gray-900 dark:text-white">
+                            R$ {(form.quantity * (form.unitCost || 0)).toFixed(2)}
+                        </span>
                     </div>
                     <Input
                         label="Notas"

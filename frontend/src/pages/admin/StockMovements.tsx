@@ -53,21 +53,21 @@ export function StockMovements() {
       productId: '1',
       type: 'IN',
       quantity: 50,
-      date: new Date(Date.nãow() - 86400000).toISOString(),
+      date: new Date(Date.now() - 86400000).toISOString(),
     },
     {
       id: '2',
       productId: '2',
       type: 'OUT',
       quantity: 10,
-      date: new Date(Date.nãow() - 172800000).toISOString(),
+      date: new Date(Date.now() - 172800000).toISOString(),
     },
     {
       id: '3',
       productId: '3',
       type: 'ADJUSTMENT',
       quantity: 5,
-      date: new Date(Date.nãow() - 259200000).toISOString(),
+      date: new Date(Date.now() - 259200000).toISOString(),
     },
   ];
 

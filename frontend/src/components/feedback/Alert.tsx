@@ -1,5 +1,5 @@
 /**
- * Alert Component - Sistema de Design BarberPro
+ * Alert Component - Sistema de Design Klypbarber
  * Alertas informativos com 4 variantes
  */
 

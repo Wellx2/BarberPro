@@ -37,7 +37,7 @@ export const Privacy: React.FC = () => {
 
           <h3 className="text-xl font-bold text-gray-900">4. Compartilhamento de Informações</h3>
           <p>
-            Garantimos a não comercialização ou aluguel de seus dados. O compartilhamento ocorre apenas com prestadores de serviços de infraestrutura (provedores de nuvem, envios automáticos de e-mail) estritamente essenciais à operação do negócio, sob contratos de confidencialidade vinculativos. A Plataforma BarberPro atua como processadora tecnãológica das informações.
+            Garantimos a não comercialização ou aluguel de seus dados. O compartilhamento ocorre apenas com prestadores de serviços de infraestrutura (provedores de nuvem, envios automáticos de e-mail) estritamente essenciais à operação do negócio, sob contratos de confidencialidade vinculativos. A Plataforma Klypbarber atua como processadora tecnãológica das informações.
           </p>
 
           <h3 className="text-xl font-bold text-gray-900">5. Seus Direitos (LGPD)</h3>

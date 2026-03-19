@@ -22,7 +22,7 @@ import {
 import { api } from '../api';
 
 // Mock do módulo api
-vi.mock('../services/api', () => ({
+vi.mock('../api', () => ({
   api: {
     get: vi.fn(),
     patch: vi.fn(),

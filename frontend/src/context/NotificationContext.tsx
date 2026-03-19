@@ -38,7 +38,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       // Disparar Web Push apenas acompanhado de um aviso visual se necessário.
       // E evitar duplicatas
       try {
-        new Notification(title || 'BarberPro', {
+        new Notification(title || 'Klypbarber', {
           body: message,
           icon: '/pwa-192x192.svg',
           badge: '/pwa-192x192.svg'
@@ -47,7 +47,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         // Fallback for mobile browsers that require Service Worker registration to show notifications
         if (navigator.serviceWorker) {
           navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification(title || 'BarberPro', {
+            registration.showNotification(title || 'Klypbarber', {
               body: message,
               icon: '/pwa-192x192.svg',
               badge: '/pwa-192x192.svg'

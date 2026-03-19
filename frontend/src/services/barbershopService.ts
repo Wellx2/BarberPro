@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Serviço de Barbearias
  */
 
@@ -99,13 +99,13 @@ export const barbershopService = {
       const response = await api.get<Barbershop[]>('/barbershops/public');
       return response.data;
     } catch (error: any) {
-      console.error('âŒ barbershopService: Erro não endpoint público:', error);
+      console.error('❌ barbershopService: Erro no endpoint público:', error);
       // Fallback para endpoint principal (pode não ter /public)
       try {
         const response = await api.get<Barbershop[]>('/barbershops');
         return response.data;
       } catch (fallbackError: any) {
-        console.error('âŒ barbershopService: Fallback também falhou:', fallbackError);
+        console.error('❌ barbershopService: Fallback também falhou:', fallbackError);
         throw fallbackError;
       }
     }

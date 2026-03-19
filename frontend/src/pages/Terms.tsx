@@ -45,7 +45,7 @@ export const Terms: React.FC = () => {
 
           <h3 className="text-xl font-bold text-gray-900">6. Limitação de Responsabilidade da Plataforma de Software</h3>
           <p>
-            A Plataforma é fornecida no estado em que se encontra ("as is"). Na máxima extensão permitida pela lei aplicável, o {shop.name} e os desenvolvedores do software BarberPro não se responsabilizam por danãos indiretos, incidentais, especiais ou punitivos decorrentes de (i) sua incapacidade de acesso ou uso da Plataforma; (ii) falhas técnicas, interrupções ou indisponibilidade temporária do serviço (PWA ou Web); ou (iii) qualquer conduta inadequada de terceiros dentro das dependências do estabelecimento.
+            A Plataforma é fornecida no estado em que se encontra ("as is"). Na máxima extensão permitida pela lei aplicável, o {shop.name} e os desenvolvedores do software Klypbarber não se responsabilizam por danãos indiretos, incidentais, especiais ou punitivos decorrentes de (i) sua incapacidade de acesso ou uso da Plataforma; (ii) falhas técnicas, interrupções ou indisponibilidade temporária do serviço (PWA ou Web); ou (iii) qualquer conduta inadequada de terceiros dentro das dependências do estabelecimento.
           </p>
 
           <h3 className="text-xl font-bold text-gray-900">7. Modificações dos Termos</h3>

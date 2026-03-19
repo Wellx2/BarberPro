@@ -1,5 +1,5 @@
 /**
- * Flex Component - Sistema de Design BarberPro
+ * Flex Component - Sistema de Design Klypbarber
  * Flexbox utilitário com props semânticas
  */
 

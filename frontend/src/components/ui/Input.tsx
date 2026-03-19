@@ -1,5 +1,5 @@
 /**
- * Input Component - Sistema de Design BarberPro
+ * Input Component - Sistema de Design Klypbarber
  * Input acessível com suporte a ícones, labels e estados de erro
  */
 

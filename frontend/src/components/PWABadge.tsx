@@ -54,7 +54,7 @@ export function PWABadge() {
                 <Download className="text-tenant-primary dark:text-tenant-primary" size={24} />
             </div>
             <div className="flex-1">
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm uppercase tracking-wider mb-1">Instalar BarberPro</h4>
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm uppercase tracking-wider mb-1">Instalar Klypbarber</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                     Adicione o aplicativo à sua tela inicial para acesso rápido e funcionamento offline.
                 </p>

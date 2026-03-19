@@ -19,11 +19,18 @@ import { Button, Card, Input, Select } from '../../components/ui';
 import { Container } from '../../components/layout/Container';
 import { Grid } from '../../components/layout/Grid';
 import { Modal, Alert } from '../../components/feedback';
+import { PieChart as RechartsPie, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Cashier } from './Cashier';
 import { Supplies } from './Supplies';
 import { ShareLink } from '../../components/ShareLink';
 import { ShopSelector } from '../../components/ShopSelector';
 import AdminAppointmentHistory from './AdminAppointmentHistory';
+import { FinancialTab } from './FinancialTab';
+import { TeamTab } from './TeamTab';
+import { ServicesTab } from './ServicesTab';
+import { ProductsTab } from './ProductsTab';
+import { StockTab } from './StockTab';
+import { PlansTab } from './PlansTab';
 import { productService } from '../../services/productService';
 import { serviceService } from '../../services/serviceService';
 import { teamService } from '../../services/teamService';
@@ -42,6 +49,19 @@ export const AdminDashboard: React.FC = () => {
   const { addNotification } = useNotification();
 
   const [activeTab, setActiveTab] = useState('FINANCIAL');
+
+  // Cache Tracker para Lazy Loading das abas (Foco em Performance PWA)
+  const fetchedData = React.useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    // Resetar cache ao trocar de barbearia (Multi-tenant)
+    fetchedData.current = {};
+    setUnitServices([]);
+    setTeamMembers([]);
+    setProducts([]);
+    setFixedCosts([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentShop.id]);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showFinancialValues, setShowFinancialValues] = useState(true);
   const [financialPeriod, setFinancialPeriod] = useState<AnalyticsPeriod>('TODAY');
@@ -86,8 +106,6 @@ export const AdminDashboard: React.FC = () => {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
   const [expenseForm, setExpenseForm] = useState<CreateExpenseDto>({ type: 'RENT', description: '', amount: 0, isRecurring: false });
-  // Controle de sub-view na aba PRODUCTS
-  const [productSubView, setProductSubView] = useState<'PRODUCTS' | 'STOCK'>('PRODUCTS');
   const [unitServices, setUnitServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -158,6 +176,13 @@ export const AdminDashboard: React.FC = () => {
         ...currentShop,
         primaryColor: wlPrimaryColor
       });
+      // Importante: Persistir no localStorage para o reload não resetar
+      const savedShops = JSON.parse(localStorage.getItem('user_shops') || '[]');
+      const updatedShops = savedShops.map((s: any) => 
+        s.id === currentShop.id ? { ...s, primaryColor: wlPrimaryColor } : s
+      );
+      localStorage.setItem('user_shops', JSON.stringify(updatedShops));
+
       addNotification('success', 'Configurações de aparência salvas com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar aparência:', error);
@@ -291,9 +316,11 @@ export const AdminDashboard: React.FC = () => {
 
   // Carregar serviços do backend
   useEffect(() => {
-    // Não fazer requisição com ID mock
-    if (!currentShop.id || currentShop.id.startsWith('shop-')) {
-      console.warn('?? Aguardando shopId real para carregar serviços');
+    if (activeTab !== 'SERVICES') return;
+    if (fetchedData.current['services']) return;
+
+    // Não fazer requisição se não houver loja selecionada
+    if (!currentShop.id) {
       setLoadingServices(false);
       return;
     }
@@ -303,6 +330,7 @@ export const AdminDashboard: React.FC = () => {
         setLoadingServices(true);
         const data = await serviceService.list(currentShop.id);
         setUnitServices(data);
+        fetchedData.current['services'] = true;
       } catch (error) {
         console.error('Erro ao carregar serviços:', error);
         addNotification('error', 'Erro ao carregar serviços');
@@ -312,12 +340,15 @@ export const AdminDashboard: React.FC = () => {
       }
     };
     loadServices();
-  }, [currentShop.id, addNotification]);
+  }, [currentShop.id, addNotification, activeTab]);
 
   // Carregar team members do backend
   useEffect(() => {
-    if (!currentShop.id || currentShop.id.startsWith('shop-')) {
-      console.warn('?? Aguardando shopId real para carregar equipe');
+    if (activeTab !== 'BARBERS') return;
+    if (fetchedData.current['team']) return;
+
+    if (!currentShop.id) {
+      console.warn('⚠️ Aguardando shopId real para carregar equipe');
       setLoadingTeam(false);
       return;
     }
@@ -328,6 +359,7 @@ export const AdminDashboard: React.FC = () => {
         // Admin vê todos os membros (ativos e inativos)
         const data = await teamService.list(true);
         setTeamMembers(data);
+        fetchedData.current['team'] = true;
       } catch (error) {
         console.error('Erro ao carregar equipe:', error);
         addNotification('error', 'Erro ao carregar equipe');
@@ -338,7 +370,7 @@ export const AdminDashboard: React.FC = () => {
     };
 
     loadTeam();
-  }, [currentShop.id, addNotification]);
+  }, [currentShop.id, addNotification, activeTab]);
 
   // Carregar planos do backend
   useEffect(() => {
@@ -362,8 +394,11 @@ export const AdminDashboard: React.FC = () => {
 
   // Carregar produtos do backend
   useEffect(() => {
-    // Não fazer requisição com ID mock
-    if (!currentShop.id || currentShop.id.startsWith('shop-')) {
+    if (activeTab !== 'PRODUCTS' && activeTab !== 'STOCK') return;
+    if (fetchedData.current['products']) return;
+
+    // Não fazer requisição se não houver loja selecionada
+    if (!currentShop.id) {
       setLoadingProducts(false);
       return;
     }
@@ -374,6 +409,7 @@ export const AdminDashboard: React.FC = () => {
         // Admin vê todos os produtos (ativos e inativos)
         const data = await productService.list(currentShop.id, true);
         setProducts(data);
+        fetchedData.current['products'] = true;
       } catch (error) {
         console.error('Erro ao carregar produtos:', error);
         addNotification('error', 'Erro ao carregar produtos');
@@ -384,7 +420,7 @@ export const AdminDashboard: React.FC = () => {
     };
 
     loadProducts();
-  }, [currentShop.id, addNotification]);
+  }, [currentShop.id, addNotification, activeTab]);
 
   // Escutar evento de troca de loja (multitenant)
   useEffect(() => {
@@ -405,8 +441,8 @@ export const AdminDashboard: React.FC = () => {
 
   // Buscar analytics financeiros da API
   useEffect(() => {
-    // Não fazer requisição com ID mock
-    if (!currentShop.id || currentShop.id.startsWith('shop-')) {
+    // Não fazer requisição se não houver loja selecionada
+    if (!currentShop.id) {
       console.warn('?? Aguardando shopId real para carregar analytics');
       setLoadingAnalytics(false);
       return;
@@ -684,7 +720,8 @@ export const AdminDashboard: React.FC = () => {
     if (type === 'BARBER') {
       updated = barbers.map(b => b.id === id ? { ...b, active: !b.active } : b);
       setBarbers(updated);
-      localStorage.setItem('barbers', JSON.stringify(updated));
+      // Removido persistência em LocalStorage (mock) - Status deve ser persistido via API se disponível
+      addNotification('info', 'Funcionalidade de status de barbeiro deve ser integrada ao teamService.');
     } else if (type === 'SERVICE') {
       // Atualizar serviço não backend
       const service = unitServices.find(s => s.id === id);
@@ -761,7 +798,7 @@ export const AdminDashboard: React.FC = () => {
     if (type === 'BARBER') {
       updated = barbers.filter(b => b.id !== id);
       setBarbers(updated);
-      localStorage.setItem('barbers', JSON.stringify(updated));
+      // Removido persistência em LocalStorage (mock)
     }
     addNotification('success', 'Item removido!');
   };
@@ -1704,7 +1741,7 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Receita</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      R$ {showFinancialValues ? analytics.gross.toFixed(2) : ''}
+                      R$ {showFinancialValues ? analytics.gross.toFixed(2) : '***'}
                     </p>
                     <p className="text-xs opacity-80 font-bold">Faturamento Bruto</p>
                   </Card>
@@ -1719,7 +1756,7 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Lucro</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      R$ {showFinancialValues ? analytics.net.toFixed(2) : ''}
+                      R$ {showFinancialValues ? analytics.net.toFixed(2) : '***'}
                     </p>
                     <p className="text-xs opacity-80 font-bold">Resultado Final</p>
                   </Card>
@@ -1731,7 +1768,7 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Média</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      R$ {showFinancialValues ? analytics.avgTicket.toFixed(2) : ''}
+                      R$ {showFinancialValues ? analytics.avgTicket.toFixed(2) : '***'}
                     </p>
                     <p className="text-xs opacity-80 font-bold">Ticket Médio</p>
                   </Card>
@@ -1743,7 +1780,7 @@ export const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-bold opacity-80 uppercase">Margem</span>
                     </div>
                     <p className="text-3xl font-black mb-1">
-                      {showFinancialValues ? analytics.margin.toFixed(1) : ''}<span className="text-2xl">%</span>
+                      {showFinancialValues ? analytics.margin.toFixed(1) : '***'}<span className="text-2xl">%</span>
                     </p>
                     <p className="text-xs opacity-80 font-bold">Lucro / Receita</p>
                   </Card>
@@ -1756,7 +1793,7 @@ export const AdminDashboard: React.FC = () => {
                       <Card className="p-5 border-l-4 border-orange-400 bg-orange-50 dark:bg-orange-900/10">
                         <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-1">Taxas de Cartão</p>
                         <p className="text-2xl font-black text-orange-600 dark:text-orange-400">
-                          R$ {showFinancialValues ? analytics.cardFees.toFixed(2) : ''}
+                          R$ {showFinancialValues ? analytics.cardFees.toFixed(2) : '***'}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">Crédito 4% Débito 2%</p>
                       </Card>
@@ -1765,7 +1802,7 @@ export const AdminDashboard: React.FC = () => {
                       <Card className="p-5 border-l-4 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/10">
                         <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-1">Custo de Insumos</p>
                         <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                          R$ {showFinancialValues ? analytics.supplyCostsTotal.toFixed(2) : ''}
+                          R$ {showFinancialValues ? analytics.supplyCostsTotal.toFixed(2) : '***'}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">supplyCost por serviço  execues</p>
                       </Card>
@@ -2085,6 +2122,91 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                   </Card.Body>
                 </Card>
+
+                {/* Gráficos de Composição Financeira (Nova Feature UX/Performance) */}
+                <Grid cols={2} gap="lg" className="grid-cols-1 lg:grid-cols-2 mt-6">
+                  {/* Composição de Receitas */}
+                  <Card>
+                    <Card.Body className="space-y-4">
+                      <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
+                        <PieChart size={20} className="text-blue-500" />
+                        Composição de Receitas
+                      </h3>
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsPie>
+                            <Pie
+                              data={[
+                                { name: 'Serviços', value: analytics.serviceRev, color: '#8b5cf6' },
+                                { name: 'Produtos', value: analytics.productRev, color: '#f97316' },
+                                { name: 'Planos', value: analytics.planRev, color: '#3b82f6' }
+                              ]}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {[
+                                { name: 'Serviços', value: analytics.serviceRev, color: '#8b5cf6' },
+                                { name: 'Produtos', value: analytics.productRev, color: '#f97316' },
+                                { name: 'Planos', value: analytics.planRev, color: '#3b82f6' }
+                              ].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                            <Legend />
+                          </RechartsPie>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card.Body>
+                  </Card>
+
+                  {/* Composição de Despesas */}
+                  <Card>
+                    <Card.Body className="space-y-4">
+                      <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase flex items-center gap-2">
+                        <PieChart size={20} className="text-red-500" />
+                        Composição de Despesas
+                      </h3>
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsPie>
+                            <Pie
+                              data={[
+                                { name: 'Comissões', value: analytics.totalCommissions, color: '#ef4444' },
+                                { name: 'Custos Fixos', value: analytics.fixedCostsTotal, color: '#f59e0b' },
+                                { name: 'Custo de Produtos', value: analytics.productRev * 0.3, color: '#eab308' },
+                                { name: 'Taxas de Cartão', value: analytics.cardFees, color: '#f97316' },
+                                { name: 'Custo Insumos', value: analytics.supplyCostsTotal, color: '#6366f1' }
+                              ].filter(item => item.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {[
+                                { name: 'Comissões', value: analytics.totalCommissions, color: '#ef4444' },
+                                { name: 'Custos Fixos', value: analytics.fixedCostsTotal, color: '#f59e0b' },
+                                { name: 'Custo de Produtos', value: analytics.productRev * 0.3, color: '#eab308' },
+                                { name: 'Taxas de Cartão', value: analytics.cardFees, color: '#f97316' },
+                                { name: 'Custo Insumos', value: analytics.supplyCostsTotal, color: '#6366f1' }
+                              ].filter(item => item.value > 0).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                            <Legend />
+                          </RechartsPie>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Grid>
               </>
             )}
 
@@ -2335,491 +2457,49 @@ export const AdminDashboard: React.FC = () => {
         }
 
         {/* Services Tab */}
-        {
-          activeTab === 'SERVICES' && (
-            <Card>
-              <Card.Body className="space-y-4">
-                <div className="flex justify-between items-center mb-4 gap-2">
-                  <h3 className="font-black text-base md:text-lg text-gray-900 dark:text-white uppercase">Catálogo de serviços</h3>
-                  <Button
-                    size="md"
-                    variant="primary"
-                    icon={<Plus size={20} />}
-                    onClick={() => handleOpenServiceModal()}
-                    className="flex-shrink-0 sm:w-auto w-10 h-10 !p-0 sm:!px-5 sm:!py-2.5"
-                    aria-label="Novo serviço"
-                  >
-                    <span className="hidden sm:inline">Novo serviço</span>
-                  </Button>
-                </div>
-
-                {loadingServices ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
-                    <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando serviços...</p>
-                  </div>
-                ) : unitServices.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Scissors size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">Nenhum serviço cadastrado.</p>
-                  </div>
-                ) : (
-                  <Grid cols={3} gap="lg">
-                    {unitServices.map(service => (
-                      <Card key={service.id} className="relative overflow-hidden transition-all">
-                        {/* Badge de Status - Sempre colorido (não afetado por grayscale) */}
-                        <div className="absolute top-2 right-2 z-10">
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg ${service.active
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
-                            }`}>
-                            {service.active ? <Eye size={12} /> : <EyeOff size={12} />}
-                            <span className="hidden sm:inline">{service.active ? 'Ativo' : 'Inativo'}</span>
-                          </span>
-                        </div>
-
-                        {/* Imagem - fica em grayscale quando inativo */}
-                        <div className={`h-32 bg-gray-100 dark:bg-gray-800 ${!service.active ? 'grayscale' : ''}`}>
-                          <img
-                            src={service.image || fallbackImage}
-                            alt={service.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = fallbackImage;
-                            }}
-                          />
-                        </div>
-
-                        <Card.Body className="space-y-2 p-4">
-                          {/* Informações do serviço - fica em grayscale quando inativo */}
-                          <div className={!service.active ? 'grayscale opacity-60' : ''}>
-                            <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{service.name}</h4>
-                            <p className="text-2xl font-black text-tenant-primary">R$ {service.price.toFixed(2)}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{service.duration}min</p>
-                          </div>
-
-                          {/* Botões */}
-                          <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                            {/* Botão Editar - SEMPRE ativo e colorido */}
-                            <button
-                              onClick={() => handleOpenServiceModal(service)}
-                              className="flex-1 p-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 active:bg-blue-200 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation"
-                              title="Editar serviço"
-                            >
-                              <Edit3 size={14} />
-                              <span className="text-xs font-bold">Editar</span>
-                            </button>
-
-                            {/* Botão Ativar/Desativar - SEMPRE colorido */}
-                            <button
-                              onClick={() => toggleActive(service.id, 'SERVICE')}
-                              className={`flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${service.active
-                                ? 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 active:bg-orange-200 dark:hover:bg-orange-900/30 text-orange-600 dark:text-orange-400'
-                                : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 active:bg-green-200 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400'
-                                }`}
-                              title={service.active ? 'Desativar serviço (ocultar das vendas)' : 'Ativar serviço'}
-                            >
-                              <Power size={14} />
-                              <span className="text-xs font-bold">{service.active ? 'Desativar' : 'Ativar'}</span>
-                            </button>
-
-                            {/* Botão Excluir - DESABILITADO quando inativo */}
-                            <button
-                              onClick={() => deleteItem(service.id, 'SERVICE')}
-                              disabled={!service.active}
-                              className={`flex-1 p-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 active:bg-red-200 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${!service.active ? 'grayscale opacity-40 cursor-not-allowed' : ''}`}
-                              title={service.active ? 'Excluir permanentemente' : 'Ative o serviço para poder excluir'}
-                            >
-                              <Trash2 size={14} />
-                              <span className="text-xs font-bold">Excluir</span>
-                            </button>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    ))}
-                  </Grid>
-                )}
-              </Card.Body>
-            </Card>
-          )
-        }
+        {activeTab === 'SERVICES' && (
+          <ServicesTab
+            unitServices={unitServices}
+            loadingServices={loadingServices}
+            handleOpenServiceModal={handleOpenServiceModal}
+            toggleActive={toggleActive}
+            deleteItem={deleteItem}
+            fallbackImage={fallbackImage}
+          />
+        )}
 
         {/* Products Tab */}
-        {
-          activeTab === 'PRODUCTS' && (
-            <Card>
-              <Card.Body className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
-                  <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-                    <button
-                      onClick={() => setProductSubView('PRODUCTS')}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${productSubView === 'PRODUCTS' ? 'bg-white dark:bg-gray-700 text-tenant-primary shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                    >
-                      Produtos
-                    </button>
-                    <button
-                      onClick={() => setProductSubView('STOCK')}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${productSubView === 'STOCK' ? 'bg-white dark:bg-gray-700 text-tenant-primary shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                    >
-                      Controle de Estoque
-                    </button>
-                  </div>
-                  {productSubView === 'PRODUCTS' && (
-                    <Button
-                      size="md"
-                      variant="primary"
-                      icon={<Plus size={20} />}
-                      onClick={() => handleOpenProductModal()}
-                      className="flex-shrink-0 sm:w-auto w-10 h-10 !p-0 sm:!px-5 sm:!py-2.5"
-                      aria-label="Novo Produto"
-                    >
-                      <span className="hidden sm:inline">Novo Produto</span>
-                    </Button>
-                  )}
-                </div>
+        {activeTab === 'PRODUCTS' && (
+          <ProductsTab
+            products={products}
+            loadingProducts={loadingProducts}
+            handleOpenProductModal={handleOpenProductModal}
+            toggleActive={toggleActive}
+            fallbackImage={fallbackImage}
+          />
+        )}
 
-                {/* Sub-view: Estoque */}
-                {productSubView === 'STOCK' && (
-                  <div>
-                    <p className="text-xs text-gray-500 mb-3">Visualize e edite rapidamente o estoque de todos os produtos.</p>
-                    {loadingProducts ? (
-                      <div className="text-center py-8">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-tenant-primary border-t-transparent"></div>
-                      </div>
-                    ) : products.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <ShoppingBag size={40} className="mx-auto mb-3 opacity-40" />
-                        <p className="text-sm">Nenhum produto cadastrado.</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                              <th className="text-left py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Produto</th>
-                              <th className="text-left py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Categoria</th>
-                              <th className="text-right py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Preço Venda</th>
-                              <th className="text-right py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Custo Unit.</th>
-                              <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Estoque</th>
-                              <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Ajuste</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {products.map(product => (
-                              <tr key={product.id} className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${!product.active ? 'opacity-50' : ''}`}>
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center gap-2">
-                                    <img src={product.image || fallbackImage} alt={product.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" onError={e => { e.currentTarget.src = fallbackImage; }} />
-                                    <span className="font-medium text-gray-900 dark:text-white text-xs line-clamp-2">{product.name}</span>
-                                  </div>
-                                </td>
-                                <td className="py-2.5 px-3">
-                                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">{product.category || ''}</span>
-                                </td>
-                                <td className="py-2.5 px-3 text-right text-gray-900 dark:text-white font-medium text-xs">
-                                  R$ {product.price.toFixed(2)}
-                                </td>
-                                <td className="py-2.5 px-3 text-right text-gray-500 dark:text-gray-400 text-xs">
-                                  {product.costPrice ? `R$ ${product.costPrice.toFixed(2)}` : ''}
-                                </td>
-                                <td className="py-2.5 px-3 text-center">
-                                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.stock === 0
-                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                                    : product.stock <= 5
-                                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                                      : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                                    }`}>
-                                    {product.stock}
-                                  </span>
-                                </td>
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <button
-                                      onClick={() => {
-                                        const novoEstoque = Math.max(0, product.stock - 1);
-                                        productService.update(product.id, { stock: novoEstoque })
-                                          .then(() => productService.list(currentShop.id, true))
-                                          .then(data => setProducts(data))
-                                          .catch(() => addNotification('error', 'Erro ao atualizar estoque'));
-                                      }}
-                                      disabled={product.stock === 0}
-                                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-base"
-                                      title="Remover 1 unidade"
-                                    >
-                                      -
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        const novoEstoque = product.stock + 1;
-                                        productService.update(product.id, { stock: novoEstoque })
-                                          .then(() => productService.list(currentShop.id, true))
-                                          .then(data => setProducts(data))
-                                          .catch(() => addNotification('error', 'Erro ao atualizar estoque'));
-                                      }}
-                                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/20 text-green-500 hover:bg-green-100 transition-colors font-bold text-base"
-                                      title="Adicionar 1 unidade"
-                                    >
-                                      +
-                                    </button>
-                                    <button onClick={() => handleOpenProductModal(product)} title="Editar produto"
-                                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500 hover:bg-blue-100 transition-colors">
-                                      <Edit3 size={13} />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="border-t-2 border-gray-300 dark:border-gray-600">
-                              <td colSpan={4} className="py-2.5 px-3 font-black text-gray-900 dark:text-white text-sm">Total em estoque</td>
-                              <td className="py-2.5 px-3 text-center font-black text-tenant-primary dark:text-tenant-primary">
-                                {products.reduce((sum, p) => sum + p.stock, 0)} unid.
-                              </td>
-                              <td></td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                        {products.some(p => p.stock === 0) && (
-                          <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center gap-2 text-red-600 dark:text-red-400 text-xs font-medium">
-                            <AlertCircle size={14} />
-                            {products.filter(p => p.stock === 0).length} produto(s) sem estoque.
-                          </div>
-                        )}
-                        {products.filter(p => p.stock > 0 && p.stock <= 5).length > 0 && (
-                          <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
-                            <AlertCircle size={14} />
-                            {products.filter(p => p.stock > 0 && p.stock <= 5).length} produto(s) com estoque baixo (= 5 unidades).
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Sub-view: Produtos */}
-                {productSubView === 'PRODUCTS' && (
-                  <>
-                    {loadingProducts ? (
-                      <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
-                        <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando produtos...</p>
-                      </div>
-                    ) : products.length === 0 ? (
-                      <div className="text-center py-12">
-                        <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
-                        <p className="text-gray-500 dark:text-gray-400">Nenhum produto cadastrado.</p>
-                      </div>
-                    ) : (
-                      <Grid cols={1} md={2} lg={3} gap="md">
-                        {products.map(product => (
-                          <Card key={product.id} className="relative overflow-hidden transition-all">
-                            {/* Badge de Status - Sempre colorido (não afetado por grayscale) */}
-                            <div className="absolute top-1.5 right-1.5 z-10">
-                              <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-0.5 sm:gap-1 shadow-lg ${product.active
-                                ? 'bg-green-500 text-white'
-                                : 'bg-red-500 text-white'
-                                }`}>
-                                {product.active ? <Eye size={10} className="sm:w-3 sm:h-3" /> : <EyeOff size={10} className="sm:w-3 sm:h-3" />}
-                                <span className="hidden sm:inline">{product.active ? 'Ativo' : 'Inativo'}</span>
-                              </span>
-                            </div>
-
-                            {/* Imagem - fica em grayscale quando inativo */}
-                            <div className={`h-32 sm:h-40 bg-gray-100 dark:bg-gray-800 ${!product.active ? 'grayscale' : ''}`}>
-                              <img
-                                src={product.image || fallbackImage}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = fallbackImage;
-                                }}
-                              />
-                            </div>
-
-                            <Card.Body className="space-y-2 p-3 sm:p-4">
-                              {/* Informações do produto - fica em grayscale quando inativo */}
-                              <div className={!product.active ? 'grayscale opacity-60' : ''}>
-                                <h4 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm line-clamp-2">{product.name}</h4>
-                                <p className="text-base sm:text-lg font-black text-tenant-primary">R$ {product.price.toFixed(2)}</p>
-                                <div className="flex items-center justify-between text-[10px] sm:text-xs">
-                                  <span className="text-gray-500">Estoque: {product.stock}</span>
-                                  {product.stock === 0 && (
-                                    <span className="text-red-500 font-bold text-[9px] sm:text-xs">SEM ESTOQUE</span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Botões */}
-                              <div className="flex flex-col sm:flex-row gap-2 mt-3 sm:mt-4">
-                                {/* Botão Editar - SEMPRE ativo e colorido */}
-                                <button
-                                  onClick={() => handleOpenProductModal(product)}
-                                  className="w-full sm:flex-1 p-2.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 active:bg-blue-200 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation"
-                                  title="Editar produto"
-                                >
-                                  <Edit3 size={16} />
-                                  <span className="text-xs font-bold">Editar</span>
-                                </button>
-
-                                {/* Botão Ativar/Desativar - SEMPRE colorido */}
-                                <button
-                                  onClick={() => toggleActive(product.id, 'PRODUCT')}
-                                  className={`w-full sm:flex-1 p-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${product.active
-                                    ? 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 active:bg-orange-200 dark:hover:bg-orange-900/30 text-orange-600 dark:text-orange-400'
-                                    : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 active:bg-green-200 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400'
-                                    }`}
-                                  title={product.active ? 'Desativar produto (ocultar das vendas)' : 'Ativar produto'}
-                                >
-                                  <Power size={16} />
-                                  <span className="text-xs font-bold">{product.active ? 'Desativar' : 'Ativar'}</span>
-                                </button>
-
-                                {/* Botão Excluir - DESABILITADO quando inativo */}
-                                <button
-                                  onClick={() => handleDeleteProduct(product.id)}
-                                  disabled={!product.active}
-                                  className={`w-full sm:flex-1 p-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 active:bg-red-200 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${!product.active ? 'grayscale opacity-40 cursor-not-allowed' : ''}`}
-                                  title={product.active ? 'Excluir permanentemente' : 'Ative o produto para poder excluir'}
-                                >
-                                  <Trash2 size={16} />
-                                  <span className="text-xs font-bold">Excluir</span>
-                                </button>
-                              </div>
-                            </Card.Body>
-                          </Card>
-                        ))}
-                      </Grid>
-                    )}
-                  </>
-                )}
-              </Card.Body>
-            </Card>
-          )
-        }
+        {/* Estoque Tab - Gestão de Quantidades */}
+        {activeTab === 'STOCK' && (
+          <StockTab
+            products={products}
+            setProducts={setProducts}
+            loadingProducts={loadingProducts}
+            currentShopId={currentShop.id}
+            productService={productService}
+          />
+        )}
 
         {/* Plans Tab - Planos de Assinatura */}
-        {
-          activeTab === 'PLANS' && (
-            <Card>
-              <Card.Body className="space-y-4">
-                <div className="flex justify-between items-center mb-4 gap-2">
-                  <h3 className="font-black text-base md:text-lg text-gray-900 dark:text-white uppercase">Planos de Assinatura</h3>
-                  <Button
-                    size="md"
-                    variant="primary"
-                    icon={<Plus size={20} />}
-                    onClick={() => handleOpenPlanModal()}
-                    className="flex-shrink-0 sm:w-auto w-10 h-10 !p-0 sm:!px-5 sm:!py-2.5"
-                    aria-label="Novo Plano"
-                  >
-                    <span className="hidden sm:inline">Novo Plano</span>
-                  </Button>
-                </div>
-
-                {loadingPlans ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
-                    <p className="mt-4 text-gray-500 dark:text-gray-400">Carregando planos...</p>
-                  </div>
-                ) : plans.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Layers size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">Nenhum plano cadastrado.</p>
-                  </div>
-                ) : (
-                  <Grid cols={3} gap="lg">
-                    {plans.map(plan => (
-                      <Card key={plan.id} className={`border-2 border-tenant-primary hover:shadow-xl transition-shadow ${!plan.active ? 'opacity-60 grayscale' : ''}`}>
-                        {/* Badge de Status */}
-                        <div className="absolute top-3 right-3 z-10">
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${plan.active
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
-                            }`}>
-                            {plan.active ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </div>
-
-                        <Card.Body className="space-y-4">
-                          <div>
-                            <h4 className="font-black text-xl text-tenant-primary dark:text-tenant-primary uppercase">{plan.name}</h4>
-                            <p className="text-3xl font-black text-gray-900 dark:text-white mt-2">
-                              R$ {plan.price.toFixed(2)}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                              Validade: {plan.benefitMonths} ms(es)
-                            </p>
-                          </div>
-
-                          {/* Benefícios */}
-                          <div className="space-y-2 py-3 border-y border-gray-200 dark:border-gray-700">
-                            {plan.benefitServices > 0 && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Check size={16} className="text-green-500" />
-                                <span className="text-gray-700 dark:text-gray-300">
-                                  {plan.benefitServices} serviços inclusos
-                                </span>
-                              </div>
-                            )}
-                            {plan.benefitProducts > 0 && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Check size={16} className="text-green-500" />
-                                <span className="text-gray-700 dark:text-gray-300">
-                                  {plan.benefitProducts} produtos inclusos
-                                </span>
-                              </div>
-                            )}
-                            {plan.benefitMoneyback > 0 && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <Check size={16} className="text-green-500" />
-                                <span className="text-gray-700 dark:text-gray-300">
-                                  {plan.benefitMoneyback}% de cashback
-                                </span>
-                              </div>
-                            )}
-                            {plan.description && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
-                                {plan.description}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Ações */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleOpenPlanModal(plan)}
-                              className="flex-1 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 text-blue-600 dark:text-blue-400 rounded-lg font-bold text-sm transition-colors"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => handleTogglePlanActive(plan.id)}
-                              className={`flex-1 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${plan.active
-                                ? 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 text-orange-600 dark:text-orange-400'
-                                : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 text-green-600 dark:text-green-400'
-                                }`}
-                            >
-                              {plan.active ? 'Desativar' : 'Ativar'}
-                            </button>
-                            <button
-                              onClick={() => handleDeletePlan(plan.id, plan.name)}
-                              disabled={plan.active}
-                              className="px-4 py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed text-red-600 dark:text-red-400 rounded-lg font-bold text-sm transition-colors"
-                              title={plan.active ? 'Desative o plano antes de excluir' : 'Excluir plano'}
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    ))}
-                  </Grid>
-                )}
-              </Card.Body>
-            </Card>
-          )
-        }
+        {activeTab === 'PLANS' && (
+          <PlansTab
+            plans={plans}
+            loadingPlans={loadingPlans}
+            handleOpenPlanModal={handleOpenPlanModal}
+            handleTogglePlanActive={handleTogglePlanActive}
+            handleDeletePlan={handleDeletePlan}
+          />
+        )}
 
         {/* Settings Tab - Configurações de Módulos */}
         {

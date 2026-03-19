@@ -39,7 +39,7 @@ export const Contact: React.FC = () => {
               </div>
             </div>
 
-            {/* Fix: Accessing optional social fields from shop object */}
+            {/* WhatsApp desativado temporariamente 
             {shop.socialWhatsapp && (
               <div className="flex items-start gap-4">
                 <div className="bg-green-100 p-3 rounded-lg text-green-600">
@@ -53,6 +53,7 @@ export const Contact: React.FC = () => {
                 </div>
               </div>
             )}
+            */}
 
             {/* Fix: Accessing optional social fields from shop object */}
             {shop.socialInstagram && (

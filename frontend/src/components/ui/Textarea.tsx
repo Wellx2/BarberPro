@@ -1,5 +1,5 @@
 /**
- * Textarea Component - Sistema de Design BarberPro
+ * Textarea Component - Sistema de Design Klypbarber
  * Textarea acessível com suporte a label e estados de erro
  */
 

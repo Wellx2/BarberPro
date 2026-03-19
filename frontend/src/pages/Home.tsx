@@ -200,11 +200,11 @@ export const Home: React.FC = () => {
         </button>
 
         <div className="relative max-w-7xl mx-auto px-4 text-center w-full animate-fade-in">
-          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 uppercase leading-nãone">
+          <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 uppercase leading-none">
             Estilo &<br /><span className="text-[#f59e0b] text-tenant-primary">Tradição</span>
           </h1>
           <p className="text-base md:text-xl text-gray-300 max-w-xl mx-auto mb-12 font-medium">
-            Excelência não atendimento para a unidade {shop.name}.
+            Excelência no atendimento para a unidade {shop.name}.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <PrimaryButton onClick={() => handleBook()} className="w-full sm:w-auto">

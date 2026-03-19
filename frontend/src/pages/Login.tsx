@@ -20,8 +20,8 @@ export const Login: React.FC = () => {
   const [loginMethod, setLoginMethod] = useState<'EMAIL' | 'PHONE'>('EMAIL');
   const [isLoading, setIsLoading] = useState(false);
   const [loginData, setLoginData] = useState({
-    email: 'admin@barberpro.com',  // ✅ Valor padrão para teste
-    password: 'senha123'            // ✅ Valor padrão para teste
+    email: '',
+    password: ''
   });
   const [registerData, setRegisterData] = useState({
     name: '',
@@ -87,8 +87,11 @@ export const Login: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const payload = registerData.isShopOwner ? registerData : {
-        ...registerData,
+      const cleanPhone = registerData.phone.replace(/\D/g, ''); // Fix the 400 Bad Request
+      const basePayload = { ...registerData, phone: cleanPhone };
+      
+      const payload = registerData.isShopOwner ? basePayload : {
+        ...basePayload,
         shopName: 'Client Account', // Bypass validation if required by DTO
         shopAddress: 'N/A'
       };
@@ -123,7 +126,7 @@ export const Login: React.FC = () => {
             <Scissors className="h-8 w-8 text-tenant-primary" />
           </div>
           <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
-            {view === 'LOGIN' ? 'BarberPro' : view === 'REGISTER' ? 'Nova Conta' : 'Escolha seu Perfil'}
+            {view === 'LOGIN' ? 'Klypbarber' : view === 'REGISTER' ? 'Nova Conta' : 'Escolha seu Perfil'}
           </h2>
           <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-3">
             {view === 'LOGIN'
@@ -159,6 +162,7 @@ export const Login: React.FC = () => {
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
               <div className="flex flex-col gap-2 mt-4">
+                {/* 
                 <button
                   type="button"
                   onClick={() => setView('PHONE_LOGIN')}
@@ -166,6 +170,7 @@ export const Login: React.FC = () => {
                 >
                   <Phone size={14} className="text-tenant-primary" /> Entrar com WhatsApp
                 </button>
+                */}
                 <button
                   type="button"
                   onClick={() => setView('REGISTER')}

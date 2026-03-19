@@ -431,7 +431,14 @@ export const Products: React.FC = () => {
                   return (
                     <div key={item.id} className="flex gap-6 items-start">
                       <div className="w-24 h-24 rounded-[20px] overflow-hidden border border-gray-100 dark:border-gray-700 shrink-0">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <img 
+                          src={item.image || 'https://images.unsplash.com/photo-1599351431247-f10b21ce9e13?q=80&w=2670&auto=format&fit=crop'} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1599351431247-f10b21ce9e13?q=80&w=2670&auto=format&fit=crop';
+                          }}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-black uppercase text-sm dark:text-white truncate">{item.name}</h4>
@@ -494,7 +501,7 @@ export const Products: React.FC = () => {
                   )}
                   <div className="flex justify-between items-end">
                     <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Total</span>
-                    <span className="text-4xl font-black text-gray-900 dark:text-tenant-primary tracking-tighter leading-none">R$ {cartTotal.toFixed(2)}</span>
+                    <span className="text-4xl font-black text-tenant-primary dark:text-tenant-primary tracking-tighter leading-none">R$ {cartTotal.toFixed(2)}</span>
                   </div>
                   <Button
                     onClick={handleCheckout}

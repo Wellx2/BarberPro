@@ -202,7 +202,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('❌ ShopContext: Erro ao buscar shop do usuário:', error);
     }
 
-    // 2. Check Subdomain (Deep Linking) - paulista.barberpro.com
+    // 2. Check Subdomain (Deep Linking) - paulista.klypbarber.com
     const hostname = window.location.hostname;
     const subdomain = hostname.split('.')[0];
 

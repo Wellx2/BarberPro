@@ -7,12 +7,15 @@ import { Appointment, BlockedPeriod, Review, Barber } from '../types';
 import { Star, Scissors, Calendar as CalendarIcon, ChevronLeft, MapPin, Award, Lock, AlertCircle, MessageSquare } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Calendar } from '../components/Calendar';
+import { Container } from '../components/layout/Container';
+import { Grid } from '../components/layout/Grid';
 import { Button } from '../components/ui/Button';
 import { barberService } from '../services/barberService';
 
 
 export const BarberProfile: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const { shop: currentShop } = useShop();
     const navigate = useNavigate();
     const { generateTimeSlots } = useShop();
 
@@ -199,7 +202,7 @@ export const BarberProfile: React.FC = () => {
                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">Experiência</div>
                         </div>
                         <div className="p-8 text-center group">
-                            <div className="text-3xl font-black text-white leading-nãone truncate px-2">{barber.unit || 'BarberPro'}</div>
+                            <div className="text-3xl font-black text-white leading-nãone truncate px-2">{barber.unit || 'Klypbarber'}</div>
                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">Unidade Sede</div>
                         </div>
                     </div>

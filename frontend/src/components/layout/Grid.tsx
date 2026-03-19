@@ -1,6 +1,6 @@
 /**
- * Grid Component - Sistema de Design BarberPro
- * Grid responsivo com auto-fit e customização de colunas
+ * Grid Component - Sistema de Design Klypbarber
+ * Grid responsivo com auto-fit e customizaï¿½ï¿½o de colunas
  */
 
 import React from 'react';

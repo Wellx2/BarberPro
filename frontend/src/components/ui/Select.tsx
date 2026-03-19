@@ -1,5 +1,5 @@
 /**
- * Select Component - Sistema de Design BarberPro
+ * Select Component - Sistema de Design Klypbarber
  * Select customizado com suporte a label e estados de erro
  */
 

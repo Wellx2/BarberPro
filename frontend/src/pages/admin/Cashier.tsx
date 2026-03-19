@@ -112,7 +112,7 @@ export const Cashier: React.FC = () => {
   const [opportunities, setOpportunities] = useState<SalesOpportunity[]>([]);
   const [retention, setRetention] = useState<RetentionMetrics | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA'));
 
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
@@ -278,7 +278,14 @@ export const Cashier: React.FC = () => {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-tighter dark:text-white">Caixa Operacional</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-3xl font-black uppercase tracking-tighter dark:text-white">Caixa Operacional</h2>
+              {selectedDate > new Date().toLocaleDateString('en-CA') && (
+                <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-200 dark:border-amber-800 animate-pulse">
+                  Previsão
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">
               {dailyAnalytics.isToday
                 ? 'Operação de hoje'
@@ -321,7 +328,7 @@ export const Cashier: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            onClick={() => setSelectedDate(new Date().toLocaleDateString('en-CA'))}
             disabled={dailyAnalytics.isToday}
             className="px-6 py-3 text-sm font-bold uppercase bg-tenant-primary text-white rounded-2xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
@@ -337,16 +344,196 @@ export const Cashier: React.FC = () => {
               {showValues ? <Eye size={20} /> : <EyeOff size={20} />}
             </button>
             <button
-              onClick={() => addNotification('info', 'Gerando relatório...', 'Impressão')}
+              onClick={() => {
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                  const content = `
+                    <html>
+                      <head>
+                        <title>Recibo de Caixa - ${shop.name}</title>
+                        <style>
+                          body { font-family: sans-serif; padding: 20px; color: #333; }
+                          h1 { text-transform: uppercase; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                          .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+                          .kpi-item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+                          .label { font-size: 12px; font-weight: bold; text-transform: uppercase; color: #666; }
+                          .value { font-size: 24px; font-weight: bold; margin-top: 5px; }
+                          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                          th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+                          .total-row { font-weight: bold; background: #f9f9f9; }
+                        </style>
+                      </head>
+                      <body>
+                        <div style="text-align: center; margin-bottom: 30px;">
+                          <h1 style="margin-bottom: 5px;">${shop.name}</h1>
+                          <p style="font-weight: bold; color: #666;">RELATÓRIO DE CAIXA OPERACIONAL</p>
+                          <p>Data: ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        
+                        <div class="kpi-grid">
+                          <div class="kpi-item">
+                            <div class="label">Total Recebido</div>
+                            <div class="value">R$ ${dailyAnalytics.totalReceived.toFixed(2)}</div>
+                          </div>
+                          <div class="kpi-item">
+                            <div class="label">Pendente</div>
+                            <div class="value">R$ ${dailyAnalytics.totalPending.toFixed(2)}</div>
+                          </div>
+                          <div class="kpi-item">
+                            <div class="label">Total Bruto</div>
+                            <div class="value">R$ ${dailyAnalytics.totalDay.toFixed(2)}</div>
+                          </div>
+                          <div class="kpi-item">
+                            <div class="label">Ticket Médio</div>
+                            <div class="value">R$ ${dailyAnalytics.avgTicket.toFixed(2)}</div>
+                          </div>
+                        </div>
+
+                        <h2>Comissões dos Profissionais</h2>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Profissional</th>
+                              <th>Atendimentos</th>
+                              <th>Comissão</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${dailyAnalytics.barberCommissions.map(b => `
+                              <tr>
+                                <td>${b.name}</td>
+                                <td>${b.appointments}</td>
+                                <td>R$ ${b.commission.toFixed(2)}</td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                        
+                        <div style="margin-top: 50px; text-align: center; border-top: 1px solid #ddd; padding-top: 20px;">
+                          <p style="font-size: 10px; color: #999;">Gerado por KlypBarber em ${new Date().toLocaleString('pt-BR')}</p>
+                        </div>
+                        <script>window.print();</script>
+                      </body>
+                    </html>
+                  `;
+                  printWindow.document.write(content);
+                  printWindow.document.close();
+                }
+              }}
               className="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-tenant-primary transition-colors flex items-center gap-2 font-bold text-sm"
             >
               <Printer size={18} /> Imprimir
             </button>
             <button
               onClick={() => setShowHistory(true)}
-              className="px-4 py-2 rounded-xl bg-tenant-primary text-white hover:opacity-90 transition-colors flex items-center gap-2 font-bold text-sm uppercase"
+              className="px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-tenant-primary transition-colors flex items-center gap-2 font-bold text-sm uppercase text-gray-700 dark:text-gray-300"
             >
               <History size={18} /> Histórico
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm('Deseja realmente FECHAR O CAIXA de hoje? Isso gerará o relatório final consolidado.')) {
+                  const printWindow = window.open('', '_blank');
+                  if (printWindow) {
+                    const content = `
+                      <html>
+                        <head>
+                          <title>FECHAMENTO DE CAIXA - ${shop.name}</title>
+                          <style>
+                            body { font-family: sans-serif; padding: 40px; color: #1a1a1a; line-height: 1.6; }
+                            .header { text-align: center; border-bottom: 4px solid #f59e0b; padding-bottom: 20px; margin-bottom: 30px; }
+                            h1 { margin: 0; text-transform: uppercase; letter-spacing: -1px; }
+                            .meta { font-weight: bold; color: #666; text-transform: uppercase; font-size: 12px; margin-top: 5px; }
+                            .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 30px 0; }
+                            .summary-item { background: #f9fafb; border: 1px solid #e5e7eb; padding: 25px; border-radius: 20px; }
+                            .label { font-size: 11px; font-weight: 900; text-transform: uppercase; color: #9ca3af; letter-spacing: 1px; }
+                            .value { font-size: 28px; font-weight: 900; color: #111827; margin-top: 5px; }
+                            .net-profit { border-left: 10px solid #10b981; }
+                            h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 40px; text-transform: uppercase; font-size: 18px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                            th { text-align: left; background: #f3f4f6; padding: 12px; font-size: 12px; text-transform: uppercase; }
+                            td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+                            .footer { margin-top: 60px; text-align: center; border-top: 1px solid #eee; padding-top: 30px; }
+                            .signature { margin-top: 40px; border-top: 1px solid #333; width: 250px; margin-left: auto; margin-right: auto; padding-top: 10px; font-size: 12px; font-weight: bold; }
+                          </style>
+                        </head>
+                        <body>
+                          <div class="header">
+                            <h1>${shop.name}</h1>
+                            <div class="meta">RELATÓRIO DE FECHAMENTO DE CAIXA</div>
+                            <div class="meta">Data: ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                          </div>
+
+                          <div class="summary-grid">
+                            <div class="summary-item">
+                              <div class="label">Total Bruto</div>
+                              <div class="value">R$ ${dailyAnalytics.totalDay.toFixed(2)}</div>
+                            </div>
+                            <div class="summary-item">
+                              <div class="label">Total Recebido</div>
+                              <div class="value">R$ ${dailyAnalytics.totalReceived.toFixed(2)}</div>
+                            </div>
+                            <div class="summary-item">
+                              <div class="label">Total Pendente</div>
+                              <div class="value">R$ ${dailyAnalytics.totalPending.toFixed(2)}</div>
+                            </div>
+                            <div class="summary-item net-profit">
+                              <div class="label">Lucro Líquido Real</div>
+                              <div class="value" style="color: #059669;">R$ ${dailyAnalytics.netRevenue.toFixed(2)}</div>
+                            </div>
+                          </div>
+
+                          <h2>Resumo por Categoria</h2>
+                          <table>
+                            <tr><td>Receita de Serviços</td><td style="text-align: right; font-weight: bold;">R$ ${dailyAnalytics.serviceRevenue.toFixed(2)}</td></tr>
+                            <tr><td>Receita de Produtos</td><td style="text-align: right; font-weight: bold;">R$ ${dailyAnalytics.productRevenue.toFixed(2)}</td></tr>
+                            <tr><td>Venda de Planos</td><td style="text-align: right; font-weight: bold;">R$ ${dailyAnalytics.planRevenue.toFixed(2)}</td></tr>
+                            <tr style="background: #fffbeb;"><td>Total de Comissões (Saída)</td><td style="text-align: right; font-weight: bold; color: #b45309;">- R$ ${dailyAnalytics.totalCommissions.toFixed(2)}</td></tr>
+                            <tr style="background: #fff5f5;"><td>Taxas de Cartão (Saída)</td><td style="text-align: right; font-weight: bold; color: #dc2626;">- R$ ${(dailyAnalytics.cardFees || 0).toFixed(2)}</td></tr>
+                          </table>
+
+                          <h2>Comissões de Profissionais</h2>
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Barbeiro</th>
+                                <th>Atendimentos</th>
+                                <th>Faturamento</th>
+                                <th>Comissão</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${dailyAnalytics.barberCommissions.map(b => `
+                                <tr>
+                                  <td>${b.name}</td>
+                                  <td>${b.appointments}</td>
+                                  <td>R$ ${b.revenue.toFixed(2)}</td>
+                                  <td style="font-weight: bold;">R$ ${b.commission.toFixed(2)}</td>
+                                </tr>
+                              `).join('')}
+                            </tbody>
+                          </table>
+
+                          <div class="footer">
+                            <p>Relatório gerado automaticamente pelo sistema KlypBarber.</p>
+                            <p style="font-size: 11px; color: #999;">ID da Operação: ${Math.random().toString(36).substr(2, 9).toUpperCase()} | Data/Hora: ${new Date().toLocaleString('pt-BR')}</p>
+                            
+                            <div class="signature">RESPONSÁVEL PELO FECHAMENTO</div>
+                          </div>
+                          
+                          <script>window.print();</script>
+                        </body>
+                      </html>
+                    `;
+                    printWindow.document.write(content);
+                    printWindow.document.close();
+                    addNotification('success', 'Relatório de fechamento gerado com sucesso!', 'Caixa Fechado');
+                  }
+                }
+              }}
+              className="px-6 py-2 rounded-xl bg-tenant-primary text-white hover:opacity-90 transition-all flex items-center gap-2 font-black text-sm uppercase shadow-lg shadow-tenant-primary/20"
+            >
+              <Check size={18} /> Fechar Caixa
             </button>
           </div>
         </div>

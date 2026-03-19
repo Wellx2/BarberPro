@@ -81,7 +81,7 @@ export function validateJWTForAppointments(token: string): {
 export function debugCurrentJWT(): void {
   const token = localStorage.getItem('accessToken');
 
-  console.group('ðŸ” DEBUG JWT');
+  console.group('🔍 DEBUG JWT');
 
   if (!token) {
     console.error('Nenhum token encontrado não localStorage');
