@@ -188,54 +188,72 @@ export const ProductsTab: React.FC = () => {
             <p className="text-xs mt-1">Sua prateleira está vazia. Adicione produtos para começar a vender.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map(product => (
-              <Card key={product.id} className="relative overflow-hidden transition-all border dark:border-gray-800">
-                {/* Badge de Status */}
-                <div className="absolute top-1.5 right-1.5 z-10">
-                  <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-lg text-white ${product.active ? 'bg-green-500' : 'bg-red-500'}`}>
-                    {product.active ? 'Ativo' : 'Inativo'}
+              <Card key={product.id} className="relative overflow-hidden transition-all">
+                {/* Badge de Status - Top Right */}
+                <div className="absolute top-2 right-2 z-10">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg text-white ${product.active
+                    ? 'bg-green-500'
+                    : 'bg-red-500'
+                    }`}>
+                    <Power size={12} />
+                    <span>{product.active ? 'Ativo' : 'Inativo'}</span>
                   </span>
                 </div>
 
-                {/* Imagem */}
-                <div className={`h-32 sm:h-40 bg-gray-100 dark:bg-gray-800 ${!product.active ? 'grayscale opacity-60' : ''}`}>
+                {/* Imagem - grayscale se inativo */}
+                <div className={`h-32 bg-gray-100 dark:bg-gray-800 ${!product.active ? 'grayscale' : ''}`}>
                   <img
                     src={product.image || fallbackImage}
                     alt={product.name}
                     className="w-full h-full object-cover"
-                    onError={(e) => { e.currentTarget.src = fallbackImage; }}
+                    onError={(e) => {
+                      e.currentTarget.src = fallbackImage;
+                    }}
                   />
                 </div>
 
-                <Card.Body className="space-y-2 p-3 sm:p-4">
+                <Card.Body className="space-y-2 p-4">
+                  {/* Informações - grayscale se inativo */}
                   <div className={!product.active ? 'grayscale opacity-60' : ''}>
-                    <h4 className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm line-clamp-2 uppercase tracking-tight h-8 sm:h-10">{product.name}</h4>
-                    <p className="text-lg sm:text-xl font-black text-tenant-primary">R$ {product.price.toFixed(2)}</p>
-                    <div className="flex items-center justify-between text-[10px] sm:text-xs">
-                      <span className="text-gray-500 font-medium">Estoque: {product.stock}</span>
-                      {product.stock === 0 && <span className="text-red-500 font-black uppercase tracking-tighter animate-pulse">Esgotado</span>}
+                    <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-tight truncate" title={product.name}>{product.name}</h4>
+                    <p className="text-2xl font-black text-tenant-primary">R$ {product.price.toFixed(2)}</p>
+                    <div className="flex items-center justify-between text-xs mt-1">
+                      <span className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tighter">Estoque: {product.stock} {product.unit}</span>
+                      {product.stock <= 5 && product.stock > 0 && <span className="text-orange-500 font-black uppercase tracking-tighter">Baixo</span>}
+                      {product.stock === 0 && <span className="text-red-500 font-black uppercase tracking-tighter">Esgotado</span>}
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 mt-3 sm:mt-4 pt-3 border-t dark:border-gray-800">
+                  {/* Botões Unificados */}
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <button
                       onClick={() => handleOpenProductModal(product)}
-                      className="w-full sm:flex-1 p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 p-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      title="Editar produto"
                     >
                       <Edit3 size={14} />
-                      <span className="text-[10px] font-black uppercase">Editar</span>
+                      <span className="text-xs font-bold">Editar</span>
                     </button>
+
                     <button
                       onClick={() => toggleActive(product.id, product.active)}
-                      className={`w-full sm:flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${product.active ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400' : 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}
+                      className={`flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${product.active
+                        ? 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 text-orange-600 dark:text-orange-400'
+                        : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 text-green-600 dark:text-green-400'
+                        }`}
+                      title={product.active ? 'Pausar venda' : 'Ativar venda'}
                     >
                       <Power size={14} />
-                      <span className="text-[10px] font-black uppercase">{product.active ? 'Pausar' : 'Ativar'}</span>
+                      <span className="text-xs font-bold">{product.active ? 'Pausar' : 'Ativar'}</span>
                     </button>
+
                     <button
                       onClick={() => deleteProduct(product.id, product.name)}
-                      className="w-full sm:w-10 p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center"
+                      disabled={!product.active}
+                      className={`flex-shrink-0 p-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 text-red-500 rounded-lg transition-colors flex items-center justify-center ${!product.active ? 'grayscale opacity-40 cursor-not-allowed' : ''}`}
+                      title={product.active ? 'Excluir definitivamente' : 'Ative para poder excluir'}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -264,12 +282,22 @@ export const ProductsTab: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço Venda *</label>
-                    <Input type="number" value={productForm.price} onChange={e => setProductForm({ ...productForm, price: parseFloat(e.target.value) })} />
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço Venda (R$) *</label>
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      value={productForm.price} 
+                      onChange={e => setProductForm({ ...productForm, price: parseFloat(e.target.value) || 0 })} 
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço Custo</label>
-                    <Input type="number" value={productForm.costPrice} onChange={e => setProductForm({ ...productForm, costPrice: parseFloat(e.target.value) })} />
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço Custo (R$)</label>
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      value={productForm.costPrice} 
+                      onChange={e => setProductForm({ ...productForm, costPrice: parseFloat(e.target.value) || 0 })} 
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

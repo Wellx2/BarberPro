@@ -80,7 +80,8 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                 startTime: isFullDay ? shop?.openingTime : startTime,
                 endTime: isFullDay ? shop?.closingTime : endTime,
                 reason,
-                forceOverride,
+                conflictingAppointmentIds: forceOverride ? conflicts.map(c => c.id) : [],
+                forceOverride, // Keep it if the parent needs it, but parent BarberDashboard doesn't pass it to API
             });
         } finally {
             setSubmitting(false);

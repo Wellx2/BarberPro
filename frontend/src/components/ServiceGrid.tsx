@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { useShop } from '../context/ShopContext';
 import { Service } from '../types';
 import { Clock, Search, X, Calendar } from 'lucide-react';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
@@ -22,7 +23,11 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
 }) => {
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const { isAuthenticated } = useAuth();
+    const { shop } = useShop();
     const navigate = useNavigate();
+
+    const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    const shopSlug = slugify(shop.name);
 
     const filteredServices = services
         .filter(service =>
@@ -32,10 +37,11 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
         .slice(0, maxItems);
 
     const handleScheduleClick = (serviceId: string) => {
+        const path = `/${shopSlug}/agendar`;
         if (isAuthenticated) {
-            navigate('/book', { state: { preSelectedServiceId: serviceId } });
+            navigate(path, { state: { preSelectedServiceId: serviceId } });
         } else {
-            navigate('/login', { state: { from: '/book', preSelectedServiceId: serviceId } });
+            navigate('/login', { state: { from: path, preSelectedServiceId: serviceId } });
         }
     };
 

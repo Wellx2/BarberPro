@@ -186,14 +186,22 @@ export interface Shop {
       cashier: boolean; // Módulo de caixa
       financial: boolean; // Dashboard financeiro
       reports: boolean; // Relatórios avançados
+      barberCanViewTicketMedio?: boolean; // Barbeiro pode ver o Ticket Médio
     };
   };
   socialWhatsapp?: string;
   socialInstagram?: string;
+  whatsapp?: string;
+  email?: string;
   coordinates?: { lat: number; lng: number };
   logoUrl?: string | null;
   bannerUrl?: string | null;
   primaryColor?: string | null;
+  heroSettings?: {
+    title: string;
+    subtitle: string;
+    backgroundImage?: string | null;
+  };
   amenities?: string[];
 }
 
@@ -635,6 +643,7 @@ export interface Appointment {
   products?: AppointmentProduct[];
   isManual?: boolean;
   notes?: string;
+  reminderEnabled?: boolean;
   cancelReason?: string;
   createdAt?: any;
   updatedAt?: any;
@@ -656,6 +665,23 @@ export interface Appointment {
     price?: number;
     service?: { id?: string; name?: string; price?: number; duration?: number };
   }>;
+  serviceOrder?: {
+    id: string;
+    status: string;
+    total: number;
+    items?: Array<{
+      id: string;
+      type: 'SERVICE' | 'PRODUCT';
+      name: string;
+      unitPrice: number;
+      quantity: number;
+      total: number;
+      commissionRate?: number;
+      commissionValue?: number;
+      service?: { name: string };
+      product?: { name: string };
+    }>;
+  };  
 }
 
 export interface CreateAppointmentDto {

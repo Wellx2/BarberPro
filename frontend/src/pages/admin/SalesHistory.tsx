@@ -1,7 +1,8 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { Invoice } from '../../types';
+import financialService from '../../services/financialService';
+import { useNotification } from '../../context/NotificationContext';
 import {
   History,
   Search,
@@ -20,35 +21,64 @@ import {
 
 export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { shop } = useShop();
+  const { addNotification } = useNotification();
   const [searchTerm, setSearchTerm] = useState('');
   const [periodFilter, setPeriodFilter] = useState<'TODAY' | 'WEEK' | 'FORTNIGHT' | 'MONTH' | 'ALL'>('TODAY');
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const invoices: Invoice[] = useMemo(() => {
-    const stored = localStorage.getItem('invoices');
-    return stored ? JSON.parse(stored) : [];
-  }, []);
+  useEffect(() => {
+    const loadInvoices = async () => {
+      try {
+        setLoading(true);
+        // Usar a nova API de listagem de faturas
+        let startDate: string | undefined;
+        const now = new Date();
+        
+        if (periodFilter === 'TODAY') startDate = now.toISOString().split('T')[0];
+        else if (periodFilter === 'WEEK') {
+          const d = new Date();
+          d.setDate(d.getDate() - 7);
+          startDate = d.toISOString().split('T')[0];
+        } else if (periodFilter === 'FORTNIGHT') {
+          const d = new Date();
+          d.setDate(d.getDate() - 15);
+          startDate = d.toISOString().split('T')[0];
+        } else if (periodFilter === 'MONTH') {
+          const d = new Date();
+          d.setDate(d.getDate() - 30);
+          startDate = d.toISOString().split('T')[0];
+        }
+
+        const data = await financialService.listInvoices(shop.id, {
+          startDate,
+          status: 'PAID' // No histórico mostramos apenas o que foi pago
+        });
+        
+        // Mapear campos se necessário (Invoice vs PendingInvoice)
+        setInvoices(data as any);
+      } catch (error) {
+        console.error('Erro ao carregar histórico:', error);
+        addNotification('error', 'Erro ao carregar histórico de vendas');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInvoices();
+  }, [shop.id, periodFilter, addNotification]);
 
   const filteredSales = useMemo(() => {
-    const nãow = new Date();
     return invoices
       .filter(inv => {
-        if (inv.shopId !== shop.id || inv.status !== 'PAID') return false;
-
-        const invDate = new Date(inv.date);
-        const diffDays = (nãow.getTime() - invDate.getTime()) / (1000 * 3600 * 24);
-
-        if (periodFilter === 'TODAY' && invDate.toDateString() !== nãow.toDateString()) return false;
-        if (periodFilter === 'WEEK' && diffDays > 7) return false;
-        if (periodFilter === 'FORTNIGHT' && diffDays > 15) return false;
-        if (periodFilter === 'MONTH' && diffDays > 30) return false;
-
+        // A API já filtra por shopId e status, mas mantemos buscas locais por nome/id
         const matchesSearch = inv.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           inv.id.toLowerCase().includes(searchTerm.toLowerCase());
 
         return matchesSearch;
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [invoices, shop.id, periodFilter, searchTerm]);
+  }, [invoices, searchTerm]);
 
   const getMethodIcon = (method?: string) => {
     switch (method) {
@@ -114,7 +144,14 @@ export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-gray-700">
-              {filteredSales.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="p-20 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-tenant-primary border-t-transparent mb-4"></div>
+                    <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Carregando faturas...</p>
+                  </td>
+                </tr>
+              ) : filteredSales.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-20 text-center text-gray-400 uppercase text-[10px] font-black tracking-widest italic">
                     Nenhuma venda encontrada neste período

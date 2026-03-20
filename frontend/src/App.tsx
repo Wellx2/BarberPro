@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 // Fix: Import HashRouter from react-router-dom and core components from react-router to resolve export errors in some environments
-import { HashRouter as Router } from 'react-router-dom';
-import { Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider, useNotification } from './context/NotificationContext';
 import { ShopProvider, useShop } from './context/ShopContext';
@@ -12,6 +12,7 @@ import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { ResetPassword } from './pages/ResetPassword';
+import { AuthCallback } from './pages/AuthCallback';
 import { UserProfile } from './pages/UserProfile';
 import { Booking } from './pages/Booking';
 import { BarberProfile } from './pages/BarberProfile';
@@ -131,7 +132,6 @@ const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return <>{children}</>;
 };
-
 const App: React.FC = () => {
   // Fix for potential broken images stored in localStorage from previous versions
   useEffect(() => {
@@ -163,74 +163,114 @@ const App: React.FC = () => {
     <ThemeProvider>
       <NotificationProvider>
         <AuthProvider>
-          <ShopProvider>
-            <AppLogic>
-              <Router>
+          <Router>
+            <ShopProvider>
+              <AppLogic>
                 <Layout>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/services" element={<Services />} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/plans" element={<Plans />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/explore" element={<Explore />} />
-
-                    {/* Rotas Protegidas */}
-                    <Route path="/dashboard" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/profile" element={
-                      <ProtectedRoute>
-                        <UserProfile />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/book" element={
-                      <ProtectedRoute>
-                        <Booking />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/appointments" element={
-                      <ProtectedRoute>
-                        <Appointments />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/history" element={
-                      <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-                        <AdminAppointmentHistory />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/super" element={
-                      <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-                        <SuperAdminDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/cashier" element={
-                      <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-                        <Cashier />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/stock" element={
-                      <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-                        <StockMovements />
-                      </ProtectedRoute>
-                    } />
-                    {/* Profile Público */}
-                    <Route path="/barber/:id" element={<BarberProfile />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                  <AppRoutes />
                 </Layout>
-              </Router>
-            </AppLogic>
-          </ShopProvider>
+              </AppLogic>
+            </ShopProvider>
+          </Router>
         </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>
+  );
+};
+
+// Separated component for routes to use hooks like useLocation if needed later
+const AppRoutes: React.FC = () => {
+  const { shop } = useShop();
+  // Slugify function to match ShopContext
+  const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+  const shopSlug = slugify(shop.name);
+
+  return (
+    <Routes>
+      {/* Rotas Globais / Estáticas */}
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/explore" element={<Explore />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+
+      {/* Rota de redirecionamento para o slug da loja atual se acessar rotas sem prefixo */}
+      <Route path="/services" element={<Navigate to={`/${shopSlug}/servicos`} replace />} />
+      <Route path="/products" element={<Navigate to={`/${shopSlug}/produtos`} replace />} />
+      <Route path="/plans" element={<Navigate to={`/${shopSlug}/planos`} replace />} />
+      <Route path="/book" element={<Navigate to={`/${shopSlug}/agendar`} replace />} />
+      <Route path="/servicos" element={<Navigate to={`/${shopSlug}/servicos`} replace />} />
+      <Route path="/produtos" element={<Navigate to={`/${shopSlug}/produtos`} replace />} />
+      <Route path="/planos" element={<Navigate to={`/${shopSlug}/planos`} replace />} />
+      <Route path="/agendar" element={<Navigate to={`/${shopSlug}/agendar`} replace />} />
+
+      {/* Rotas de Loja (Dinamicas com Slug) */}
+      <Route path="/:shopSlug">
+        <Route index element={<Home />} />
+        <Route path="servicos" element={<Services />} />
+        <Route path="produtos" element={<Products />} />
+        <Route path="planos" element={<Plans />} />
+        <Route path="agendar" element={
+          <ProtectedRoute>
+            <Booking />
+          </ProtectedRoute>
+        } />
+      </Route>
+
+      {/* Aliases em Inglês para compatibilidade ou se preferir */}
+      <Route path="/:shopSlug/services" element={<Navigate to="../servicos" replace />} />
+      <Route path="/:shopSlug/products" element={<Navigate to="../produtos" replace />} />
+      <Route path="/:shopSlug/plans" element={<Navigate to="../planos" replace />} />
+      <Route path="/:shopSlug/book" element={<Navigate to="../agendar" replace />} />
+
+      {/* Rotas Protegidas de Usuário (Podem ser globais) */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+
+      {/* Rotas de Admin */}
+      <Route path="/admin/appointments" element={
+        <ProtectedRoute>
+          <Appointments />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/history" element={
+        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+          <AdminAppointmentHistory />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/super" element={
+        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+          <SuperAdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/cashier" element={
+        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+          <Cashier />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/stock" element={
+        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+          <StockMovements />
+        </ProtectedRoute>
+      } />
+
+      {/* Profile Público de Barbeiro */}
+      <Route path="/barber/:id" element={<BarberProfile />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 

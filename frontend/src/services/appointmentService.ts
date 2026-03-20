@@ -40,6 +40,8 @@ export interface CancelAppointmentDto {
  */
 export interface AppointmentFilters {
   date?: string; // YYYY-MM-DD ou ISO 8601
+  startDate?: string;
+  endDate?: string;
   barberId?: string;
   status?: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_BY_BARBER';
 }
@@ -79,11 +81,11 @@ export const appointmentService = {
         const vinculoError = error?.message?.includes('próprio')
           ? 'Você só pode agendar para seu próprio perfil (cliente/barbeiro).'
           : 'Seu usuário não está vinculado ao perfil de cliente/barbeiro nesta barbearia. Contate o administrador.';
-        console.warn('âš ï¸ Erro de vínculo de identidade (403):', error?.message);
+        console.warn('Erro de vínculo de identidade (403):', error?.message);
         throw { ...error, message: vinculoError };
       }
 
-      console.error('âŒ Erro ao criar agendamento:', {
+      console.error('Erro ao criar agendamento:', {
         status: error?.statusCode || error?.status,
         message: error?.message,
         error: error?.error,
@@ -231,11 +233,35 @@ export const appointmentService = {
     } catch (error: any) {
       // Se endpoint não existir, retorna array vazio
       if (error.statusCode === 404 || error.response?.status === 404) {
-        console.warn('âš ï¸ Endpoint /barbers/:id/available-slots não implementado');
+        console.warn('Endpoint /barbers/:id/available-slots não implementado');
         return [];
       }
-      console.error('âŒ Erro ao buscar slots disponíveis:', error);
+      console.error('Erro ao buscar slots disponíveis:', error);
       return [];
     }
+  },
+
+  /**
+   * Obter contagem de cancelamentos do barbeiro logado (mensal e semanal)
+   */
+  async getMyCancellationsCount(): Promise<{ monthly: number; weekly: number }> {
+    const response = await api.get<{ monthly: number; weekly: number }>('/appointments/my-cancellations-count');
+    return response.data;
+  },
+
+  /**
+   * Enviar lembrete manual ao cliente
+   */
+  async sendManualReminder(id: string): Promise<{ success: boolean; reason?: string }> {
+    const response = await api.post<{ success: boolean; reason?: string }>(`/appointments/${id}/send-reminder`);
+    return response.data;
+  },
+
+  /**
+   * Atualizar preferências do agendamento (ex: lembrete automático)
+   */
+  async updatePreferences(id: string, data: { reminderEnabled?: boolean }): Promise<Appointment> {
+    const response = await api.patch<Appointment>(`/appointments/${id}`, data);
+    return response.data;
   },
 };

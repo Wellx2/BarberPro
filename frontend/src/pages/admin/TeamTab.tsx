@@ -107,6 +107,49 @@ export const TeamTab: React.FC = () => {
     }
   };
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 600;
+          if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(compressedBase64);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file);
+        setTeamForm({ ...teamForm, avatar: compressedBase64 });
+        addNotification('success', 'Foto carregada com sucesso!');
+      } catch (error) {
+        addNotification('error', 'Erro ao processar imagem');
+      }
+    }
+  };
+
   const handleToggleTeamMemberActive = async (id: string) => {
     try {
       await teamService.toggleActive(id);
@@ -167,67 +210,67 @@ export const TeamTab: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {teamMembers.map(member => (
-              <Card key={member.id} className={`relative transition-all ${!member.active ? 'opacity-60' : ''}`}>
-                <div className="absolute top-3 right-3 z-10">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${member.active
-                    ? 'bg-green-500 text-white'
-                    : 'bg-red-500 text-white'
+              <Card key={member.id} className="relative overflow-hidden transition-all">
+                {/* Badge de Status - Top Right */}
+                <div className="absolute top-2 right-2 z-10">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg text-white ${member.active
+                    ? 'bg-green-500'
+                    : 'bg-red-500'
                     }`}>
-                    {member.active ? 'Ativo' : 'Inativo'}
+                    <Power size={12} />
+                    <span>{member.active ? 'Ativo' : 'Inativo'}</span>
                   </span>
                 </div>
 
                 <Card.Body className="p-4">
-                  <div className="flex items-start gap-4 mb-4">
+                  <div className={`flex items-start gap-4 mb-4 ${!member.active ? 'grayscale opacity-60' : ''}`}>
                     {member.avatar ? (
                       <img
                         src={member.avatar}
                         alt={member.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-tenant-primary"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-tenant-primary shadow-md"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-full bg-tenant-primary/10 dark:bg-tenant-primary/20 flex items-center justify-center">
-                        <Users size={32} className="text-tenant-primary dark:text-tenant-primary" />
+                      <div className="w-16 h-16 rounded-full bg-tenant-primary/10 dark:bg-tenant-primary/20 flex items-center justify-center border-2 border-dashed border-tenant-primary/30">
+                        <Users size={32} className="text-tenant-primary" />
                       </div>
                     )}
 
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-900 dark:text-white text-lg">{member.name}</h4>
-                      <p className="text-sm font-medium text-tenant-primary dark:text-tenant-primary">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-lg uppercase tracking-tight truncate">{member.name}</h4>
+                      <p className="text-xs font-black text-tenant-primary uppercase tracking-widest leading-none mb-1">
                         {TEAM_ROLE_LABELS[member.role] || member.role}
                       </p>
-                      {member.email && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{member.email}</p>
-                      )}
-                      {member.phone && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{member.phone}</p>
+                      {member.commissionRate !== undefined && (
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
+                          Comissão: {member.commissionRate}%
+                        </p>
                       )}
                     </div>
                   </div>
 
                   {member.specialties && member.specialties.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Especialidades:</p>
+                    <div className={`mb-4 ${!member.active ? 'grayscale opacity-60' : ''}`}>
                       <div className="flex flex-wrap gap-1">
-                        {member.specialties.map((spec, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-xs rounded-full">
+                        {member.specialties.slice(0, 3).map((spec, idx) => (
+                          <span key={idx} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-[10px] font-bold uppercase text-gray-500 rounded-md">
                             {spec}
                           </span>
                         ))}
+                        {member.specialties.length > 3 && (
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-[10px] font-bold text-gray-400 rounded-md">
+                            +{member.specialties.length - 3}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {member.commissionRate !== undefined && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <strong>Comissão:</strong> {member.commissionRate}%
-                    </p>
-                  )}
-
-                  <div className="flex gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  {/* Botões Unificados */}
+                  <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
                     <button
                       onClick={() => handleOpenTeamModal(member)}
-                      className="flex-1 p-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 text-blue-600 dark:text-blue-400 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 min-w-[80px] p-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 text-blue-600 dark:text-blue-400 rounded-lg transition-colors flex items-center justify-center gap-1.5"
                       title="Editar"
                     >
                       <Edit3 size={14} />
@@ -236,29 +279,30 @@ export const TeamTab: React.FC = () => {
 
                     <button
                       onClick={() => handleToggleTeamMemberActive(member.id)}
-                      className={`flex-1 p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${member.active
+                      className={`flex-1 min-w-[80px] p-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${member.active
                         ? 'bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 text-orange-600 dark:text-orange-400'
                         : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 text-green-600 dark:text-green-400'
                         }`}
                       title={member.active ? 'Desativar' : 'Ativar'}
                     >
                       <Power size={14} />
-                      <span className="text-xs font-bold">{member.active ? 'Desativar' : 'Ativar'}</span>
+                      <span className="text-xs font-bold">{member.active ? 'Pausar' : 'Ativar'}</span>
                     </button>
 
                     <button
                       onClick={() => handleOpenLockAgendaModal(member)}
                       disabled={!member.active}
-                      className="flex-1 p-2 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 disabled:opacity-40 disabled:cursor-not-allowed text-purple-600 dark:text-purple-400 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 min-w-[80px] p-2 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 disabled:opacity-40 disabled:cursor-not-allowed text-purple-600 dark:text-purple-400 rounded-lg transition-colors flex items-center justify-center gap-1.5"
                       title={member.active ? 'Trancar Agenda' : 'Ative para trancar agenda'}
                     >
                       <Lock size={14} />
-                      <span className="text-xs font-bold hidden sm:inline">Trancar</span>
+                      <span className="text-xs font-bold">Trancar</span>
                     </button>
 
                     <button
                       onClick={() => handleDeleteTeamMember(member.id, member.name)}
-                      className="p-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 text-red-500 rounded-lg transition-colors flex items-center justify-center"
+                      disabled={!member.active}
+                      className={`p-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 text-red-500 rounded-lg transition-colors flex items-center justify-center ${!member.active ? 'grayscale opacity-40 cursor-not-allowed' : ''}`}
                       title="Excluir"
                     >
                       <Trash2 size={14} />
@@ -324,8 +368,20 @@ export const TeamTab: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">URL da Foto</label>
-                <Input type="url" value={teamForm.avatar || ''} onChange={e => setTeamForm({ ...teamForm, avatar: e.target.value })} placeholder="https://exemplo.com/foto.jpg" />
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Foto do Profissional</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center shrink-0">
+                    {teamForm.avatar ? (
+                      <img src={teamForm.avatar} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Users className="text-gray-300" size={24} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Input type="file" accept="image/*" onChange={handleImageUpload} className="w-full" />
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold">Formatos: JPG, PNG • Max 1MB</p>
+                  </div>
+                </div>
               </div>
             </div>
 

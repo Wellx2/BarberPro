@@ -1,52 +1,49 @@
-# 💈 BarberPro - Sistema de Gestão para Barbearias
+# BarberPro Frontend
 
-Sistema completo de gestão multi-tenant para barbearias com agendamentos, vendas, estoque e planos de assinatura.
+BarberPro é uma solução SaaS multi-tenant avançada para gestão de barbearias, focada em oferecer uma experiência premium tanto para proprietários quanto para clientes.
 
-[![Vite](https://img.shields.io/badge/Vite-6.4.1-646CFF?logo=vite)](https://vitejs.dev/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+## 🚀 Visão Geral
 
----
+O projeto foi construído para ser altamente escalável e personalizável (White-Label), permitindo que cada barbearia tenha sua própria identidade visual, catálogo de serviços e regras de negócio, tudo sob um único ecossistema robusto.
 
-## 🚀 Início Rápido
+## ✨ Principais Funcionalidades
 
-### Pré-requisitos
-- Node.js 18+ 
+- **Multi-tenancy Dinâmico**: Identificação automática da barbearia através de slugs na URL (ex: `klypbarber.com.br/centro`).
+- **White-Label Completo**: Personalização de cores, logotipos, banners e informações de contato pelo painel administrativo.
+- **Gestão Financeira**: Módulo de fluxo de caixa, comissões de barbeiros e relatórios DRE (Demonstrativo de Resultados).
+- **Agendamento Inteligente**: Fluxo simplificado para clientes com seleção de profissional, serviço e horário em tempo real.
+- **Painel Administrativo Modular**: Gestão de estoque, serviços, profissionais e assinaturas.
+- **Design Premium**: Interface moderna com suporte a Dark Mode e micro-animações.
 
-### Instalação
+## 🛠️ Stack Tecnológica
 
-```bash
-# 1. Instalar dependências
-npm install
+- **Core**: React 18 + TypeScript
+- **Roteamento**: React Router v6 (BrowserRouter para URLs limpas)
+- **Estilização**: Tailwind CSS + CSS Variáveis (Tokens de Marca)
+- **Build**: Vite
+- **Comunicação**: Axios (com interceptores para segurança JWT)
+- **Ícones**: Lucide React
 
-# 2. Configurar variáveis de ambiente
-# Edite .env.local e adicione sua chave Gemini API
-GEMINI_API_KEY=sua_chave_aqui
+## 🔄 Atualizações Recentes (Refatoração Crítica)
 
-# 3. Iniciar servidor
-npm run dev
+Recentemente, o projeto passou por uma grande evolução arquitetural:
+1. **Migração de HashRouter para BrowserRouter**: URLs mais limpas e amigáveis para SEO.
+2. **Sistema de Slugs**: Implementação de `/:shopSlug` para permitir URLs personalizadas por barbearia.
+3. **Refatoração do Admin**: Consolidação dos módulos financeiros e de estoque em abas modulares.
+4. **Otimização de Performance**: Redução de renderizações desnecessárias e melhor gestão de estado via Context API.
 
-# 4. Acessar: http://localhost:3000
-```
+## 📦 Como Iniciar
 
----
-
-## 🎭 Perfis de Usuário
-
-- **Cliente:** Agendar serviços, comprar produtos
-- **Barbeiro:** Gerenciar agenda e atendimentos
-- **Admin:** Gestão completa da unidade
-- **Super Admin:** Gestão multi-tenant global
-
----
-
-## 📚 Documentação
-
-- [📖 Guia de Início](GETTING_STARTED.md)
-- [🎨 Guia de Estilo](STYLE_GUIDE.md)
-- [📁 Estrutura](ESTRUTURA_REORGANIZADA.md)
-- [🔒 Segurança](SEGURANCA.md)
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+2. Configure as variáveis de ambiente:
+   Crie um arquivo `.env` baseado no `.env.example`.
+3. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
 
 ---
-
-**View app in AI Studio:** https://ai.studio/apps/drive/18QZXpi1KqkvPfEx8f-okra5oR-tiDvf0
+*BarberPro - Elevando o nível da sua barbearia.*

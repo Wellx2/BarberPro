@@ -31,7 +31,7 @@ export const BarberProfile: React.FC = () => {
         if (id) {
             setLoading(true);
             Promise.all([
-                barberService.getById(id),
+                barberService.getPublicById(id),
                 barberService.getPublicReviews(id).catch(() => [])
             ])
                 .then(([barberData, reviewsData]) => {
@@ -107,7 +107,11 @@ export const BarberProfile: React.FC = () => {
         });
     };
 
+    const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+
     const handleBookClick = (date?: Date, time?: string) => {
+        const shopSlug = slugify(currentShop.name);
+        
         const state: any = { preSelectedBarberId: barber.id };
         if (date && time) {
             const year = date.getFullYear();
@@ -116,7 +120,7 @@ export const BarberProfile: React.FC = () => {
             state.preSelectedDate = `${year}-${month}-${day}`;
             state.preSelectedTime = time;
         }
-        navigate('/book', { state });
+        navigate(`/${shopSlug}/agendar`, { state });
     };
 
     const selectedDateObj = new Date(selectedDate + 'T00:00:00');
@@ -134,7 +138,7 @@ export const BarberProfile: React.FC = () => {
                     alt="Barbershop Background"
                     className="w-full h-full object-cover opacity-30"
                 />
-                <Link to="/" className="absolute top-6 left-6 z-20 text-white flex items-center gap-2 bg-gray-900/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-tenant-primary hover:text-white transition-all shadow-lg active:scale-95 group">
+                <Link to={currentShop.id ? `/${slugify(currentShop.name)}` : "/"} className="absolute top-6 left-6 z-20 text-white flex items-center gap-2 bg-gray-900/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-tenant-primary hover:text-white transition-all shadow-lg active:scale-95 group">
                     <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                     <span className="font-bold text-sm uppercase tracking-tight">Voltar</span>
                 </Link>

@@ -161,6 +161,7 @@ export const Login: React.FC = () => {
               <Button type="submit" variant="primary" fullWidth disabled={isLoading}>
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
+
               <div className="flex flex-col gap-2 mt-4">
                 {/* Ocultando login por WhatsApp temporariamente */}
                 <button

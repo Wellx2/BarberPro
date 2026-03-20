@@ -32,6 +32,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isTabActive = (path: string) => location.pathname === path;
 
+  const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+  const shopSlug = slugify(shop.name);
+
+  // Helper paths
+  const getShopPath = (path: string) => `/${shopSlug}${path}`;
+
   const showPlans = shop.settings.modulesEnabled?.clientPlans !== false;
   const showProducts = shop.settings.modulesEnabled?.products !== false;
 
@@ -42,7 +48,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2">
+              <Link to={getShopPath('/')} className="flex items-center gap-2">
                 {shop.logoUrl ? (
                   <img src={shop.logoUrl} alt={shop.name} className="h-10 w-10 object-contain" />
                 ) : (
@@ -58,19 +64,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-6">
-              <Link to="/" className="hover:text-tenant-primary transition-colors font-medium">Início</Link>
+              <Link to={getShopPath('/')} className="hover:text-tenant-primary transition-colors font-medium">Início</Link>
               <Link to="/explore" className="hover:text-tenant-primary transition-colors font-medium">Buscar</Link>
-              <Link to="/services" className="hover:text-tenant-primary transition-colors font-medium">Serviços</Link>
+              <Link to={getShopPath('/servicos')} className="hover:text-tenant-primary transition-colors font-medium">Serviços</Link>
               {showPlans && (
-                <Link to="/plans" className="hover:text-tenant-primary transition-colors font-medium">Planos</Link>
+                <Link to={getShopPath('/planos')} className="hover:text-tenant-primary transition-colors font-medium">Planos</Link>
               )}
               {showProducts && (
-                <Link to="/products" className="hover:text-tenant-primary transition-colors font-medium flex items-center gap-1">
+                <Link to={getShopPath('/produtos')} className="hover:text-tenant-primary transition-colors font-medium flex items-center gap-1">
                   <ShoppingBag size={18} /> Loja
                 </Link>
               )}
 
-              <Link to="/book" className="bg-tenant-primary hover:opacity-90 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all">
+              <Link to={getShopPath('/agendar')} className="bg-tenant-primary hover:opacity-90 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all">
                 <Calendar size={18} /> Agendar
               </Link>
 
@@ -120,31 +126,31 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Bottom Navigation - Mobile Essential UX */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 safe-area-bottom">
         <div className="flex justify-around items-center h-16">
-          <Link to="/" className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/') ? 'text-tenant-primary' : 'text-gray-400'}`}>
+          <Link to={getShopPath('/')} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive(getShopPath('/')) ? 'text-tenant-primary' : 'text-gray-400'}`}>
             <HomeIcon size={20} />
             <span className="text-[10px] font-bold uppercase">Início</span>
           </Link>
 
           {/* UX SWAP: If plans are disabled, show Services (Catalog) instead of empty/hidden Plans slot */}
           {showPlans ? (
-            <Link to="/plans" className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/plans') ? 'text-tenant-primary' : 'text-gray-400'}`}>
+            <Link to={getShopPath('/planos')} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive(getShopPath('/planos')) ? 'text-tenant-primary' : 'text-gray-400'}`}>
               <Award size={20} />
               <span className="text-[10px] font-bold uppercase">Planos</span>
             </Link>
           ) : (
-            <Link to="/services" className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/services') ? 'text-tenant-primary' : 'text-gray-400'}`}>
+            <Link to={getShopPath('/servicos')} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive(getShopPath('/servicos')) ? 'text-tenant-primary' : 'text-gray-400'}`}>
               <List size={20} />
               <span className="text-[10px] font-bold uppercase">Serviços</span>
             </Link>
           )}
 
-          <Link to="/book" className="flex flex-col items-center gap-1 flex-1 -mt-8">
+          <Link to={getShopPath('/agendar')} className="flex flex-col items-center gap-1 flex-1 -mt-8">
             <div className="bg-tenant-primary p-3 rounded-full shadow-lg border-4 border-white dark:border-gray-800 text-white">
               <Calendar size={24} />
             </div>
             <span className="text-[10px] font-bold uppercase mt-1 text-tenant-primary">Agendar</span>
           </Link>
-          <Link to="/products" className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/products') ? 'text-tenant-primary' : 'text-gray-400'}`}>
+          <Link to={getShopPath('/produtos')} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive(getShopPath('/produtos')) ? 'text-tenant-primary' : 'text-gray-400'}`}>
             <ShoppingBag size={20} />
             <span className="text-[10px] font-bold uppercase">Loja</span>
           </Link>

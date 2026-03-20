@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useShop } from '../../context/ShopContext';
 import {
   Calendar, CheckCircle, ChevronLeft, ChevronRight,
   Phone, X, Plus, Minus, ShoppingBag, Scissors, AlertCircle,
-  Clock, XCircle, UserCheck, Package, Star
+  Clock, XCircle, UserCheck, Package, Star, AlertTriangle, ShieldAlert, Shield,
+  BellRing, ToggleLeft, ToggleRight, Search, ChevronDown
 } from 'lucide-react';
 import { useBarberSchedule } from '../../hooks/useAppointments';
 import {
@@ -378,21 +379,30 @@ const ServiceOrderModal: React.FC<ServiceOrderModalProps> = ({
           </div>
 
           {!showCancelForm && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={onClose}
+                  className="flex items-center justify-center gap-2 px-4 py-3.5 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all font-bold text-sm shadow-sm"
+                >
+                  <XCircle className="w-5 h-5 text-gray-400" />
+                  Fechar
+                </button>
+                <button
+                  onClick={handleComplete}
+                  disabled={completing || loadingItems || !order}
+                  className="flex items-center justify-center gap-2 px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all disabled:opacity-60 shadow-lg shadow-green-200 dark:shadow-none"
+                >
+                  <CheckCircle className="w-6 h-6" />
+                  {completing ? 'Concluindo...' : 'Finalizar Conta'}
+                </button>
+              </div>
+              
               <button
                 onClick={() => setShowCancelForm(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all font-bold text-sm shadow-sm"
+                className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold uppercase tracking-wider text-center py-2"
               >
-                <XCircle className="w-5 h-5" />
-                Cancelar
-              </button>
-              <button
-                onClick={handleComplete}
-                disabled={completing || loadingItems || !order}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all disabled:opacity-60 shadow-lg shadow-green-200 dark:shadow-none"
-              >
-                <CheckCircle className="w-6 h-6" />
-                {completing ? 'Concluindo...' : 'Finalizar Conta'}
+                Cancelar este agendamento (Cliente desistiu)
               </button>
             </div>
           )}
@@ -426,9 +436,62 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
   // Form State
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [date, setDate] = useState<string>(getLocalDateString());
   const [time, setTime] = useState<string>('09:00');
   const [notes, setNotes] = useState('');
+
+  // Dropdown & New Client states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientPhone, setNewClientPhone] = useState('');
+  const [creatingClient, setCreatingClient] = useState(false);
+
+  const handleCreateClient = async () => {
+    if (!newClientName || !newClientPhone) return;
+    setCreatingClient(true);
+    try {
+      const newCli = await clientService.create({ name: newClientName, phone: newClientPhone, shopId });
+      setClients(prev => [...prev, newCli]);
+      setSelectedClient(newCli.id);
+      setShowNewClientForm(false);
+      setNewClientName('');
+      setNewClientPhone('');
+    } catch (e: any) {
+      alert(e?.response?.data?.message || 'Erro ao criar cliente');
+    } finally {
+      setCreatingClient(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredClients = clients.filter(c => {
+    const term = searchTerm.toLowerCase();
+    const phoneStr = c.phone?.toLowerCase() || c.user?.phone?.toLowerCase() || '';
+    const nameStr = c.name?.toLowerCase() || '';
+    const codeStr = c.id?.toLowerCase() || '';
+    return nameStr.includes(term) || phoneStr.includes(term) || codeStr.includes(term);
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -451,14 +514,27 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedClient || selectedServices.length === 0) return;
+    if (!selectedClient) {
+      alert("Por favor, selecione um cliente.");
+      return;
+    }
+    if (selectedServices.length === 0) {
+      alert("Por favor, selecione pelo menos um serviço.");
+      return;
+    }
     setSaving(true);
     try {
+      // Build a timezone-aware ISO string so the backend UTC server
+      // interprets the correct local time (BRT = UTC-3)
+      const localDate = new Date(`${date}T${time}:00`);
+      const tzOffsetMs = localDate.getTimezoneOffset() * 60000;
+      const localISOString = new Date(localDate.getTime() - tzOffsetMs).toISOString();
+
       await appointmentService.create({
         clientId: selectedClient,
         barberId,
         serviceIds: selectedServices,
-        date: `${date}T${time}:00`,
+        date: localISOString,
         notes,
       });
       onSuccess();
@@ -488,82 +564,334 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div>
+          <div ref={dropdownRef} className="relative">
             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Cliente</label>
-            <select
-              required
-              value={selectedClient}
-              onChange={e => setSelectedClient(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
+            <div 
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border rounded-xl flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-tenant-primary"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
-              <option value="">Selecione um cliente...</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Serviços</label>
-            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
-              {services.map(s => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => toggleService(s.id)}
-                  className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${selectedServices.includes(s.id)
-                    ? 'bg-tenant-primary border-tenant-primary text-white'
-                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
-                    }`}
-                >
-                  {s.name}
-                </button>
-              ))}
+              <span className={selectedClient ? "font-medium text-gray-900 dark:text-white" : "text-gray-500"}>
+                {selectedClient ? clients.find(c => c.id === selectedClient)?.name : 'Selecione ou busque um cliente...'}
+              </span>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
             </div>
+
+            {isDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-lg max-h-60 flex flex-col">
+                <div className="p-2 border-b border-gray-100 dark:border-gray-700 shrink-0">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por nome, telefone ou ID..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-tenant-primary dark:text-white"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                <div className="overflow-y-auto p-1 grow">
+                  {filteredClients.length > 0 ? (
+                    filteredClients.map(c => (
+                      <div
+                        key={c.id}
+                        className={`px-3 py-2 rounded-lg cursor-pointer flex flex-col mb-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${selectedClient === c.id ? 'bg-tenant-primary/10 text-tenant-primary dark:bg-tenant-primary/20' : 'text-gray-700 dark:text-gray-300'}`}
+                        onClick={() => {
+                          setSelectedClient(c.id);
+                          setIsDropdownOpen(false);
+                          setSearchTerm('');
+                        }}
+                      >
+                        <span className="font-bold text-sm">{c.name}</span>
+                        {(c.phone || c.user?.phone) && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3" />
+                            {c.phone || c.user?.phone}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-400 truncate mt-0.5">ID: {c.id.split('-')[0]}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-gray-500">
+                      Nenhum cliente encontrado
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-2 border-t border-gray-100 dark:border-gray-700 mt-auto bg-gray-50 dark:bg-gray-800/80 rounded-b-xl shrink-0">
+                  <button 
+                    type="button"
+                    className="w-full py-2 flex items-center justify-center gap-2 text-xs font-bold text-tenant-primary hover:bg-tenant-primary/10 rounded-lg transition-colors"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setShowNewClientForm(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4"/> Cadastrar Novo Cliente
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Data</label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
-              />
+          {showNewClientForm && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 border border-gray-200 dark:border-gray-700 rounded-xl space-y-3 relative animate-in fade-in slide-in-from-top-2">
+              <button 
+                type="button" 
+                onClick={() => setShowNewClientForm(false)}
+                title="Cancelar"
+                className="absolute top-2 right-2 p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-tenant-primary" /> Cadastro Rápido
+              </h3>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nome Completo *</label>
+                <input
+                  type="text"
+                  placeholder="Ex: João Silva"
+                  value={newClientName}
+                  onChange={e => setNewClientName(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-tenant-primary dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">WhatsApp (DDD + Número) *</label>
+                <input
+                  type="tel"
+                  placeholder="Ex: 11999999999"
+                  value={newClientPhone}
+                  onChange={e => setNewClientPhone(e.target.value.replace(/\D/g, '').slice(0,11))}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-tenant-primary dark:text-white"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleCreateClient}
+                disabled={creatingClient || !newClientName || newClientPhone.length < 10}
+                className="w-full mt-1 py-2.5 bg-tenant-primary hover:opacity-90 text-white rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+              >
+                {creatingClient ? 'Procesando...' : 'Salvar e Usar no Agendamento'}
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Hora</label>
-              <input
-                type="time"
-                required
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
-              />
-            </div>
-          </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Notas</label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary resize-none h-20"
-            />
-          </div>
+          {!showNewClientForm && (
+            <>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Serviços</label>
+                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-2">
+                  {services.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleService(s.id)}
+                      className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${selectedServices.includes(s.id)
+                        ? 'bg-tenant-primary border-tenant-primary text-white'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                        }`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <button
-            type="submit"
-            disabled={saving || loading}
-            className="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 mt-2"
-          >
-            {saving ? 'Criando...' : 'Confirmar Agendamento'}
-          </button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Data</label>
+                  <input
+                    type="date"
+                    required
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Hora</label>
+                  <input
+                    type="time"
+                    required
+                    value={time}
+                    onChange={e => setTime(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Notas</label>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-tenant-primary resize-none h-20"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving || loading}
+                className="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 mt-2"
+              >
+                {saving ? 'Criando...' : 'Confirmar Agendamento'}
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>
   );
 };
+
+// ============================================================
+// Modal de Saldo do Barbeiro
+// ============================================================
+interface BalanceModalProps {
+  barberDetail: Barber | null;
+  onClose: () => void;
+  balancePeriod: 0 | 7 | 15 | 30;
+  setBalancePeriod: (p: 0 | 7 | 15 | 30) => void;
+  allAppointments: any[];
+  commissionRate: number;
+  formatCurrency: (v: number) => string;
+}
+
+const BalanceModal: React.FC<BalanceModalProps> = ({
+  barberDetail,
+  onClose,
+  balancePeriod,
+  setBalancePeriod,
+  allAppointments,
+  commissionRate,
+  formatCurrency,
+}) => {
+  const now = new Date();
+  const cutoffDate = new Date(now);
+  cutoffDate.setDate(now.getDate() - balancePeriod);
+
+  const isToday = balancePeriod === 0;
+
+  const periodCompleted = isToday 
+    ? allAppointments.filter(apt => {
+        if (apt.status !== 'COMPLETED') return false;
+        const d = new Date(apt.date || apt.scheduledFor || 0);
+        return d.toDateString() === now.toDateString();
+      })
+    : allAppointments.filter(apt => {
+        if (apt.status !== 'COMPLETED') return false;
+        const d = new Date(apt.date || apt.scheduledFor || 0);
+        return d >= cutoffDate && d <= now;
+      });
+
+  const periodRevenue = periodCompleted.reduce((sum, apt) => sum + (apt.totalPrice || 0), 0);
+  const periodCommission = periodRevenue * ((barberDetail?.commissionRate || commissionRate) / 100);
+
+  // Group past appointments by month (outside current period, for history)
+  const historyMap: Record<string, { revenue: number; commission: number; count: number }> = {};
+  allAppointments.forEach(apt => {
+    if (apt.status !== 'COMPLETED') return;
+    const d = new Date(apt.date || apt.scheduledFor || 0);
+    if (d >= cutoffDate) return; // ignore the current period
+    const key = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    if (!historyMap[key]) historyMap[key] = { revenue: 0, commission: 0, count: 0 };
+    historyMap[key].revenue += apt.totalPrice || 0;
+    historyMap[key].commission += (apt.totalPrice || 0) * ((barberDetail?.commissionRate || commissionRate) / 100);
+    historyMap[key].count += 1;
+  });
+  const historyEntries = Object.entries(historyMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-sm w-full max-h-[90vh] flex flex-col overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Meu Saldo</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Comissões por período</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          {/* Period selector */}
+          <div className="flex gap-2">
+            {([0, 7, 15, 30] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setBalancePeriod(p)}
+                className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all ${
+                  balancePeriod === p
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {p === 0 ? 'Hoje' : `${p} dias`}
+              </button>
+            ))}
+          </div>
+
+          {/* Period summary */}
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-800 text-center">
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1">
+              Comissão ({isToday ? 'Hoje' : `${balancePeriod} dias`})
+            </p>
+            <p className="text-4xl font-black text-emerald-700 dark:text-emerald-300">{formatCurrency(periodCommission)}</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
+              {periodCompleted.length} atend. · Faturamento bruto: {formatCurrency(periodRevenue)}
+            </p>
+          </div>
+
+          {/* Current balance */}
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Saldo atual na conta</p>
+               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-0.5">{formatCurrency((barberDetail?.balance || 0) > 0 ? barberDetail?.balance : periodCommission)}</p>
+            </div>
+            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center">
+              <UserCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+
+          {/* History */}
+          {historyEntries.length > 0 && (
+            <section>
+              <h3 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Saldos Anteriores</h3>
+              <div className="space-y-2">
+                {historyEntries.map(([month, data]) => (
+                  <div key={month} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize">{month}</p>
+                      <p className="text-xs text-gray-400">{data.count} atendimento{data.count !== 1 ? 's' : ''}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(data.commission)}</p>
+                      <p className="text-[10px] text-gray-400">de {formatCurrency(data.revenue)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+          {historyEntries.length === 0 && (
+            <p className="text-center text-sm text-gray-400 py-4">Nenhum histórico anterior disponível.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const BarberDashboard: React.FC = () => {
   const { user } = useAuth();
   const { shop } = useShop();
@@ -577,16 +905,47 @@ export const BarberDashboard: React.FC = () => {
   const [barberDetail, setBarberDetail] = useState<Barber | null>(null);
   const [overdueAppointments, setOverdueAppointments] = useState<any[]>([]);
   const [showOverdueAlert, setShowOverdueAlert] = useState(false);
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [balancePeriod, setBalancePeriod] = useState<0 | 7 | 15 | 30>(0);
+  const [cancelModalAppt, setCancelModalAppt] = useState<any | null>(null);
+  const [cancellationCounts, setCancellationCounts] = useState<{ monthly: number; weekly: number }>({ monthly: 0, weekly: 0 });
+  const [allAppointments, setAllAppointments] = useState<any[]>([]);
+
+
 
   // barberId: usa o ID da entidade Barber do JWT (se disponível)
   // Se não estiver no JWT, passa null e o backend filtra pelo token JWT (BARBER role)
   const barberId = user?.barberId || null;
 
-  useEffect(() => {
+  const fetchBarberInfo = useCallback(() => {
     if (barberId) {
       barberService.getById(barberId)
         .then(data => setBarberDetail(data as any))
         .catch(console.error);
+    }
+  }, [barberId]);
+
+  const fetchCancelCount = useCallback(() => {
+    if (user?.role === 'BARBER') {
+      appointmentService.getMyCancellationsCount()
+        .then(counts => setCancellationCounts(counts))
+        .catch(console.error);
+    }
+  }, [user?.role]);
+
+
+  useEffect(() => {
+    fetchBarberInfo();
+    fetchCancelCount();
+
+    // Carregar histórico de 30 dias para o Modal de Saldo
+    appointmentService.list({ 
+      status: 'COMPLETED',
+      startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString(),
+      endDate: new Date().toISOString()
+    }).then(setAllAppointments).catch(console.error);
+
+    if (barberId) {
 
       // Verificar agendamentos pendentes de datas passadas
       appointmentService.list({ status: 'SCHEDULED' })
@@ -603,7 +962,7 @@ export const BarberDashboard: React.FC = () => {
         })
         .catch(console.error);
     }
-  }, [barberId]);
+  }, [barberId, fetchBarberInfo]);
 
   const { schedule, loading, error, refresh } = useBarberSchedule(barberId, selectedDate);
 
@@ -664,31 +1023,69 @@ export const BarberDashboard: React.FC = () => {
       : 0,
   };
 
+  const getPeriodCommission = useCallback((period: number) => {
+    if (period === 0) return summary.totalCommission;
+    
+    const now = new Date();
+    const cutoffDate = new Date(now);
+    cutoffDate.setDate(now.getDate() - period);
+
+    return allAppointments
+      .filter(apt => {
+        if (apt.status !== 'COMPLETED') return false;
+        const d = new Date(apt.date || apt.scheduledFor || 0);
+        return d >= cutoffDate && d <= now;
+      })
+      .reduce((sum, apt) => {
+        const rate = barberDetail?.commissionRate || 40;
+        return sum + ((apt.totalPrice || 0) * (rate / 100));
+      }, 0);
+  }, [allAppointments, summary.totalCommission, barberDetail?.commissionRate]);
+
   const changeDate = (offset: number) => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + offset);
     setSelectedDate(newDate);
   };
 
-  // Abrir Ordem de Serviço (cliente chegou na barbearia)
+  // Registra chegada e abre a ordem de serviço silenciosamente
+  const handleMarkArrived = async (appointment: any) => {
+    setActionLoading(appointment.id);
+    try {
+      await serviceOrderService.create({
+        clientId: (appointment as any).client?.id || appointment.clientId || '',
+        barberId: appointment.barberId,
+        appointmentId: appointment.id,
+        items: appointment.services?.map((s: any) => ({
+          type: 'SERVICE',
+          serviceId: s.serviceId || s.id || '',
+          name: s.service?.name || s.name || 'Serviço',
+          quantity: 1,
+          unitPrice: s.service?.price || s.price || 0,
+        })) || [],
+      });
+      refresh();
+    } catch (e: any) {
+      alert(e?.message || 'Erro ao registrar chegada.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Abrir Modal de Ordem de Serviço (Adicionar produtos / Finalizar)
   const handleClientArrived = (appointment: any) => {
     setServiceOrderAppt(appointment);
   };
 
   // Concluir atendimento via Ordem de Serviço
-  const handleCompleteFromOS = async (extraProducts: Array<{ id: string; quantity: number }>) => {
-    if (!serviceOrderAppt) return;
-    setActionLoading(serviceOrderAppt.id);
-    try {
-      await appointmentService.complete(serviceOrderAppt.id, extraProducts);
-      setServiceOrderAppt(null);
-      refresh();
-    } catch (e: any) {
-      alert(e?.message || 'Erro ao concluir atendimento');
-    } finally {
-      setActionLoading(null);
-    }
+  const handleCompleteFromOS = async (_extraProducts: Array<{ id: string; quantity: number }>) => {
+    // O ServiceOrderModal já chamou serviceOrderService.complete(), que internamente
+    // marca o agendamento como COMPLETED. Apenas fechamos o modal e atualizamos a agenda.
+    setServiceOrderAppt(null);
+    refresh();
+    fetchBarberInfo(); // Atualiza o saldo (balance) em tempo real após a conclusão
   };
+
 
   // Cancelar pelo barbeiro via Ordem de Serviço
   const handleCancelFromOS = async (reason: string) => {
@@ -706,17 +1103,48 @@ export const BarberDashboard: React.FC = () => {
   };
 
   // Cancelar diretamente da lista (cliente não compareceu)
-  const handleDirectCancel = async (appointment: any) => {
-    const reason = window.prompt('Motivo do cancelamento (obrigatório):\nEx: Cliente não compareceu');
-    if (!reason?.trim()) return;
-    setActionLoading(appointment.id);
+  const handleDirectCancel = (appointment: any) => {
+    setCancelModalAppt(appointment);
+  };
+
+  const confirmDirectCancel = async (reason: string) => {
+    if (!cancelModalAppt) return;
+    setActionLoading(cancelModalAppt.id);
     try {
-      await appointmentService.cancelByBarber(appointment.id, reason);
+      await appointmentService.cancelByBarber(cancelModalAppt.id, reason);
+      setCancelModalAppt(null);
       refresh();
+      fetchCancelCount();
     } catch (e: any) {
       alert(e?.message || 'Erro ao cancelar agendamento');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+
+  // Enviar lembrete manual ao cliente
+  const handleSendReminder = async (appointmentId: string) => {
+    try {
+      const res = await appointmentService.sendManualReminder(appointmentId);
+      if (res.success) {
+        alert('Lembrete enviado com sucesso!');
+      } else if (res.reason === 'NOTIFICATIONS_DISABLED_BY_USER') {
+        alert('O cliente desativou o recebimento de notificações (LGPD).');
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Erro ao enviar lembrete');
+    }
+  };
+
+  // Ativar/Desativar lembrete automático (2h antes)
+  const handleToggleReminder = async (appointment: any) => {
+    try {
+      const newStatus = !appointment.reminderEnabled;
+      await appointmentService.updatePreferences(appointment.id, { reminderEnabled: newStatus });
+      refresh();
+    } catch (e: any) {
+      alert(e?.message || 'Erro ao atualizar preferência');
     }
   };
 
@@ -794,8 +1222,8 @@ export const BarberDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+      {/* Cards de Resumo - Linha 1: Status dos agendamentos */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
           <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide mb-1">Aguardando</p>
           <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{summary.scheduled}</p>
@@ -804,22 +1232,34 @@ export const BarberDashboard: React.FC = () => {
           <p className="text-xs text-green-600 dark:text-green-400 font-semibold uppercase tracking-wide mb-1">Concluídos</p>
           <p className="text-3xl font-bold text-green-900 dark:text-green-100">{summary.completed}</p>
         </div>
-        <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl p-4 border border-tenant-primary/10 dark:border-tenant-primary/30">
-          <p className="text-xs text-tenant-primary dark:text-tenant-primary font-semibold uppercase tracking-wide mb-1">Ticket Médio</p>
-          <p className="text-3xl font-bold text-tenant-primary dark:text-white/90">{formatCurrency(summary.avgTicket)}</p>
-        </div>
-        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
-          <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wide mb-1">Minha Comis.</p>
-          <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(summary.totalCommission)}</p>
-        </div>
         <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-800">
           <p className="text-xs text-red-600 dark:text-red-400 font-semibold uppercase tracking-wide mb-1">Cancelados</p>
           <p className="text-3xl font-bold text-red-900 dark:text-red-100">{summary.cancelled}</p>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1">Meu Saldo</p>
-          <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(barberDetail?.balance || 0)}</p>
+      </div>
+
+      {/* Cards de Resumo - Linha 2: Financeiro */}
+      <div className={`grid gap-3 mb-6 ${(shop as any)?.modulesEnabled?.barberCanViewTicketMedio !== false ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
+          <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wide mb-1">Minha Comis.</p>
+          <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(summary.totalCommission)}</p>
         </div>
+        {(shop as any)?.modulesEnabled?.barberCanViewTicketMedio !== false && (
+          <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl p-4 border border-tenant-primary/10 dark:border-tenant-primary/30">
+            <p className="text-xs text-tenant-primary dark:text-tenant-primary font-semibold uppercase tracking-wide mb-1">Ticket Médio</p>
+            <p className="text-3xl font-bold text-tenant-primary dark:text-white/90">{formatCurrency(summary.avgTicket)}</p>
+          </div>
+        )}
+        <button
+          onClick={() => setShowBalanceModal(true)}
+          className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800 hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-600 transition-all text-left group cursor-pointer"
+        >
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1 flex items-center justify-between">
+            <span>Meu Saldo ({balancePeriod === 0 ? 'Hoje' : `${balancePeriod} dias`})</span>
+            <span className="text-[9px] opacity-60 group-hover:opacity-100 transition-opacity">▲ ver períodos</span>
+          </p>
+          <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(getPeriodCommission(balancePeriod))}</p>
+        </button>
       </div>
 
       {/* Lista de Agendamentos */}
@@ -892,6 +1332,32 @@ export const BarberDashboard: React.FC = () => {
               const isCompleted = appointment.status === 'COMPLETED';
               const isScheduled = appointment.status === 'SCHEDULED';
 
+              const apptDate = new Date(appointment.date || appointment.scheduledFor);
+              const nowMidnight = new Date();
+              nowMidnight.setHours(23, 59, 59, 999);
+              const isTodayOrPast = apptDate.getTime() <= nowMidnight.getTime();
+
+              // 🚫 Bloqueia "Chegou" para agendamentos futuros (tolerância de 5 min)
+              // Cobre tanto dias futuros quanto horários futuros no mesmo dia
+              const isFutureAppointment = apptDate.getTime() > Date.now() + 5 * 60 * 1000;
+
+              const hasOrderItems = !!((appointment as any).serviceOrder?.items?.length);
+              const orderItems = hasOrderItems ? (appointment as any).serviceOrder.items : [];
+              
+              const displayServices = hasOrderItems 
+                ? orderItems.filter((i: any) => i.type === 'SERVICE')
+                : (appointment as any).services || [];
+                
+              const displayProducts = hasOrderItems
+                ? orderItems.filter((i: any) => i.type === 'PRODUCT')
+                : appointment.products || [];
+
+              const displayTotal = (appointment as any).serviceOrder?.total || appointment.totalPrice;
+
+              const displayCommission = hasOrderItems
+                ? orderItems.reduce((s: number, i: any) => s + (i.commissionValue || 0), 0)
+                : (displayTotal || 0) * (commissionRate / 100);
+
               return (
                 <div
                   key={appointment.id}
@@ -905,7 +1371,7 @@ export const BarberDashboard: React.FC = () => {
                       {/* Horário */}
                       <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/30">
                         <Clock className="w-4 h-4 text-tenant-primary mb-1" />
-                        <span className="text-lg font-bold text-tenant-primary dark:text-white/90 leading-nãone">
+                        <span className="text-lg font-bold text-tenant-primary dark:text-white/90 leading-none">
                           {safeFormatTime(appointment.date || appointment.scheduledFor)}
                         </span>
                       </div>
@@ -930,9 +1396,9 @@ export const BarberDashboard: React.FC = () => {
                         )}
 
                         {/* Serviços */}
-                        {(appointment as any).services?.length > 0 && (
+                        {displayServices.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mb-2">
-                            {(appointment as any).services.map((svc: any) => (
+                            {displayServices.map((svc: any) => (
                               <span key={svc.id} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300">
                                 {svc.service?.name || svc.name}
                               </span>
@@ -941,11 +1407,11 @@ export const BarberDashboard: React.FC = () => {
                         )}
 
                         {/* Produtos */}
-                        {appointment.products && appointment.products.length > 0 && (
+                        {displayProducts.length > 0 && (
                           <div className="flex flex-wrap gap-1.5">
-                            {appointment.products.map((prod: any) => (
+                            {displayProducts.map((prod: any) => (
                               <span key={prod.id} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 rounded-md text-xs text-blue-800 dark:text-blue-300">
-                                {prod.product?.name || prod.name} x{prod.quantity}
+                                {prod.product?.name || prod.name} {prod.quantity > 1 ? `x${prod.quantity}` : ''}
                               </span>
                             ))}
                           </div>
@@ -955,25 +1421,69 @@ export const BarberDashboard: React.FC = () => {
                       {/* Preço */}
                       <div className="flex-shrink-0 text-right">
                         <p className="text-xl font-bold text-tenant-primary dark:text-tenant-primary">
-                          {formatCurrency(appointment.totalPrice)}
+                          {formatCurrency(displayTotal)}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          Comissão: {formatCurrency((appointment.totalPrice || 0) * (commissionRate / 100))} ({commissionRate}%)
+                          Comissão: {formatCurrency(displayCommission)} {!hasOrderItems && `(${commissionRate}%)`}
                         </p>
                       </div>
                     </div>
 
                     {/* Ações — apenas para SCHEDULED */}
                     {isScheduled && (
-                      <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                        <button
-                          onClick={() => handleClientArrived(appointment)}
-                          disabled={isLoading}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-60"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          {isLoading ? 'Aguarde...' : 'Cliente Chegou'}
-                        </button>
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        {(isTodayOrPast && !isFutureAppointment) ? (
+                          (appointment as any).serviceOrder ? (
+                            <button
+                              onClick={() => handleClientArrived(appointment)}
+                              disabled={isLoading}
+                              className="flex-1 min-w-[120px] py-2.5 px-4 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                            >
+                              <ShoppingBag className="w-4 h-4" />
+                              {isLoading ? 'Aguarde...' : 'Abrir Comanda'}
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleMarkArrived(appointment)}
+                              disabled={isLoading}
+                              className="flex-1 min-w-[120px] py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              {isLoading ? 'Aguarde...' : 'Chegou'}
+                            </button>
+                          )
+                        ) : (
+                          <div className="flex-1 min-w-[120px] py-2.5 px-4 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 rounded-xl font-medium text-xs flex items-center justify-center text-center border border-dashed border-gray-200 dark:border-gray-700">
+                            {isFutureAppointment
+                              ? `Disponível às ${apptDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                              : 'Aguardando o dia do agendamento'}
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-1 gap-2">
+                          <button
+                            onClick={() => handleSendReminder(appointment.id)}
+                            className="flex-1 py-2.5 px-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-bold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all flex items-center justify-center gap-2"
+                            title="Enviar lembrete agora"
+                          >
+                            <BellRing className="w-4 h-4" />
+                            Lembrar
+                          </button>
+                          
+                          <button
+                            onClick={() => handleToggleReminder(appointment)}
+                            className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-sm transition-all ${
+                              appointment.reminderEnabled 
+                                ? 'bg-green-50 dark:bg-green-900/20 text-green-600' 
+                                : 'bg-gray-50 dark:bg-gray-800 text-gray-400'
+                            }`}
+                            title={appointment.reminderEnabled ? 'Lembrete automático ativado' : 'Ativar lembrete automático'}
+                          >
+                            {appointment.reminderEnabled ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5 text-gray-300" />}
+                            <span>Auto</span>
+                          </button>
+                        </div>
+
                         <button
                           onClick={() => handleDirectCancel(appointment)}
                           disabled={isLoading}
@@ -1020,9 +1530,10 @@ export const BarberDashboard: React.FC = () => {
           onCheckConflicts={(data) => barberService.checkConflicts(data)}
           onConfirm={async (data) => {
             try {
+              const { forceOverride, ...payload } = data;
               await barberService.createAgendaLock({
                 barberId: barberId || '',
-                ...data
+                ...payload
               });
               setShowLockModal(false);
               refresh();
@@ -1069,6 +1580,157 @@ export const BarberDashboard: React.FC = () => {
           }}
         />
       )}
+      {/* Modal de Saldo */}
+      {showBalanceModal && (
+        <BalanceModal
+          barberDetail={barberDetail}
+          onClose={() => setShowBalanceModal(false)}
+          balancePeriod={balancePeriod}
+          setBalancePeriod={setBalancePeriod}
+          allAppointments={allAppointments}
+          commissionRate={commissionRate}
+          formatCurrency={formatCurrency}
+        />
+      )}
+
+      {/* Modal de Cancelamento Direto (Não Veio) */}
+      {cancelModalAppt && (
+        <CancelAppointmentModal
+          appointment={cancelModalAppt}
+          onClose={() => setCancelModalAppt(null)}
+          onConfirm={confirmDirectCancel}
+          counts={cancellationCounts}
+        />
+      )}
+    </div>
+  );
+};
+
+// --- COMPONENTE: CancelAppointmentModal (Moderno & Anti-Fraude) ---
+const CancelAppointmentModal: React.FC<{
+  appointment: any;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+  counts: { monthly: number; weekly: number };
+}> = ({ appointment, onClose, onConfirm, counts }) => {
+  const [reason, setReason] = useState('Cliente não compareceu');
+  const [loading, setLoading] = useState(false);
+
+  const { monthly, weekly } = counts;
+  const isNearLimit = monthly >= 7;
+  const isOverLimit = monthly >= 10;
+  const isWeeklyHigh = weekly >= 5;
+
+  const handleConfirm = async () => {
+    if (!reason.trim()) return;
+    setLoading(true);
+    await onConfirm(reason);
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="bg-gradient-to-r from-red-600 to-orange-500 p-6 text-white relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-white/20 rounded-xl">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold">Confirmar Cancelamento</h2>
+          </div>
+          <p className="text-white/80 text-sm">
+            Você está prestes a cancelar o agendamento de <strong>{appointment.client?.name || 'Cliente'}</strong>.
+          </p>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className={`p-4 rounded-2xl border-2 flex items-start gap-4 ${
+            isOverLimit 
+              ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' 
+              : isNearLimit 
+                ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
+                : 'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800'
+          }`}>
+            <div className={`p-2 rounded-lg ${
+              isOverLimit ? 'bg-red-200 text-red-700' : isNearLimit ? 'bg-orange-200 text-orange-700' : 'bg-blue-200 text-blue-700'
+            }`}>
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-sm text-gray-900 dark:text-white">Uso de Cancelamentos</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                Você já realizou <strong>{monthly}</strong> cancelamentos este mês.
+              </p>
+              
+              {isWeeklyHigh && !isOverLimit && (
+                <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold mt-2 uppercase tracking-tight">
+                  💡 Dica: Verificamos {weekly} cancelamentos nesta semana. Para evitar "No-Show", envie lembretes aos clientes!
+                </p>
+              )}
+
+              {isOverLimit && (
+                <p className="text-[10px] text-red-600 dark:text-red-400 font-bold mt-2 uppercase tracking-tight">
+                  🚨 LIMITE MENSAL EXCEDIDO (10/10). 
+                </p>
+              )}
+              {!isOverLimit && isNearLimit && (
+                <p className="text-[10px] text-orange-600 dark:text-orange-400 font-bold mt-1 uppercase">
+                  ⚠️ Cuidado: Você está próximo do limite mensal de 10.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Motivo do Cancelamento
+            </label>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {['Cliente não compareceu', 'Erro no agendamento', 'Indisponibilidade', 'Outro'].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setReason(m)}
+                  className={`px-3 py-2 text-xs rounded-xl border transition-all ${
+                    reason === m 
+                      ? 'bg-red-50 border-red-500 text-red-700 font-bold dark:bg-red-900/40 dark:text-red-300' 
+                      : 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Descreva o motivo..."
+              className="w-full h-24 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all dark:text-white"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3.5 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+            >
+              Manter Agendamento
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading || !reason.trim()}
+              className="flex-1 py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all shadow-lg shadow-red-200 dark:shadow-none disabled:opacity-50"
+            >
+              {loading ? 'Confirmando...' : 'Confirmar Cancelamento'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

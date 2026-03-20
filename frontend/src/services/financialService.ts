@@ -123,6 +123,28 @@ export interface DailyCashierAnalytics {
 // ─── Funções de API ───────────────────────────────────────────────────────────
 
 /**
+ * Lista faturas (invoices) filtradas por loja e período.
+ */
+export const listInvoices = async (
+  shopId: string,
+  params?: {
+    startDate?: string;
+    endDate?: string;
+    clientId?: string;
+    status?: string;
+  }
+): Promise<PendingInvoice[]> => {
+  const queryParams = new URLSearchParams({ shopId });
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) queryParams.append(key, value);
+    });
+  }
+  const response = await api.get<PendingInvoice[]>(`/invoices?${queryParams.toString()}`);
+  return response.data;
+};
+
+/**
  * Analytics financeiros para o período especificado.
  */
 export const getFinancialAnalytics = async (
@@ -203,6 +225,7 @@ export const getAssets = async (): Promise<AssetWithDepreciation[]> => {
 export default {
   getFinancialAnalytics,
   getDailyCashierAnalytics,
+  listInvoices,
   processInvoicePayment,
   getSalesOpportunities,
   getRetentionMetrics,

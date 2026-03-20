@@ -52,7 +52,7 @@ export const Plans: React.FC = () => {
                             <Shield size={24} />
                         </div>
                         <h3 className="font-bold text-gray-900 dark:text-white mb-2">Sem Fidelidade</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Cancele quando quiser, sem multas ou letras miúdas. Você não controle.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Cancele quando quiser, sem multas ou letras miúdas. Você no controle.</p>
                     </div>
                 </div>
             </div>
@@ -70,7 +70,7 @@ export const Plans: React.FC = () => {
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                         <h4 className="font-bold text-gray-900 dark:text-white mb-2">Como funciona a renovação?</h4>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm">A renovação é automática mensalmente não seu cartão de crédito. Você pode cancelar a renovação a qualquer momento pelo seu painel.</p>
+                        <p className="text-gray-600 dark:text-gray-300 text-sm">A renovação é automática mensalmente no seu cartão de crédito. Você pode cancelar a renovação a qualquer momento pelo seu painel.</p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                         <h4 className="font-bold text-gray-900 dark:text-white mb-2">Os créditos acumulam?</h4>

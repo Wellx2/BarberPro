@@ -14,6 +14,8 @@ import { Grid } from '../components/layout/Grid';
 import { Button, Card } from '../components/ui';
 import { barbershopService } from '../services/barbershopService';
 import { LocationMap } from '../components/LocationMap';
+import { ContactSection } from '../components/ContactSection';
+import { QuickReschedule } from '../components/QuickReschedule';
 import { api } from '../services/api';
 import { Service, Product, Appointment } from '../types';
 import { appointmentService } from '../services/appointmentService';
@@ -30,7 +32,6 @@ export const Home: React.FC = () => {
   const [barbers, setBarbers] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [lastAppointment, setLastAppointment] = useState<Appointment | null>(null);
   const lastLoadedShopId = React.useRef<string | null>(null);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
@@ -103,20 +104,6 @@ export const Home: React.FC = () => {
 
     loadPreview();
 
-    // Buscar último agendamento para o botão "Refazer último corte"
-    if (isAuthenticated && user?.role === 'CLIENT' && !fetchError && shop.id) {
-      appointmentService.list({ status: 'COMPLETED' })
-        .then(appointments => {
-          if (appointments && appointments.length > 0) {
-            const sorted = appointments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            // Verifica se o agendamento foi na loja atual
-            // Assumimos que a listagem já filtra por usuário. Se o back não filtrar por loja, pode precisar filtro extra.
-            setLastAppointment(sorted[0]);
-          }
-        })
-        .catch(err => console.error('Home: Erro ao buscar último agendamento', err));
-    }
-
     // ✅ Cleanup: Abortar requisição ao desmontar
     return () => {
       if (abortControllerRef.current) {
@@ -138,19 +125,29 @@ export const Home: React.FC = () => {
   const showReviews = modulesEnabled.reviews !== false;
   const showBarbers = shop.settings.showBarbers !== false;
 
+  const heroTitleRaw = shop.heroSettings?.title || 'Estilo & Tradição';
+  const heroSubtitleRaw = shop.heroSettings?.subtitle || `Excelência no atendimento para a unidade ${shop.name}.`;
+  const [heroTitleFirst, heroTitleSecond] = heroTitleRaw.includes('&') ? heroTitleRaw.split('&') : [heroTitleRaw, null];
+  const heroBackgroundImage = shop.heroSettings?.backgroundImage || shop.bannerUrl || shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80';
+
+  const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+  const shopSlug = slugify(shop.name);
+
   // Função auxiliar para verificar login antes de navegar
   const navigateWithAuth = (path: string) => {
+    const fullPath = path.startsWith('/') ? `/${shopSlug}${path}` : `/${shopSlug}/${path}`;
     if (isAuthenticated) {
-      navigate(path);
+      navigate(fullPath);
     } else {
-      navigate('/login', { state: { from: path } });
+      navigate('/login', { state: { from: fullPath } });
     }
   };
 
   const handleBook = (serviceId?: string) => {
     const state = serviceId ? { preSelectedServiceId: serviceId } : {};
-    if (isAuthenticated) navigate('/book', { state });
-    else navigate('/login', { state: { from: '/book', ...state } });
+    const path = `/${shopSlug}/agendar`;
+    if (isAuthenticated) navigate(path, { state });
+    else navigate('/login', { state: { from: path, ...state } });
   };
 
   // Helper to map amenity strings to icons and labels
@@ -177,7 +174,7 @@ export const Home: React.FC = () => {
       <section className="relative bg-gray-900 text-white h-[85vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src={shop.bannerUrl || shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80'}
+            src={heroBackgroundImage}
             alt={shop.name}
             className="w-full h-full object-cover opacity-30"
           />
@@ -201,30 +198,23 @@ export const Home: React.FC = () => {
 
         <div className="relative max-w-7xl mx-auto px-4 text-center w-full animate-fade-in">
           <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 uppercase leading-none">
-            Estilo &<br /><span className="text-[#f59e0b] text-tenant-primary">Tradição</span>
+            {heroTitleSecond !== null ? (
+              <>
+                {heroTitleFirst.trim()} &<br /><span className="text-tenant-primary">{heroTitleSecond.trim()}</span>
+              </>
+            ) : (
+              heroTitleFirst
+            )}
           </h1>
           <p className="text-base md:text-xl text-gray-300 max-w-xl mx-auto mb-12 font-medium">
-            Excelência no atendimento para a unidade {shop.name}.
+            {heroSubtitleRaw}
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <PrimaryButton onClick={() => handleBook()} className="w-full sm:w-auto">
               Agendar Agora
             </PrimaryButton>
 
-            {/* MVP Quick Reschedule */}
-            {lastAppointment && (
-              <button
-                onClick={() => navigate('/book', {
-                  state: {
-                    preSelectedBarberId: lastAppointment.barberId,
-                    preSelectedServiceId: lastAppointment.serviceIds
-                  }
-                })}
-                className="w-full sm:w-auto px-8 py-5 rounded-[22px] bg-white/10 backdrop-blur-md border border-white/20 text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95"
-              >
-                Refazer Último Corte
-              </button>
-            )}
+            <QuickReschedule shopId={shop.id} />
           </div>
         </div>
       </section>
@@ -282,7 +272,7 @@ export const Home: React.FC = () => {
 
               <div className="text-center mt-16">
                 <button
-                  onClick={() => navigateWithAuth('/services')}
+                  onClick={() => navigateWithAuth('/servicos')}
                   className="inline-flex items-center gap-2 text-tenant-primary hover:opacity-80 font-bold uppercase text-sm tracking-wider transition-colors group"
                 >
                   Ver Catálogo Completo
@@ -315,13 +305,13 @@ export const Home: React.FC = () => {
                   products={products}
                   subscriptionsActive={subscriptionsActive}
                   userHasPlan={!!user?.planId}
-                  onAddToCart={() => navigate('/products')}
-                  onViewDetails={() => navigate('/products')}
+                  onAddToCart={() => navigate(`/${shopSlug}/produtos`)}
+                  onViewDetails={() => navigate(`/${shopSlug}/produtos`)}
                   maxItems={3}
                 />
                 <div className="text-center mt-12">
                   <button
-                    onClick={() => navigateWithAuth('/products')}
+                    onClick={() => navigateWithAuth('/produtos')}
                     className="inline-flex items-center gap-2 text-tenant-primary hover:opacity-80 font-bold uppercase text-sm tracking-wider transition-colors group"
                   >
                     Ver Loja
@@ -429,7 +419,7 @@ export const Home: React.FC = () => {
                       : 'Conheça todos os nossos profissionais'}
                   </p>
                   <button
-                    onClick={() => navigateWithAuth('/services')}
+                    onClick={() => navigateWithAuth('/servicos')}
                     className="inline-flex items-center gap-2 text-tenant-primary hover:opacity-80 dark:text-tenant-primary dark:hover:opacity-90 font-bold text-sm transition-colors"
                   >
                     {isAuthenticated ? 'Ver Todos os Profissionais' : 'Ver Todos os Profissionais'}
@@ -520,6 +510,9 @@ export const Home: React.FC = () => {
           <LocationMap shop={shop} />
         </Container>
       </section>
+
+      {/* 8. Contact Section */}
+      <ContactSection whatsapp={shop.whatsapp} email={shop.email} phone={shop.phone} />
 
       {showLocationModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/95 backdrop-blur-md">

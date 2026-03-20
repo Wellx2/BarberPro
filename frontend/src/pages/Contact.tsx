@@ -91,7 +91,7 @@ export const Contact: React.FC = () => {
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Mensagem enviada com sucesso!'); }}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-              <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tenant-primary outline-nãone" placeholder="Seu nãome completo" required />
+              <input type="text" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tenant-primary outline-nãone" placeholder="Seu nome completo" required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>

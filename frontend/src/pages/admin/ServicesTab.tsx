@@ -271,7 +271,12 @@ export const ServicesTab: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Preço (R$) *</label>
-                  <Input type="number" value={serviceForm.price} onChange={e => setServiceForm({ ...serviceForm, price: parseFloat(e.target.value) })} />
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    value={serviceForm.price} 
+                    onChange={e => setServiceForm({ ...serviceForm, price: parseFloat(e.target.value) || 0 })} 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Duração (Minutos)</label>

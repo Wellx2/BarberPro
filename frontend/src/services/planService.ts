@@ -12,7 +12,7 @@ export const planService = {
    * Buscar planos públicos de uma barbearia específica (sem autenticação)
    */
   async listPublic(shopId: string): Promise<Plan[]> {
-    const response = await api.get<Plan[]>(`/plans/public/${shopId}`);
+    const response = await api.get<Plan[]>(`/plans/public/shop/${shopId}`);
     return response.data;
   },
 

@@ -197,7 +197,7 @@ export const FinancialTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
-        {(['TODAY', 'WEEK', 'MONTH', 'QUARTER'] as AnalyticsPeriod[]).map((period) => (
+        {(['TODAY', 'WEEK'] as AnalyticsPeriod[]).map((period) => (
           <button
             key={period}
             onClick={() => {
@@ -209,21 +209,36 @@ export const FinancialTab: React.FC = () => {
               : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
           >
-            {period === 'TODAY' ? 'Hoje' : period === 'WEEK' ? '7 Dias' : period === 'MONTH' ? '30 Dias' : '90 Dias'}
+            {period === 'TODAY' ? 'Hoje' : '7 Dias'}
           </button>
         ))}
         <button
           onClick={() => setRollingRange(15)}
-          className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${useCustomRange && customRange.startDate && customRange.endDate
+          className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${useCustomRange && (customRange.startDate && customRange.endDate && (new Date(customRange.endDate).getTime() - new Date(customRange.startDate).getTime()) / (1000 * 60 * 60 * 24) === 14)
             ? 'bg-tenant-primary text-white shadow-lg'
             : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
         >
           15 Dias
         </button>
+        {(['MONTH', 'QUARTER'] as AnalyticsPeriod[]).map((period) => (
+          <button
+            key={period}
+            onClick={() => {
+              setUseCustomRange(false);
+              setFinancialPeriod(period);
+            }}
+            className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${financialPeriod === period && !useCustomRange
+              ? 'bg-tenant-primary text-white shadow-lg'
+              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            {period === 'MONTH' ? '30 Dias' : '90 Dias'}
+          </button>
+        ))}
         <button
           onClick={() => setUseCustomRange(true)}
-          className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${useCustomRange
+          className={`px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${useCustomRange && ! (customRange.startDate && customRange.endDate && (new Date(customRange.endDate).getTime() - new Date(customRange.startDate).getTime()) / (1000 * 60 * 60 * 24) === 14)
             ? 'bg-tenant-primary text-white shadow-lg'
             : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
@@ -267,33 +282,46 @@ export const FinancialTab: React.FC = () => {
         </div>
       )}
 
-      <Card className={`p-6 border-2 ${analytics.margin >= 30
-        ? 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-500'
-        : analytics.margin >= 15
-          ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-500'
-          : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-500'
-        }`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-gray-900 dark:text-white mb-2">
-              Saúde Financeira: {
-                analytics.margin >= 30 ? 'Excelente' :
-                  analytics.margin >= 15 ? 'Atenção' :
-                    'Crítico'
-              }
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Margem de lucro: <span className="font-black">{analytics.margin.toFixed(1)}%</span>
-            </p>
+      {financialPeriod !== 'TODAY' && !useCustomRange && (
+        <Card className={`p-6 border-2 ${analytics.margin >= 30
+          ? 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-500'
+          : analytics.margin >= 15
+            ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-500'
+            : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-500'
+          }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-gray-900 dark:text-white mb-2">
+                Saúde Financeira: {
+                  analytics.margin >= 30 ? 'Excelente' :
+                    analytics.margin >= 15 ? 'Atenção' :
+                      'Crítico'
+                }
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Margem de lucro: <span className="font-black">{analytics.margin.toFixed(1)}%</span>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowFinancialValues(!showFinancialValues)}
+              className="p-3 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              {showFinancialValues ? <Eye size={24} /> : <EyeOff size={24} />}
+            </button>
           </div>
-          <button
+        </Card>
+      )}
+
+      {financialPeriod === 'TODAY' && (
+        <div className="flex justify-end p-2">
+           <button
             onClick={() => setShowFinancialValues(!showFinancialValues)}
-            className="p-3 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm border border-gray-100 dark:border-gray-700"
           >
-            {showFinancialValues ? <Eye size={24} /> : <EyeOff size={24} />}
+            {showFinancialValues ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
         </div>
-      </Card>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6">
@@ -348,7 +376,7 @@ export const FinancialTab: React.FC = () => {
       </div>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
         <Card 
           className="p-6 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98]"
           onClick={() => setShowRevenueDetail(true)}
@@ -422,28 +450,71 @@ export const FinancialTab: React.FC = () => {
         </Card>
       </div>
 
-      {(analytics.cardFees > 0 || analytics.supplyCostsTotal > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {analytics.cardFees > 0 && (
-            <Card className="p-5 border-l-4 border-orange-400 bg-orange-50 dark:bg-orange-900/10">
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-500 mb-1">Taxas de Cartão</p>
-              <p className="text-2xl font-black text-orange-600 dark:text-orange-400">
-                R$ {showFinancialValues ? analytics.cardFees.toFixed(2) : '***'}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Crédito 4% Débito 2%</p>
-            </Card>
-          )}
-          {analytics.supplyCostsTotal > 0 && (
-            <Card className="p-5 border-l-4 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/10">
-              <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-1">Custo de Insumos</p>
-              <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                R$ {showFinancialValues ? analytics.supplyCostsTotal.toFixed(2) : '***'}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Gasto proporcional ao volume de serviços</p>
-            </Card>
-          )}
+      {/* DRE Simplificado */}
+      <Card className="overflow-hidden border-0 shadow-xl bg-white dark:bg-gray-900">
+        <div className="bg-gray-900 dark:bg-black p-4">
+          <h3 className="text-white font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <BarChart3 size={18} className="text-tenant-primary" />
+            Demonstrativo de Resultados (DRE)
+          </h3>
         </div>
-      )}
+        <div className="p-0">
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr className="bg-blue-50/50 dark:bg-blue-900/10">
+                <td className="py-3 px-6 font-bold text-gray-900 dark:text-white">RECEITA BRUTA TOTAL</td>
+                <td className="py-3 px-6 text-right font-black text-blue-600 dark:text-blue-400">
+                  R$ {showFinancialValues ? analytics.gross.toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-6 pl-10 text-gray-500 dark:text-gray-400">(-) Taxas de Cartão Operacionais</td>
+                <td className="py-3 px-6 text-right text-red-500 font-medium">
+                  R$ {showFinancialValues ? analytics.cardFees.toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr className="bg-gray-50 dark:bg-gray-800/50">
+                <td className="py-3 px-6 font-bold text-gray-700 dark:text-gray-300">RECEITA LÍQUIDA</td>
+                <td className="py-3 px-6 text-right font-bold text-gray-900 dark:text-white">
+                  R$ {showFinancialValues ? (analytics.gross - analytics.cardFees).toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-6 pl-10 text-gray-500 dark:text-gray-400">(-) Comissões de Profissionais</td>
+                <td className="py-3 px-6 text-right text-red-500 font-medium">
+                  R$ {showFinancialValues ? analytics.totalCommissions.toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-6 pl-10 text-gray-500 dark:text-gray-400">(-) Custo de Insumos (Proporcional)</td>
+                <td className="py-3 px-6 text-right text-red-500 font-medium">
+                  R$ {showFinancialValues ? analytics.supplyCostsTotal.toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr className="bg-gray-50 dark:bg-gray-800/50">
+                <td className="py-3 px-6 font-bold text-gray-700 dark:text-gray-300">LUCRO BRUTO (Margem de Contribuição)</td>
+                <td className="py-3 px-6 text-right font-bold text-gray-900 dark:text-white">
+                  R$ {showFinancialValues ? (analytics.gross - analytics.cardFees - analytics.totalCommissions - analytics.supplyCostsTotal).toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-6 pl-10 text-gray-500 dark:text-gray-400">(-) Custos Fixos & Despesas Adm.</td>
+                <td className="py-3 px-6 text-right text-red-500 font-medium">
+                  R$ {showFinancialValues ? analytics.fixedCostsTotal.toFixed(2) : '••••'}
+                </td>
+              </tr>
+              <tr className={analytics.isLoss ? "bg-red-50 dark:bg-red-900/20" : "bg-green-50 dark:bg-green-900/20"}>
+                <td className="py-4 px-6 font-black text-gray-900 dark:text-white text-base">RESULTADO LÍQUIDO (LUCRO/PREJUÍZO)</td>
+                <td className={`py-4 px-6 text-right font-black text-xl ${analytics.isLoss ? 'text-red-600' : 'text-green-600'}`}>
+                  R$ {showFinancialValues ? analytics.net.toFixed(2) : '••••'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
       {/* Seção Custos Fixos / Despesas */}
       <Card className="mt-4">
@@ -543,6 +614,7 @@ export const FinancialTab: React.FC = () => {
           )}
         </Card.Body>
       </Card>
+    </div>
 
       {/* Modal de Despesa */}
       {showExpenseModal && (
@@ -757,9 +829,9 @@ export const FinancialTab: React.FC = () => {
           </div>
 
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-900 -mx-6 -mb-6 p-6">
-            <span className="font-black text-sm uppercase text-white">Custo Total Operacional</span>
+            <span className="font-black text-sm uppercase text-white">Total de Saídas (Custos + Comissões)</span>
             <span className="text-2xl font-black text-red-500">
-              R$ {((analytics?.expenses || 0) + (analytics?.totalCommissions || 0)).toFixed(2)}
+              R$ {showFinancialValues ? ((analytics?.fixedCostsTotal || 0) + (analytics?.totalCommissions || 0) + (analytics?.cardFees || 0) + (analytics?.supplyCostsTotal || 0)).toFixed(2) : '••••'}
             </span>
           </div>
         </div>
@@ -767,4 +839,3 @@ export const FinancialTab: React.FC = () => {
     </div>
   );
 };
-

@@ -47,7 +47,7 @@ export const barberService = {
       const response = await api.get<Barber[]>(`/barbers/public/shop/${shopId}`);
       return response.data.filter((b: any) => b.active !== false);
     } catch (error: any) {
-      console.error('âŒ barberService.listPublic: Erro', error);
+      console.error('barberService.listPublic: Erro', error);
       throw error; // Re-throw para permitir fallback não componente
     }
   },
@@ -57,6 +57,14 @@ export const barberService = {
    */
   async getById(id: string): Promise<Barber> {
     const response = await api.get<Barber>(`/barbers/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Busca barbeiro público por ID (sem autenticação)
+   */
+  async getPublicById(id: string): Promise<Barber> {
+    const response = await api.get<Barber>(`/barbers/public/${id}`);
     return response.data;
   },
 

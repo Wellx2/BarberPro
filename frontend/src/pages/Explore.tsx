@@ -118,7 +118,7 @@ export const Explore: React.FC = () => {
                         Encontre uma <span className="text-tenant-primary">Barbearia</span>
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400 max-w-2xl text-lg">
-                        Descubra as melhores opções perto de você. Pesquise por nãome ou navegue pelas barbearias disponíveis.
+                        Descubra as melhores opções perto de você. Pesquise por nome ou navegue pelas barbearias disponíveis.
                     </p>
                 </div>
 

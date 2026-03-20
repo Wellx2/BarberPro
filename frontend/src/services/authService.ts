@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Serviço de Autenticação
  */
 
@@ -30,6 +30,7 @@ interface AuthResponse {
     shopId: string;
     barberId?: string;
     clientId?: string;
+    avatar?: string;
   };
 }
 
@@ -49,7 +50,7 @@ export const authService = {
       try {
         await this.fetchEnabledModules(authData.user.shopId);
       } catch (error) {
-        console.warn('âš ï¸ Não foi possível carregar módulos:', error);
+        console.warn('Não foi possível carregar módulos:', error);
       }
     } else {
       console.error('❌ Login não retornou tokens válidos');
@@ -114,7 +115,7 @@ export const authService = {
       localStorage.setItem('enabled_modules', JSON.stringify(modules));
       return modules;
     } catch (error) {
-      console.warn('âš ï¸ Endpoint de módulos não disponível. Habilitando todos por padrão.');
+      console.warn('Endpoint de módulos não disponível. Habilitando todos por padrão.');
       // Se o endpoint não existir, habilita todos os módulos por padrão
       const allModules = [
         'AGENDA', 'FINANCEIRO', 'CAIXA', 'SERVICOS',

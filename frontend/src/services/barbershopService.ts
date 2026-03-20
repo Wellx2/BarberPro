@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Serviço de Barbearias
  */
 
@@ -14,6 +14,13 @@ export interface Barbershop {
   logoUrl?: string | null;       // 🎨 White Label URL alternativa
   bannerUrl?: string | null;     // 🎨 White Label Banner
   primaryColor?: string | null;  // 🎨 White Label Cor primária
+  whatsapp?: string | null;
+  email?: string | null;
+  heroSettings?: {
+    title: string;
+    subtitle: string;
+    backgroundImage?: string | null;
+  } | null;
   latitude?: number;
   longitude?: number;
   openingHours?: string;
@@ -46,6 +53,22 @@ export interface SwitchShopResponse {
   refreshToken: string;
 }
 
+export interface CreateBarbershopData {
+  name: string;
+  phone: string;
+  address?: string;
+  ownerEmail: string;
+  ownerName: string;
+  ownerPassword?: string;
+}
+
+export interface QuickSetupData extends CreateBarbershopData {
+  servicesCount?: number;
+  productsCount?: number;
+  barbersCount?: number;
+  plansCount?: number;
+}
+
 export interface BarbershopPreview {
   shop: {
     id: string;
@@ -59,6 +82,13 @@ export interface BarbershopPreview {
     logoUrl?: string | null;   // 🎨 White Label
     bannerUrl?: string | null; // 🎨 White Label
     primaryColor?: string | null; // 🎨 White Label
+    whatsapp?: string | null;
+    email?: string | null;
+    heroSettings?: {
+      title: string;
+      subtitle: string;
+      backgroundImage?: string | null;
+    } | null;
   };
   services: Array<{
     id: string;
@@ -137,10 +167,18 @@ export const barbershopService = {
   },
 
   /**
-   * Cria nova barbearia (requer autenticação SUPER_ADMIN)
+   * Cria nova barbearia e administrador (requer autenticação SUPER_ADMIN)
    */
-  async create(data: Omit<Barbershop, 'id'>): Promise<Barbershop> {
-    const response = await api.post<Barbershop>('/barbershops', data);
+  async create(data: CreateBarbershopData): Promise<{ shop: Barbershop; user: any }> {
+    const response = await api.post<{ shop: Barbershop; user: any }>('/barbershops', data);
+    return response.data;
+  },
+
+  /**
+   * Configuração rápida de barbearia com dados automáticos (requer autenticação SUPER_ADMIN)
+   */
+  async quickSetup(data: QuickSetupData): Promise<{ message: string; shopId: string }> {
+    const response = await api.post<{ message: string; shopId: string }>('/barbershops/quick-setup', data);
     return response.data;
   },
 
@@ -173,6 +211,14 @@ export const barbershopService = {
    */
   async updateModuleSettings(shopId: string, modulesEnabled: any): Promise<Barbershop> {
     const response = await api.patch<Barbershop>(`/barbershops/${shopId}/modules`, { modulesEnabled });
+    return response.data;
+  },
+
+  /**
+   * Atualiza configurações do Hero (painel principal da barbearia)
+   */
+  async updateHeroSettings(shopId: string, data: any): Promise<any> {
+    const response = await api.patch(`/barbershops/${shopId}/hero`, data);
     return response.data;
   },
 };

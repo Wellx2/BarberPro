@@ -66,3 +66,8 @@ desktop.ini
 .temp/
 .vite/
 *.tsbuildinfo
+
+# Documentation
+docs/
+*.resolved
+brain/

@@ -31,11 +31,11 @@ export const LocationMap: React.FC<LocationMapProps> = ({ shop }) => {
                     </div>
 
                     <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-4">
-                        Visite nãossa<br /><span className="text-tenant-primary">Unidade</span>
+                        Visite nossa<br /><span className="text-tenant-primary">Unidade</span>
                     </h2>
 
                     <p className="text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
-                        Localizada não coração de {address.split(',')[1] || 'nãossa cidade'}, nãossa barbearia oferece um ambiente premium e fácil acesso para você.
+                        Localizada no coração de {address.split(',')[1] || 'nossa cidade'}, nossa barbearia oferece um ambiente premium e fácil acesso para você.
                     </p>
 
                     <div className="space-y-4">
@@ -58,10 +58,10 @@ export const LocationMap: React.FC<LocationMapProps> = ({ shop }) => {
                                 <a
                                     href={`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`}
                                     target="_blank"
-                                    rel="nãoopener nãoreferrer"
+                                    rel="noopener noreferrer"
                                     className="text-tenant-primary font-black hover:underline inline-flex items-center gap-1"
                                 >
-                                    Abrir não Google Maps
+                                    Abrir no Google Maps
                                 </a>
                             </div>
                         </div>
@@ -78,7 +78,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({ shop }) => {
                         src={publicMapUrl}
                         allowFullScreen
                         loading="lazy"
-                        referrerPolicy="não-referrer-when-downgrade"
+                        referrerPolicy="no-referrer-when-downgrade"
                         className="grayscale contrast-125 dark:invert dark:hue-rotate-180 dark:brightness-95"
                     ></iframe>
                 </div>

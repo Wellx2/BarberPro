@@ -110,7 +110,7 @@ export const AdminDashboard: React.FC = () => {
         </nav>
 
         {/* Tab Content Area */}
-        <main className="min-h-[500px] animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <main className="min-h-[500px] pb-24 lg:pb-32 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {renderTabContent()}
         </main>
 

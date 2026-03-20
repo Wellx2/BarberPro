@@ -15,6 +15,7 @@ interface AuthContextType {
   updateUserProfile: (data: any) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (data: any) => Promise<void>;
+  validateSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -178,6 +179,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const validateSession = async () => {
+    try {
+      const response = await authService.validateToken();
+      const userData: User = {
+        id: response.user.id,
+        name: response.user.name,
+        email: response.user.email,
+        phone: response.user.phone || '',
+        role: response.user.role as UserRole,
+        shopId: response.user.shopId,
+        ...(response.user.barberId && { barberId: response.user.barberId }),
+        ...(response.user.clientId && { clientId: response.user.clientId }),
+        avatar: response.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(response.user.name)}&background=random`,
+        favorites: [],
+        credits: 0,
+        loyaltyStamps: 0
+      };
+      setUser(userData);
+
+      // Carregar módulos se shopId estiver presente
+      if (userData.shopId) {
+        await authService.fetchEnabledModules(userData.shopId);
+      }
+    } catch (error) {
+      console.error('Falha ao validar sessão:', error);
+      logout();
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -190,7 +220,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toggleFavorite,
       updateUserProfile,
       forgotPassword,
-      resetPassword
+      resetPassword,
+      validateSession
     }}>
       {children}
     </AuthContext.Provider>

@@ -21,10 +21,10 @@ import { SalesHistory } from './SalesHistory';
 import { Card } from '../../components/ui';
 import { Grid } from '../../components/layout/Grid';
 
-// ─── Card Fee Config ──────────────────────────────────────────────────────────
-const CARD_FEES: Record<string, number> = {
-  CREDIT_CARD: 4,
-  DEBIT_CARD: 2,
+// Card Fee Config - Fallback values
+const DEFAULT_CARD_FEES: Record<string, number> = {
+  CREDIT_CARD: 3.49,
+  DEBIT_CARD: 1.99,
   PIX: 0,
   CASH: 0,
 };
@@ -130,7 +130,7 @@ export const Cashier: React.FC = () => {
   const loadDailyAnalytics = useCallback(async () => {
     try {
       setLoadingAnalytics(true);
-      const isToday = selectedDate === new Date().toISOString().split('T')[0];
+      const isToday = selectedDate === new Date().toLocaleDateString('en-CA');
 
       if (isToday) {
         const [data, opps, ret] = await Promise.all([
@@ -203,14 +203,19 @@ export const Cashier: React.FC = () => {
     [splitEntries]
   );
 
-  const splitFees = useMemo(
-    () =>
-      splitEntries.reduce((sum, e) => {
-        const amt = parseFloat(e.amount) || 0;
-        return sum + (amt * (CARD_FEES[e.method] ?? 0)) / 100;
-      }, 0),
-    [splitEntries]
-  );
+  const splitFees = useMemo(() => {
+    const shopFees = (shop?.settings as any)?.cardFees || DEFAULT_CARD_FEES;
+    return splitEntries.reduce((sum, e) => {
+      const amt = parseFloat(e.amount) || 0;
+      let fee = 0;
+      if (e.method === 'CREDIT_CARD') {
+        fee = shopFees.credit ?? DEFAULT_CARD_FEES.CREDIT_CARD;
+      } else if (e.method === 'DEBIT_CARD') {
+        fee = shopFees.debit ?? DEFAULT_CARD_FEES.DEBIT_CARD;
+      }
+      return sum + (amt * fee) / 100;
+    }, 0);
+  }, [splitEntries, shop?.settings]);
 
   const remainingAmount = useMemo(
     () => (selectedInvoice ? selectedInvoice.amount - splitTotal : 0),
@@ -301,7 +306,7 @@ export const Cashier: React.FC = () => {
               onClick={() => {
                 const d = new Date(selectedDate + 'T00:00:00');
                 d.setDate(d.getDate() - 1);
-                setSelectedDate(d.toISOString().split('T')[0]);
+                setSelectedDate(d.toLocaleDateString('en-CA'));
               }}
               className="px-4 py-3 hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors flex items-center"
             >
@@ -319,7 +324,7 @@ export const Cashier: React.FC = () => {
               onClick={() => {
                 const d = new Date(selectedDate + 'T00:00:00');
                 d.setDate(d.getDate() + 1);
-                setSelectedDate(d.toISOString().split('T')[0]);
+                setSelectedDate(d.toLocaleDateString('en-CA'));
               }}
               className="px-4 py-3 hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors flex items-center"
             >
@@ -614,7 +619,9 @@ export const Cashier: React.FC = () => {
               <p className="text-4xl font-black text-orange-500">
                 {showValues ? `R$ ${dailyAnalytics.cardFees.toFixed(2)}` : 'R$ ••••'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">Crédito 4% · Débito 2%</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Crédito {(shop?.settings as any)?.cardFees?.credit ?? 3.49}% · Débito {(shop?.settings as any)?.cardFees?.debit ?? 1.99}%
+              </p>
             </Card>
           )}
         </Grid>
@@ -688,9 +695,9 @@ export const Cashier: React.FC = () => {
                   <div className="flex flex-col items-center gap-6">
                     <div className="relative w-44 h-44 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="88" cy="88" r="80" fill="nãone" stroke="currentColor" strokeWidth="14" className="text-gray-200 dark:text-gray-700" />
+                        <circle cx="88" cy="88" r="80" fill="none" stroke="currentColor" strokeWidth="14" className="text-gray-200 dark:text-gray-700" />
                         <circle
-                          cx="88" cy="88" r="80" fill="nãone" stroke="currentColor" strokeWidth="14"
+                          cx="88" cy="88" r="80" fill="none" stroke="currentColor" strokeWidth="14"
                           strokeDasharray="502.65"
                           strokeDashoffset={502.65 - (502.65 * retention.retentionRate) / 100}
                           className="text-rose-500 transition-all duration-1000 ease-out"
@@ -752,12 +759,14 @@ export const Cashier: React.FC = () => {
 
         <Card>
           <Card.Body className="space-y-4">
-            <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase">Formas de Pagamento</h3>
+            <h3 className="font-black text-lg text-gray-900 dark:text-white uppercase">Pagamentos Recebidos</h3>
             <div className="space-y-3">
               {Object.entries(dailyAnalytics.paymentMethods).map(([method, amount]) => {
                 const icons: Record<string, React.ElementType> = { PIX: QrCode, CASH: Banknote, CREDIT_CARD: CreditCard, DEBIT_CARD: CreditCard };
                 const Icon = icons[method] ?? DollarSign;
-                const fee = CARD_FEES[method] ?? 0;
+                const shopFees = (shop?.settings as any)?.cardFees || DEFAULT_CARD_FEES;
+                const fee = method === 'CREDIT_CARD' ? (shopFees.credit ?? 3.49) : method === 'DEBIT_CARD' ? (shopFees.debit ?? 1.99) : 0;
+
                 return (
                   <div key={method} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
                     <div className="flex items-center gap-3">
@@ -844,7 +853,7 @@ export const Cashier: React.FC = () => {
                   placeholder="Buscar cliente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-tenant-primary focus:outline-nãone"
+                  className="pl-10 pr-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:border-tenant-primary focus:outline-none"
                 />
               </div>
             </div>
@@ -915,7 +924,7 @@ export const Cashier: React.FC = () => {
                   <div className="space-y-2">
                     {crossSellItems.map((item, i) => (
                       <div key={i} className="flex items-center justify-between bg-white dark:bg-gray-900 p-3 rounded-xl">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{item.emojái} {item.label}</span>
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{item.emoji} {item.label}</span>
                         <button className="text-xs font-bold text-tenant-primary dark:text-tenant-primary hover:underline">
                           + Adicionar
                         </button>
@@ -944,13 +953,15 @@ export const Cashier: React.FC = () => {
                 <div className="space-y-3">
                   {splitEntries.map((entry, idx) => {
                     const amt = parseFloat(entry.amount) || 0;
-                    const fee = (amt * (CARD_FEES[entry.method] ?? 0)) / 100;
+                    const shopFees = (shop?.settings as any)?.cardFees || DEFAULT_CARD_FEES;
+                    const feeRate = entry.method === 'CREDIT_CARD' ? (shopFees.credit ?? 3.49) : entry.method === 'DEBIT_CARD' ? (shopFees.debit ?? 1.99) : 0;
+                    const fee = (amt * feeRate) / 100;
                     return (
                       <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
                         <select
                           value={entry.method}
-                          onChange={(e) => updateSplitEntry(idx, 'method', e.target.value)}
-                          className="flex-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg py-2 px-3 text-sm font-bold focus:border-tenant-primary focus:outline-nãone"
+                          onChange={(e) => updateSplitEntry(idx, 'method', e.target.value as any)}
+                          className="flex-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg py-2 px-3 text-sm font-bold focus:border-tenant-primary focus:outline-none"
                         >
                           <option value="PIX">PIX</option>
                           <option value="CASH">Dinheiro</option>
@@ -966,7 +977,7 @@ export const Cashier: React.FC = () => {
                             placeholder="0,00"
                             value={entry.amount}
                             onChange={(e) => updateSplitEntry(idx, 'amount', e.target.value)}
-                            className="pl-9 pr-3 py-2 w-28 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:border-tenant-primary focus:outline-nãone"
+                            className="pl-9 pr-3 py-2 w-28 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:border-tenant-primary focus:outline-none"
                           />
                         </div>
                         {fee > 0 && (
@@ -1017,32 +1028,35 @@ export const Cashier: React.FC = () => {
               ) : (
                 /* ── Single method grid ── */
                 <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'PIX' as const, icon: QrCode, label: 'PIX', fee: 0 },
-                    { id: 'CASH' as const, icon: Banknote, label: 'Dinheiro', fee: 0 },
-                    { id: 'CREDIT_CARD' as const, icon: CreditCard, label: 'Crédito', fee: 4 },
-                    { id: 'DEBIT_CARD' as const, icon: CreditCard, label: 'Débito', fee: 2 },
-                  ].map((method) => {
-                    const feeAmt = (selectedInvoice.amount * method.fee) / 100;
-                    return (
-                      <button
-                        key={method.id}
-                        disabled={loading}
-                        onClick={() => handleSinglePayment(method.id)}
-                        className="flex flex-col items-center justify-center gap-3 p-6 rounded-[28px] border-2 border-gray-100 dark:border-gray-700 hover:border-tenant-primary dark:hover:border-tenant-primary bg-gray-50 dark:bg-gray-900/40 transition-all group"
-                      >
-                        <div className="p-4 bg-white rounded-2xl shadow-md group-hover:scale-110 transition-transform flex items-center justify-center">
-                          <method.icon size={26} className="text-gray-900" />
-                        </div>
-                        <span className="text-xs font-black uppercase tracking-widest text-gray-600 dark:text-white">{method.label}</span>
-                        {method.fee > 0 && (
-                          <span className="text-xs text-orange-500 font-bold">
-                            taxa {method.fee}% (-R$ {feeAmt.toFixed(2)})
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                  {(() => {
+                    const shopFees = (shop?.settings as any)?.cardFees || DEFAULT_CARD_FEES;
+                    return [
+                      { id: 'PIX' as const, icon: QrCode, label: 'PIX', fee: 0 },
+                      { id: 'CASH' as const, icon: Banknote, label: 'Dinheiro', fee: 0 },
+                      { id: 'CREDIT_CARD' as const, icon: CreditCard, label: 'Crédito', fee: shopFees.credit ?? 3.49 },
+                      { id: 'DEBIT_CARD' as const, icon: CreditCard, label: 'Débito', fee: shopFees.debit ?? 1.99 },
+                    ].map((method) => {
+                      const feeAmt = (selectedInvoice.amount * method.fee) / 100;
+                      return (
+                        <button
+                          key={method.id}
+                          disabled={loading}
+                          onClick={() => handleSinglePayment(method.id)}
+                          className="flex flex-col items-center justify-center gap-3 p-6 rounded-[28px] border-2 border-gray-100 dark:border-gray-700 hover:border-tenant-primary dark:hover:border-tenant-primary bg-gray-50 dark:bg-gray-900/40 transition-all group"
+                        >
+                          <div className="p-4 bg-white rounded-2xl shadow-md group-hover:scale-110 transition-transform flex items-center justify-center">
+                            <method.icon size={26} className="text-gray-900" />
+                          </div>
+                          <span className="text-xs font-black uppercase tracking-widest text-gray-600 dark:text-white">{method.label}</span>
+                          {method.fee > 0 && (
+                            <span className="text-xs text-orange-500 font-bold">
+                              taxa {method.fee}% (-R$ {feeAmt.toFixed(2)})
+                            </span>
+                          )}
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               )}
 

@@ -147,21 +147,28 @@ export const Booking: React.FC = () => {
   useEffect(() => {
     if (location.state) {
       const { preSelectedBarberId, preSelectedDate, preSelectedTime, preSelectedServiceId } = location.state;
-      if (preSelectedServiceId) setSelectedServices(Array.isArray(preSelectedServiceId) ? preSelectedServiceId : [preSelectedServiceId]);
+      if (preSelectedServiceId) {
+        setSelectedServices(Array.isArray(preSelectedServiceId) ? preSelectedServiceId : [preSelectedServiceId]);
+      }
       if (preSelectedBarberId) setSelectedBarber(preSelectedBarberId);
       if (preSelectedDate) setSelectedDate(preSelectedDate);
       if (preSelectedTime) setSelectedTime(preSelectedTime);
+
+      // Se temos serviços e barbeiro pré-selecionados, podemos pular para a etapa de data/hora
+      if (preSelectedServiceId && preSelectedBarberId) {
+        // Para CLIENT/BARBER, etapa 3 é data/hora. Para ADMIN, etapa 4.
+        if (user?.role === 'CLIENT' || user?.role === 'BARBER') {
+          setStep(3);
+        } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+          setStep(4);
+        }
+      }
     }
-  }, [location.state]);
+  }, [location.state, user?.role]);
 
   // Carregar slots disponíveis quando barbeiro, data e duração forem selecionados
   useEffect(() => {
     const loadAvailableSlots = async () => {
-      // Cliente não tem permissão para buscar slots - usar todos os horários disponíveis
-      if (user?.role === 'CLIENT') {
-        setAvailableSlots(timeSlots);
-        return;
-      }
 
       if (!selectedBarber || selectedBarber === 'any' || !selectedDate) {
         setAvailableSlots(timeSlots);
@@ -213,8 +220,9 @@ export const Booking: React.FC = () => {
   const handleConfirm = async () => {
     if (!user) { navigate('/login', { state: { from: '/book' } }); return; }
 
-    if (shopBarbers.length === 0) {
-      addNotification('error', 'Nenhum barbeiro disponível não momento');
+    // Para BARBER: o próprio barbeiro logado é o barbeiro — não precisa de shopBarbers
+    if (shopBarbers.length === 0 && user.role !== 'BARBER') {
+      addNotification('error', 'Nenhum barbeiro disponível no momento');
       return;
     }
 
@@ -231,14 +239,16 @@ export const Booking: React.FC = () => {
       addNotification('error', 'Selecione pelo menãos um serviço');
       return;
     }
-    if (!selectedBarber || selectedBarber === 'any' && shopBarbers.length === 0) {
+    // Para BARBER: barberId é inferido do JWT no backend, não precisa de selectedBarber
+    if (user.role !== 'BARBER' && (!selectedBarber || (selectedBarber === 'any' && shopBarbers.length === 0))) {
       addNotification('error', 'Nenhum barbeiro disponível');
       return;
     }
 
     try {
-      let finalBarberId = selectedBarber === 'any' ? shopBarbers[0].id : selectedBarber;
-      
+      // Para BARBER: não precisa de finalBarberId (backend usa JWT)
+      let finalBarberId = selectedBarber === 'any' ? (shopBarbers[0]?.id || '') : (selectedBarber || '');
+
       // Fix: Use local date parts to avoid timezone shift to 23:59/00:00 UTC
       const [year, month, day] = selectedDate.split('-').map(Number);
       const [hour, minute] = selectedTime.split(':').map(Number);
@@ -249,8 +259,9 @@ export const Booking: React.FC = () => {
         return;
       }
 
-      if (appointmentDate <= new Date()) {
-        addNotification('error', 'Selecione uma data e horário futuros', 'Erro não Agendamento');
+      // Only block past times for CLIENTS (barbers/admins can book same-day retroactively)
+      if (user.role === 'CLIENT' && appointmentDate <= new Date()) {
+        addNotification('error', 'Selecione uma data e horário futuros', 'Erro no Agendamento');
         return;
       }
 
@@ -360,7 +371,13 @@ export const Booking: React.FC = () => {
       {/* Header com botão voltar */}
       <div className="flex items-center justify-between mb-8">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (step > 1) {
+              setStep(step - 1);
+            } else {
+              navigate(-1);
+            }
+          }}
           className="flex items-center gap-2 text-gray-400 hover:text-tenant-primary transition-colors group"
         >
           <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
@@ -460,7 +477,7 @@ export const Booking: React.FC = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Buscar cliente por nãome..."
+                placeholder="Buscar cliente por nome..."
                 value={clientSearchQuery}
                 onChange={(e) => setClientSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 rounded-[24px] border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-tenant-primary outline-nãone transition-all"
@@ -611,7 +628,7 @@ export const Booking: React.FC = () => {
                 })}
               </div>
             </div>
-            <div className="mt-16 flex justify-between"><button onClick={() => setStep(2)} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-tenant-primary">Voltar</button><button disabled={!selectedTime} onClick={() => setStep(4)} className="bg-[#f59e0b] bg-tenant-primary text-white px-12 py-5 rounded-[22px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl">Revisar</button></div>
+            <div className="mt-16 flex justify-between"><button onClick={() => setStep(2)} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-tenant-primary">Voltar</button><button disabled={!selectedTime} onClick={() => setStep(4)} className="bg-[#f59e0b] bg-tenant-primary text-white px-12 py-5 rounded-[22px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl">Continuar</button></div>
           </div>
         )}
 
@@ -666,7 +683,7 @@ export const Booking: React.FC = () => {
                 })}
               </div>
             </div>
-            <div className="mt-16 flex justify-between"><button onClick={() => setStep(3)} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-tenant-primary">Voltar</button><button disabled={!selectedTime} onClick={() => setStep(5)} className="bg-[#f59e0b] bg-tenant-primary text-white px-12 py-5 rounded-[22px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl">Revisar</button></div>
+            <div className="mt-16 flex justify-between"><button onClick={() => setStep(3)} className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-tenant-primary">Voltar</button><button disabled={!selectedTime} onClick={() => setStep(5)} className="bg-[#f59e0b] bg-tenant-primary text-white px-12 py-5 rounded-[22px] font-black uppercase text-[11px] tracking-[0.2em] shadow-xl">Continuar</button></div>
           </div>
         )}
 

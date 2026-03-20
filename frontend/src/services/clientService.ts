@@ -28,6 +28,15 @@ export const clientService = {
   },
 
   /**
+   * Criar novo cliente
+   * POST /api/clients
+   */
+  async create(data: { name: string; phone: string; shopId: string }): Promise<Client> {
+    const response = await api.post<Client>('/clients', data);
+    return response.data;
+  },
+
+  /**
    * Buscar cliente por ID
    * GET /api/clients/:id
    */
@@ -37,7 +46,7 @@ export const clientService = {
   },
 
   /**
-   * Buscar clientes por termo de pesquisa (nãome, email, telefone)
+   * Buscar clientes por termo de pesquisa (nome, email, telefone)
    * GET /api/clients/search?q=termo
    */
   async search(query: string): Promise<Client[]> {

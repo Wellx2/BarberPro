@@ -5,12 +5,17 @@ import { useClientAppointments } from '../../hooks/useAppointments';
 import { appointmentService } from '../../services/appointmentService';
 import { barberService } from '../../services/barberService';
 import { useAuth } from '../../context/AuthContext';
+import { useShop } from '../../context/ShopContext';
 import { Barber } from '../../types';
 import { api } from '../../services/api';
 
 export const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { shop } = useShop();
+
+  const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+  const shopSlug = slugify(shop.name);
 
   const [cancelModalId, setCancelModalId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -44,8 +49,10 @@ export const ClientDashboard: React.FC = () => {
     const loadBarbers = async () => {
       try {
         setLoadingBarbers(true);
-        const data = await barberService.list();
-        setBarbers(data.filter(b => b.active));
+        if (user?.shopId) {
+          const data = await barberService.listPublic(user.shopId);
+          setBarbers(data);
+        }
       } catch (error) {
         console.error('Erro ao carregar barbeiros:', error);
       } finally {
@@ -210,35 +217,53 @@ export const ClientDashboard: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header with booking button */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Meus Agendamentos
-        </h1>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-800 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Meus Agendamentos
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
+            Acompanhe seus horários e histórico de visitas na barbearia
+          </p>
+        </div>
         <button
-          onClick={() => navigate('/book')}
-          className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-tenant-primary hover:opacity-90 text-white rounded-xl font-bold transition-colors shadow-md"
+          onClick={() => navigate(`/${shopSlug}/agendar`)}
+          className="hidden md:flex items-center gap-2 px-6 py-3 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:opacity-90"
+          style={{ backgroundColor: 'var(--tenant-primary, #f59e0b)' }}
         >
-          <Calendar size={18} />
-          Novo Agendamento
+          <Calendar size={20} />
+          <span>Novo Agendamento</span>
         </button>
       </div>
 
       {/* Upcoming Appointments */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          Próximos Agendamentos
-        </h2>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: 'var(--tenant-primary, #f59e0b)' }}>
+            <Clock size={20} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+            Próximos Agendamentos
+          </h2>
+        </div>
 
         {upcoming.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">
-              Você não tem agendamentos futuros
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+              <Calendar className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Nenhum agendamento futuro
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-6">
+              Você não tem nenhum horário marcado. Que tal aproveitar para agendar seu próximo serviço agora?
             </p>
             <button
-              onClick={() => navigate('/book')}
-              className="mt-4 px-6 py-2 bg-tenant-primary text-white rounded-lg hover:opacity-90 transition-colors"
+              onClick={() => navigate(`/${shopSlug}/agendar`)}
+              className="px-6 py-2.5 text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-md flex items-center gap-2"
+              style={{ backgroundColor: 'var(--tenant-primary, #f59e0b)' }}
             >
+              <Calendar size={18} />
               Fazer Agendamento
             </button>
           </div>
@@ -247,19 +272,20 @@ export const ClientDashboard: React.FC = () => {
             {upcoming.map((appointment) => (
               <div
                 key={appointment.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <div className="flex items-center gap-2 text-gray-60:0 dark:text-gray-400 mb-2">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
                       <Clock size={16} />
-                      <span>{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
+                      <span className="font-medium">{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <UserIcon size={18} className="text-gray-400" />
                       {(appointment as any).barber?.name}
                     </h3>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(appointment.status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(appointment.status)}`}>
                     {getStatusLabel(appointment.status)}
                   </span>
                 </div>
@@ -267,10 +293,10 @@ export const ClientDashboard: React.FC = () => {
                 {/* Services */}
                 {appointment.services && appointment.services.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Serviços:</p>
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Serviços:</p>
                     <div className="flex flex-wrap gap-2">
                       {appointment.services.map((service: any) => (
-                        <span key={service.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded">
+                        <span key={service.id} className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600">
                           {service.service?.name || service.name} - {formatCurrency(service.service?.price ?? service.price ?? 0)}
                         </span>
                       ))}
@@ -279,11 +305,11 @@ export const ClientDashboard: React.FC = () => {
                 )}
 
                 {appointment.status === 'SCHEDULED' && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 -mx-5 px-5">
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">Lembrete de Agendamento</h4>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">Lembrete</h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {appointment.reminderEnabled !== false ? 'Lembrete ativo para este horário' : 'Silenciado para este agendamento'}
+                        {appointment.reminderEnabled !== false ? 'Ativo' : 'Silenciado'}
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -294,39 +320,38 @@ export const ClientDashboard: React.FC = () => {
                         onChange={async (e) => {
                           const newVal = e.target.checked;
                           try {
-                            // Optimistic UI update
-                            appointment.reminderEnabled = newVal;
+                            // Update API and trigger refresh
                             await api.patch(`/appointments/${appointment.id}`, { reminderEnabled: newVal });
+                            refresh();
                           } catch (err) {
                             console.error('Erro ao atualizar preferência de lembrete:', err);
-                            appointment.reminderEnabled = !newVal; // revert
                           }
                         }}
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-nãone rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
                     </label>
                   </div>
                 )}
 
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    Total: {formatCurrency(appointment.totalPrice ?? 0)}
+                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <span className="text-lg font-black text-gray-900 dark:text-white">
+                    {formatCurrency(appointment.totalPrice ?? 0)}
                   </span>
                   {appointment.status === 'SCHEDULED' && (
                     <div className="flex gap-2">
                       {canEdit(appointment) ? (
                         <button
                           onClick={() => openReschedule(appointment)}
-                          className="flex items-center gap-1 px-3 py-1.5 border border-tenant-primary text-tenant-primary rounded-lg hover:bg-tenant-primary/10 transition-colors text-sm font-semibold"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-bold"
                         >
-                          <Edit2 size={14} /> Editar
+                          <Edit2 size={16} /> Editar
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-400 italic self-center">Edição não disponivel</span>
+                        <span className="text-xs text-gray-400 italic self-center px-2">Edição indisponível</span>
                       )}
                       <button
                         onClick={() => setCancelModalId(appointment.id)}
-                        className="px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-semibold"
+                        className="px-4 py-2 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-bold"
                       >
                         Cancelar
                       </button>
@@ -341,42 +366,51 @@ export const ClientDashboard: React.FC = () => {
 
       {/* History */}
       <section>
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          Histórico
-        </h2>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 shadow-sm border border-gray-200 dark:border-gray-700">
+            <Calendar size={20} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+            Histórico de Visitas
+          </h2>
+        </div>
 
         {past.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">Nenhum agendamento anterior</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
+              <Calendar className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">Você ainda não possui um histórico de visitas.</p>
           </div>
         ) : (
           <div className="grid gap-4">
             {(showAllPast ? past : past.slice(0, 4)).map((appointment) => (
               <div
                 key={appointment.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 opacity-75"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 opacity-80 hover:opacity-100 transition-opacity"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
                       <Clock size={16} />
-                      <span>{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
+                      <span className="font-medium">{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <UserIcon size={18} className="text-gray-400" />
                       {(appointment as any).barber?.name}
                     </h3>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(appointment.status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(appointment.status)}`}>
                     {getStatusLabel(appointment.status)}
                   </span>
                 </div>
 
                 {appointment.services && appointment.services.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Serviços:</p>
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Serviços:</p>
                     <div className="flex flex-wrap gap-2">
                       {appointment.services.map((service: any) => (
-                        <span key={service.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded">
+                        <span key={service.id} className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600">
                           {service.service?.name || service.name} - {formatCurrency(service.service?.price ?? service.price ?? 0)}
                         </span>
                       ))}
@@ -386,10 +420,10 @@ export const ClientDashboard: React.FC = () => {
 
                 {appointment.products && appointment.products.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Produtos:</p>
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Produtos:</p>
                     <div className="flex flex-wrap gap-2">
                       {appointment.products.map((product: any) => (
-                        <span key={product.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded">
+                        <span key={product.id} className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600">
                           {product.name} - {formatCurrency(product.price)}
                         </span>
                       ))}
@@ -397,9 +431,9 @@ export const ClientDashboard: React.FC = () => {
                   </div>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    Total: {formatCurrency(appointment.totalPrice ?? 0)}
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                  <span className="text-lg font-black text-gray-900 dark:text-white">
+                    {formatCurrency(appointment.totalPrice ?? 0)}
                   </span>
                   {appointment.status === 'COMPLETED' && (
                     <button
@@ -409,7 +443,8 @@ export const ClientDashboard: React.FC = () => {
                         setRating(5);
                         setReviewComment('');
                       }}
-                      className="px-4 py-2 bg-tenant-primary hover:opacity-90 text-white rounded-lg transition-colors font-semibold text-sm flex items-center gap-2"
+                      className="px-5 py-2 text-white rounded-lg transition-all font-bold text-sm flex items-center gap-2 shadow-sm hover:shadow-md hover:opacity-90"
+                      style={{ backgroundColor: 'var(--tenant-primary, #f59e0b)' }}
                     >
                       <Star size={16} className="fill-current" /> Avaliar
                     </button>
@@ -421,7 +456,7 @@ export const ClientDashboard: React.FC = () => {
             {!showAllPast && past.length > 4 && (
               <button
                 onClick={() => setShowAllPast(true)}
-                className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition-colors"
+                className="w-full py-4 mt-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-400 font-bold transition-all bg-transparent"
               >
                 Ver Mais Histórico ({past.length - 4} itens)
               </button>

@@ -99,7 +99,7 @@ export const UserProfile: React.FC = () => {
   const handleSave = () => {
     // Validações
     if (!formData.name.trim()) {
-      addNotification('error', 'O nãome é obrigatório', 'Erro de Validação');
+      addNotification('error', 'O nome é obrigatório', 'Erro de Validação');
       return;
     }
 
@@ -463,13 +463,13 @@ export const UserProfile: React.FC = () => {
                   <span className="font-bold text-gray-900 dark:text-white">{roleLabels[user.role]}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">ID do Usuário:</span>
-                  <span className="font-mono text-gray-900 dark:text-white">{user.id}</span>
+                  <span className="text-gray-600 dark:text-gray-400">ID Público:</span>
+                  <span className="font-mono text-gray-900 dark:text-white">#{user.id.split('-')[0].toUpperCase()}</span>
                 </div>
                 {user.shopId && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Barbearia:</span>
-                    <span className="font-mono text-gray-900 dark:text-white">{user.shopId}</span>
+                    <span className="text-gray-600 dark:text-gray-400">ID Barbearia:</span>
+                    <span className="font-mono text-gray-900 dark:text-white">#{user.shopId.split('-')[0].toUpperCase()}</span>
                   </div>
                 )}
               </div>
@@ -499,7 +499,7 @@ export const UserProfile: React.FC = () => {
                       setGlobalPushEnabled(newVal);
                       setIsSavingPush(true);
                       try {
-                        await api.patch(`/users/${user!.id}`, { globalPushEnabled: newVal });
+                        await api.put('/auth/profile', { globalPushEnabled: newVal });
                         // Pedir permissão do browser se ativar
                         if (newVal && 'Notification' in window && Notification.permission !== 'granted') {
                           Notification.requestPermission();

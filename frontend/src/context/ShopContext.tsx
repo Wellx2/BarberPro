@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Shop } from '../types';
 import { barbershopService, Barbershop } from '../services/barbershopService';
 import { useAuth } from './AuthContext';
@@ -41,6 +42,13 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
     logoUrl: barbershop.logoUrl,
     bannerUrl: barbershop.bannerUrl,
     primaryColor: barbershop.primaryColor,
+    whatsapp: barbershop.whatsapp || '',
+    email: barbershop.email || '',
+    heroSettings: barbershop.heroSettings ? {
+      title: barbershop.heroSettings.title,
+      subtitle: barbershop.heroSettings.subtitle,
+      backgroundImage: barbershop.heroSettings.backgroundImage
+    } : undefined,
     settings: {
       showBarbers: true,
       subscriptionEnabled: barbershop.settings?.subscriptionEnabled ?? true, // ✅ Default true para mostrar planos
@@ -202,11 +210,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error('❌ ShopContext: Erro ao buscar shop do usuário:', error);
     }
 
-    // 2. Check Subdomain (Deep Linking) - paulista.klypbarber.com
-    const hostname = window.location.hostname;
-    const subdomain = hostname.split('.')[0];
+    // 2. Check URL Path (First segment as shopSlug) - klypbarber.com.br/nome-da-barbearia
+    const pathname = window.location.pathname;
+    const pathParts = pathname.split('/').filter(p => p !== '');
+    // Ignore internal system routes at root level
+    const systemRoutes = ['login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'reset-password'];
+    const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) ? pathParts[0] : null;
 
-    // Slugify function para comparar subdomínios 
+    // Slugify function para comparar slugs 
     const slugify = (str: string) => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
     const stored = localStorage.getItem('shops');
@@ -214,14 +225,26 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const storedShops = JSON.parse(stored);
 
-        if (subdomain !== 'localhost' && subdomain !== 'www') {
+        // A. Try match from path slug
+        if (potentialSlug) {
+          const foundFromPath = storedShops.find((s: Shop) => slugify(s.name) === potentialSlug);
+          if (foundFromPath && !foundFromPath.id.startsWith('shop-')) {
+            return foundFromPath;
+          }
+        }
+
+        // B. Check Subdomain (Deep Linking) - paulista.klypbarber.com
+        const hostname = window.location.hostname;
+        const subdomain = hostname.split('.')[0];
+
+        if (subdomain !== 'localhost' && subdomain !== 'www' && subdomain !== 'klypbarber') {
           const foundFromSubdomain = storedShops.find((s: Shop) => slugify(s.name) === subdomain);
           if (foundFromSubdomain && !foundFromSubdomain.id.startsWith('shop-')) {
             return foundFromSubdomain;
           }
         }
 
-        // 3. Check URL Parameters (Deep Linking - ?shopId=xxx)
+        // C. Check URL Parameters (Deep Linking - ?shopId=xxx)
         const params = new URLSearchParams(window.location.search);
         const urlShopId = params.get('shopId');
 
@@ -232,7 +255,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        // 4. Check Local Storage
+        // D. Check Local Storage
         const storedId = localStorage.getItem('selected_shop_id');
         const found = storedShops.find((s: Shop) => s.id === storedId);
         if (found && !found.id.startsWith('shop-')) {
@@ -277,8 +300,44 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
   });
+  const location = useLocation();
 
-  // ? useEffect para definir shop quando shops é carregado ou atualizado do backend
+  // Slugify function para comparar slugs 
+  const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+
+  // ? NOVO: useEffect para sincronizar a loja com a URL sempre que a rota mudar
+  useEffect(() => {
+    const pathname = location.pathname;
+    const pathParts = pathname.split('/').filter(p => p !== '');
+    
+    // Ignore internal system routes at root level
+    const systemRoutes = ['login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'reset-password', 'auth'];
+    
+    const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) ? pathParts[0] : null;
+
+    if (!potentialSlug) return;
+
+    // Se o slug na URL já é o da loja atual (slugificado), não faz nada
+    if (shop.id && slugify(shop.name) === potentialSlug) {
+      return;
+    }
+
+    // Tentar encontrar a loja pelo slug na lista carregada
+    if (shops.length > 0) {
+      const foundFromPath = shops.find((s: Shop) => slugify(s.name) === potentialSlug);
+      if (foundFromPath && foundFromPath.id !== shop.id) {
+        console.log(`🔄 ShopContext: Trocando loja para ${foundFromPath.name} devido ao slug na URL: ${potentialSlug}`);
+        setShop(foundFromPath);
+        localStorage.setItem('selected_shop_id', foundFromPath.id);
+        return;
+      }
+      
+      // Se não encontrou na lista (loja inexistente ou não carregada)
+      if (potentialSlug && !foundFromPath) {
+         console.warn(`⚠️ ShopContext: Slug na URL '${potentialSlug}' não corresponde a nenhuma loja cadastrada.`);
+      }
+    }
+  }, [location.pathname, shops, shop.id]);
   useEffect(() => {
     // Se shops ainda está vazio, aguardar
     if (shops.length === 0) {

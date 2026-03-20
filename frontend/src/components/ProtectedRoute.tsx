@@ -3,6 +3,7 @@ import React from 'react';
 // Fix: Import Navigate and useLocation from react-router to resolve export errors in some environments
 import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { useShop } from '../context/ShopContext';
 import { UserRole } from '../types';
 
 interface ProtectedRouteProps {
@@ -12,11 +13,23 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { user, isAuthenticated } = useAuth();
+  const { shop } = useShop();
   const location = useLocation();
 
   if (!isAuthenticated) {
     // Redireciona para login mantendo a origem para retornão posterior
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  // Segurança Adicional: Verificar se o usuário pertence à loja atual
+  // Apenas Super Admin pode acessar qualquer loja. Admin e Barbeiro ficam restritos à sua própria loja.
+  if (user && user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.CLIENT) {
+    if (user.shopId && shop.id && user.shopId !== shop.id) {
+      console.warn(`⛔ Acesso negado: Usuário pertence à loja ${user.shopId}, mas tentou acessar ${shop.id}`);
+      // Se ele estiver logado mas na loja errada (via URL), mandamos ele de volta para a home dele ou damos logout
+      // Melhor mandar para a dashboard dele, o sistema de rotas vai cuidar do resto
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   if (allowedRoles && user && user.role && !allowedRoles.includes(user.role)) {
