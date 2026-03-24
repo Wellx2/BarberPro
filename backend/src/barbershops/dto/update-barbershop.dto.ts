@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max, IsArray } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsInt, Min, Max, IsArray, IsObject } from 'class-validator';
 
 export class UpdateBarbershopDto {
   @IsOptional()
@@ -12,6 +12,14 @@ export class UpdateBarbershopDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  whatsapp?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
 
   @IsOptional()
   @IsString()
@@ -59,4 +67,8 @@ export class UpdateBarbershopDto {
   @IsArray()
   @IsString({ each: true })
   amenities?: string[];
+
+  @IsOptional()
+  @IsObject()
+  settings?: any;
 }

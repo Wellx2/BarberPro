@@ -19,8 +19,22 @@ async function bootstrap() {
   app.use(helmet());
 
   // CORS
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+  const allowedOrigins = [
+    frontendUrl,
+    'http://localhost:3002',
+    'https://www.klypbarber.com.br',
+    'https://klypbarber.com.br'
+  ];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -50,7 +64,7 @@ async function bootstrap() {
 
   // Swagger
   const config = new DocumentBuilder()
-    .setTitle('BarberPro API')
+    .setTitle('KlypBarber API')
     .setDescription('Backend SaaS multi-tenant para gestão de barbearias')
     .setVersion('1.0')
     .addBearerAuth()
@@ -79,8 +93,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  console.log(`🚀 BarberPro API running on http://localhost:${port}/api`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  // console.log(`🚀 KlypBarber API running on http://localhost:${port}/api`);
+  // console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

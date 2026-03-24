@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateBarbershopDto } from './dto/update-barbershop.dto';
@@ -11,7 +12,9 @@ import { UpdateHeroDto } from './dto/update-hero.dto';
 import { UpdatePlansContentDto } from './dto/update-plans-content.dto';
 import { UpdateModulesDto } from './dto/update-modules.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
-import { SubscriptionTier, SubscriptionStatus } from '@prisma/client';
+import { CreateBarbershopDto } from './dto/create-barbershop.dto';
+import { QuickSetupDto } from './dto/quick-setup.dto';
+import { SubscriptionTier, SubscriptionStatus, UserRole, TeamMemberRole, BarberWorkModel, ModuleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -19,7 +22,182 @@ export class BarbershopsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) { }
+
+  /**
+   * Cria uma nova barbearia e seu respectivo dono (ADMIN)
+   */
+  async create(dto: CreateBarbershopDto) {
+    const { name, phone, address, ownerEmail, ownerName, ownerPassword } = dto;
+
+    // Verificar se já existe usuário com este e-mail
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: ownerEmail },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('E-mail do proprietário já cadastrado.');
+    }
+
+    const passwordHash = await bcrypt.hash(ownerPassword, 12);
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Criar a barbearia
+      const shop = await tx.barbershop.create({
+        data: {
+          name,
+          phone,
+          address,
+          primaryColor: '#f59e0b',
+        },
+      });
+
+      // 2. Criar o usuário dono
+      const user = await tx.user.create({
+        data: {
+          name: ownerName,
+          email: ownerEmail,
+          passwordHash,
+          role: UserRole.ADMIN,
+          shopId: shop.id,
+          active: true,
+        },
+      });
+
+      // 3. Inicializar Hero Settings
+      await tx.barbershopHeroSettings.create({
+        data: {
+          shopId: shop.id,
+          title: `Bem-vindo à ${name}`,
+          subtitle: 'Os melhores profissionais da região',
+        },
+      });
+
+      // 4. Inicializar Conteúdo de Planos
+      await tx.barbershopPlansContent.create({
+        data: {
+          shopId: shop.id,
+        },
+      });
+
+      // 5. Inicializar Módulos padrão
+      const defaultModules = [
+        ModuleType.AGENDA,
+        ModuleType.CAIXA,
+        ModuleType.PLANOS,
+      ];
+
+      for (const moduleType of defaultModules) {
+        await tx.barbershopModule.create({
+          data: {
+            shopId: shop.id,
+            moduleType,
+            enabled: true,
+            enabledAt: new Date(),
+          },
+        });
+      }
+
+      return { shop, user };
+    });
+  }
+
+  /**
+   * Configuração rápida de barbearia com dados automáticos
+   */
+  async quickSetup(dto: QuickSetupDto) {
+    const { shop, user } = await this.create(dto);
+
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Gerar Serviços
+      if (dto.servicesCount && dto.servicesCount > 0) {
+        const serviceTemplates = [
+          { name: 'Corte Masculino', price: 50, duration: 30, category: 'Cabelo' },
+          { name: 'Barba', price: 30, duration: 20, category: 'Barba' },
+          { name: 'Sobrancelha', price: 15, duration: 15, category: 'Estética' },
+          { name: 'Combo Corte + Barba', price: 70, duration: 50, category: 'Combos' },
+          { name: 'Pezinho', price: 10, duration: 10, category: 'Cabelo' },
+          { name: 'Corte Kids', price: 40, duration: 30, category: 'Cabelo' },
+          { name: 'Progressiva Masculina', price: 100, duration: 90, category: 'Tratamentos' },
+          { name: 'Luzes', price: 120, duration: 120, category: 'Cor' },
+          { name: 'Pigmentação', price: 40, duration: 30, category: 'Cor' },
+          { name: 'Hidratação', price: 30, duration: 20, category: 'Tratamentos' },
+        ];
+
+        for (let i = 0; i < Math.min(dto.servicesCount, serviceTemplates.length); i++) {
+          await tx.service.create({
+            data: {
+              shopId: shop.id,
+              ...serviceTemplates[i],
+            },
+          });
+        }
+      }
+
+      // 2. Gerar Produtos
+      if (dto.productsCount && dto.productsCount > 0) {
+        const productTemplates = [
+          { name: 'Pomada Modeladora', price: 45, category: 'Finalização', stock: 20 },
+          { name: 'Óleo para Barba', price: 35, category: 'Cuidado Barba', stock: 15 },
+          { name: 'Shampoo 3 em 1', price: 55, category: 'Higiene', stock: 10 },
+          { name: 'Gel Fixador', price: 20, category: 'Finalização', stock: 25 },
+          { name: 'After Shave', price: 40, category: 'Pós-barba', stock: 12 },
+          { name: 'Cera de Bigode', price: 25, category: 'Cuidado Barba', stock: 8 },
+        ];
+
+        for (let i = 0; i < Math.min(dto.productsCount, productTemplates.length); i++) {
+          await tx.product.create({
+            data: {
+              shopId: shop.id,
+              ...productTemplates[i],
+            },
+          });
+        }
+      }
+
+      // 3. Gerar Barbeiros
+      if (dto.barbersCount && dto.barbersCount > 0) {
+        const barberNames = ['Felipe', 'Ricardo', 'Bruno', 'Gabriel', 'Tiago', 'Lucas'];
+        for (let i = 0; i < Math.min(dto.barbersCount, barberNames.length); i++) {
+          await tx.barber.create({
+            data: {
+              shopId: shop.id,
+              name: barberNames[i],
+              nickname: barberNames[i],
+              role: TeamMemberRole.BARBER,
+              workModel: BarberWorkModel.COMMISSION_ONLY,
+              commissionRate: 50,
+              active: true,
+            },
+          });
+        }
+
+        // Se criou o dono e pediu barbeiros, adicionar o dono como barbeiro também?
+        // Vamos apenas garantir que o dono tenha acesso, o que já foi feito.
+      }
+
+      // 4. Gerar Planos de Assinatura para Clientes
+      if (dto.plansCount && dto.plansCount > 0) {
+        const planTemplates = [
+          { name: 'Plano Básico', price: 99, benefits: ['Até 2 cortes/mês', '10% desc. em produtos'], description: 'Ideal para quem corta o cabelo 1x por mês' },
+          { name: 'Plano Pro', price: 180, benefits: ['Até 4 serviços/mês', '15% desc. em produtos', 'Bebida grátis'], isPopular: true, description: 'Cabelo e barba sempre alinhados' },
+          { name: 'Plano VIP', price: 290, benefits: ['Serviços ilimitados', '20% desc. em produtos', 'Reserva prioritária'], description: 'A experiência completa' },
+        ];
+
+        for (let i = 0; i < Math.min(dto.plansCount, planTemplates.length); i++) {
+          await tx.plan.create({
+            data: {
+              shopId: shop.id,
+              ...planTemplates[i],
+            },
+          });
+        }
+      }
+    });
+
+    return { message: 'Barbearia configurada com sucesso!', shopId: shop.id };
+  }
 
   // ===== ROTAS PÚBLICAS =====
   /**
@@ -39,6 +217,8 @@ export class BarbershopsService {
         id: true,
         name: true,
         phone: true,
+        whatsapp: true,
+        email: true,
         address: true,
         openingTime: true,
         closingTime: true,
@@ -46,6 +226,13 @@ export class BarbershopsService {
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
+        heroSettings: {
+          select: {
+            title: true,
+            subtitle: true,
+            backgroundImage: true
+          }
+        }
         // amenities: true,
       },
       orderBy: { name: 'asc' },
@@ -63,6 +250,8 @@ export class BarbershopsService {
         id: true,
         name: true,
         phone: true,
+        whatsapp: true,
+        email: true,
         address: true,
         openingTime: true,
         closingTime: true,
@@ -71,6 +260,13 @@ export class BarbershopsService {
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
+        heroSettings: {
+          select: {
+            title: true,
+            subtitle: true,
+            backgroundImage: true
+          }
+        }
         // amenities: true,
       },
     });
@@ -213,12 +409,12 @@ export class BarbershopsService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_SECRET,
+      secret: this.configService.get<string>('JWT_SECRET'),
       expiresIn: '15m',
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       expiresIn: '7d',
     });
 
@@ -404,7 +600,7 @@ export class BarbershopsService {
   }
 
   /**
-   * Atualiza a assinatura do BarberPro (apenas SUPER_ADMIN)
+   * Atualiza a assinatura do KlypBarber (apenas SUPER_ADMIN)
    * Configura o plano contratado pela barbearia
    */
   async updateSubscription(shopId: string, dto: UpdateSubscriptionDto) {

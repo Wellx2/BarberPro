@@ -12,6 +12,8 @@ model Barbershop {
   name                   String
   cnpj                   String?                   @unique
   phone                  String
+  whatsapp               String?
+  email                  String?
   address                String?
   logo                   String?
   logoUrl                String?
@@ -32,6 +34,7 @@ model Barbershop {
   subscriptionEndDate    DateTime?
   maxTeamMembers         Int?                      @default(3)
   modulesEnabled         Json?
+  settings               Json?                     @default("{}")
   createdAt              DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
   agendaLocks            AgendaLock[]
@@ -121,6 +124,7 @@ model Barber {
   workModel        BarberWorkModel    @default(COMMISSION_ONLY)
   monthlySalary    Float?
   chairRentalFee   Float?
+  balance          Float              @default(0)
   iCalToken        String?            @unique @default(uuid())
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
