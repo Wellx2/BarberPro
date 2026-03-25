@@ -112,17 +112,17 @@ export const SettingsTab: React.FC = () => {
 
       setCurrentShop(updatedShopData);
 
-      // Persistir no localStorage para manter após reload
-      const savedShops = JSON.parse(localStorage.getItem('user_shops') || '[]');
+      // Atualizar lista de barbearias no localStorage para persistência local imediata
+      const savedShops = JSON.parse(localStorage.getItem('shops') || '[]');
       const updatedShops = savedShops.map((s: any) => 
         s.id === currentShop.id ? { ...s, ...updatedShopData } : s
       );
-      localStorage.setItem('user_shops', JSON.stringify(updatedShops));
+      localStorage.setItem('shops', JSON.stringify(updatedShops));
 
-      addNotification('success', 'Configurações de aparência e taxas salvas!');
-    } catch (error) {
-      console.error('Erro ao salvar aparência:', error);
-      addNotification('error', 'Erro ao salvar as configurações.');
+      addNotification('success', 'Configurações de White Label salvas!');
+    } catch (error: any) {
+      console.error('Erro detalhado ao salvar aparência:', error.response?.data || error);
+      addNotification('error', error.response?.data?.message || 'Erro ao salvar as configurações.');
     } finally {
       setIsSavingWl(false);
     }

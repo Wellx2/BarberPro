@@ -36,7 +36,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Variant styles
     let variantClass = "";
-    if (variant === 'primary') variantClass = "bg-[#f59e0b] bg-tenant-primary text-white hover:opacity-90 shadow-md";
+    if (variant === 'primary') variantClass = "bg-tenant-primary text-white hover:opacity-90 shadow-md";
     else if (variant === 'secondary') variantClass = "bg-gray-900 text-white hover:bg-gray-800 dark:bg-gray-700";
     else if (variant === 'outline') variantClass = "border-2 border-tenant-primary text-tenant-primary hover:bg-tenant-primary/5";
     else if (variant === 'danger') variantClass = "bg-red-500 text-white hover:bg-red-600";

@@ -323,7 +323,7 @@ export const TeamTab: React.FC = () => {
           size="lg"
           title={editTeamMember ? 'Editar Colaborador' : 'Novo Colaborador'}
         >
-          <div className="flex flex-col gap-5 pb-2">
+          <div className="flex flex-col gap-5 pb-2 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nome Completo *</label>
@@ -366,6 +366,26 @@ export const TeamTab: React.FC = () => {
                   </div>
                 </>
               )}
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Especialidades (separadas por vírgula)</label>
+                <Input 
+                  value={teamForm.specialties?.join(', ') || ''} 
+                  onChange={e => setTeamForm({ ...teamForm, specialties: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '') })} 
+                  placeholder="Corte Social, Barba, Pigmentação" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Breve Descrição / Bio</label>
+                <textarea
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-tenant-primary focus:border-transparent transition-all duration-200"
+                  rows={3}
+                  value={teamForm.description || ''}
+                  onChange={e => setTeamForm({ ...teamForm, description: e.target.value })}
+                  placeholder="Descreva a experiência e diferenciais do profissional..."
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Foto do Profissional</label>

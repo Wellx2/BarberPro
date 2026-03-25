@@ -14,10 +14,13 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true
+        },
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192.svg', 'pwa-512x512.svg'],
         manifest: {
-          name: 'BarberPro',
-          short_name: 'BarberPro',
+          name: 'Klypbarber',
+          short_name: 'Klypbarber',
           description: 'Gestão Inteligente de Barbearia',
           theme_color: '#111827',
           background_color: '#111827',
