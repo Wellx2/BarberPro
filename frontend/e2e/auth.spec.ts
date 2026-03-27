@@ -18,7 +18,7 @@ test.describe('8. Perfil & Conta', () => {
     await page.getByLabel(/WhatsApp/i).fill('11999887766');
     // Há dois campos E-mail (login e register), pegar o visível no form
     await page.getByLabel(/E-mail/i).fill(uniqueEmail);
-    await page.getByLabel(/Senha/i).fill('senha123');
+    await page.getByLabel(/Senha/i).fill('[SENHA_TESTE]');
 
     // Submeter
     await page.getByRole('button', { name: /Registrar e Acessar/i }).click();
@@ -59,7 +59,7 @@ test.describe('8. Perfil & Conta', () => {
     await page.waitForTimeout(1500);
 
     await page.getByPlaceholder('seu@email.com').fill('admin@klypbarber.com');
-    await page.getByPlaceholder('••••••••').fill('senha123');
+    await page.getByPlaceholder('••••••••').fill('[SENHA_TESTE]');
     await page.getByRole('button', { name: /Entrar/i }).click();
     await page.waitForTimeout(3000);
 

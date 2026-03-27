@@ -1,7 +1,7 @@
 {
-  "name": "Backend_Barberpro",
+  "name": "backend-klypbarber",
   "version": "1.0.0",
-  "description": "Backend completo para SaaS de gestão de barbearias (BarberPro)",
+  "description": "Backend completo para SaaS de gestão de barbearias (KlypBarber)",
   "main": "dist/main.js",
   "scripts": {
     "start": "nest start",
@@ -13,7 +13,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:reset": "prisma migrate reset --force"
+    "prisma:seed:stage": "ts-node prisma/seed-stage.ts",
+    "prisma:reset": "prisma migrate reset --force",
+    "vercel-build": "prisma generate && npm run build"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

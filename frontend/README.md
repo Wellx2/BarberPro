@@ -43,7 +43,7 @@ Recentemente, o projeto passou por uma grande evolução arquitetural:
 3. Inicie o servidor de desenvolvimento:
    ```bash
    npm run dev
-   ```
+4. Para publicar sua aplicação na internet, consulte o arquivo **[DEPLOY.md](./DEPLOY.md)** com o guia passo-a-passo.
 
 ---
 *BarberPro - Elevando o nível da sua barbearia.*

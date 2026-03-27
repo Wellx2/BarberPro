@@ -7,7 +7,7 @@ export class ResetPasswordDto {
     @IsNotEmpty({ message: 'Token é obrigatório' })
     token: string;
 
-    @ApiProperty({ example: 'nova_senha123', description: 'A nova senha do usuário' })
+    @ApiProperty({ example: 'nova_senha_exemplo', description: 'A nova senha do usuário' })
     @IsString()
     @MinLength(6, { message: 'A nova senha deve ter no mínimo 6 caracteres' })
     @IsNotEmpty({ message: 'Nova senha é obrigatória' })

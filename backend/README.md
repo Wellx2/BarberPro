@@ -1,6 +1,6 @@
-# BarberPro Backend 💈
+# KlypBarber Backend
 
-> Backend SaaS multi-tenant completo para gestão de barbearias
+Backend completo para SaaS de gestão de barbearias (KlypBarber)
 
 ## 🚀 Tecnologias
 
@@ -150,7 +150,7 @@ POST /api/auth/register-shop
   "shopName": "Minha Barbearia",
   "name": "João Silva",
   "email": "joao@example.com",
-  "password": "senha123",
+  "password": "[SENHA_TESTE]",
   "phone": "11999999999"
 }
 
@@ -158,7 +158,7 @@ POST /api/auth/register-shop
 POST /api/auth/login
 {
   "email": "joao@example.com",
-  "password": "senha123"
+  "password": "[SENHA_TESTE]"
 }
 
 # Login com Google OAuth (redireciona para Google)

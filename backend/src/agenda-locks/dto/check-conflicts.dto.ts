@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, Matches, IsOptional } from 'class-validator';
 
 export class CheckConflictsDto {
   @ApiProperty({
@@ -9,6 +9,10 @@ export class CheckConflictsDto {
   @IsString()
   @IsNotEmpty()
   teamMemberId: string;
+
+  @IsString()
+  @IsOptional()
+  barberId?: string;
 
   @ApiProperty({
     description: 'Data do bloqueio (YYYY-MM-DD)',

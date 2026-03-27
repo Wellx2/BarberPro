@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsDateString, IsOptional, IsArray } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsArray, Matches } from 'class-validator';
 
 export class CreateAgendaLockDto {
   @IsNotEmpty()
@@ -6,7 +6,10 @@ export class CreateAgendaLockDto {
   barberId: string;
 
   @IsNotEmpty()
-  @IsDateString()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'date deve estar no formato YYYY-MM-DD',
+  })
   date: string;
 
   @IsNotEmpty()

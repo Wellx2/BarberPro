@@ -5,7 +5,7 @@ async function loginAsAdmin(page: Page) {
   await page.goto('/login');
   await page.waitForTimeout(1500);
   await page.getByPlaceholder('seu@email.com').fill('admin@klypbarber.com');
-  await page.getByPlaceholder('••••••••').fill('senha123');
+  await page.getByPlaceholder('••••••••').fill('[SENHA_TESTE]');
   await page.getByRole('button', { name: /Entrar/i }).click();
   await page.waitForTimeout(3000);
 }
