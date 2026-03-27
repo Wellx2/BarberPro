@@ -1,4 +1,4 @@
-# 🔒 Guia de Segurança - BarberPro Backend
+# 🔒 Guia de Segurança - KlypBarber Backend
 
 ## ⚠️ Incidente de Segurança Resolvido
 
@@ -22,7 +22,7 @@
 ```yaml
 environment:
   POSTGRES_PASSWORD: postgres
-  JWT_SECRET: minha-senha-123
+  JWT_SECRET: [SUA_SENHA_AQUI]
 ```
 
 ✅ **CORRETO:**
@@ -111,7 +111,7 @@ Antes de fazer deploy:
 ### Incidente #1 - Credenciais Expostas no Git (29/01/2026)
 - **Severidade**: Alta
 - **Arquivo**: `docker-compose.yml`
-- **Credencial**: `POSTGRES_PASSWORD=postgres`
+- **Credencial**: `POSTGRES_PASSWORD=[SENHA_PADRAO]`
 - **Ação**: Removido hardcoded, implementado variáveis de ambiente
 - **Status**: Resolvido
 - **Responsável**: Wellington Tavares

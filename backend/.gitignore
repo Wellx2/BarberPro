@@ -9,6 +9,8 @@ build/
 # Environment variables (CRITICAL - contains secrets)
 .env
 .env.local
+.env.production
+.env.staging
 .env.*
 !.env.example
 !.env.*.example
@@ -46,6 +48,15 @@ coverage/
 *.tmp
 *.temp
 .cache/
+modified_utf8.txt
+out_modified.txt
+out_untracked.txt
+untracked_utf8.txt
+test-frontend-simulation.html
+test-prisma.ts
+test-*.ps1
 
 # Documentation
-docs/
+# Unignore docs as they contain important project guides
+!docs/
+
