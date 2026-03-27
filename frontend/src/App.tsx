@@ -240,7 +240,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Rotas de Admin */}
       <Route path="/admin/appointments" element={
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
           <Appointments />
         </ProtectedRoute>
       } />

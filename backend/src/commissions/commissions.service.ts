@@ -350,7 +350,17 @@ export class CommissionsService {
     });
 
     if (!commission) {
-      return { rate: 0, value: 0 };
+      // Fallback para a comissão padrão do perfil do barbeiro se não houver regra específica
+      const barber = await this.prisma.barber.findUnique({
+        where: { id: barberId },
+        select: { commissionRate: true },
+      });
+
+      const rate = barber?.commissionRate || 0;
+      return {
+        rate: rate,
+        value: (itemValue || 0) * (rate / 100),
+      };
     }
 
     // Verificar se deve aplicar baseado no tipo de item

@@ -18,7 +18,7 @@ enum SubscriptionStatus {
 export class UpdateSubscriptionDto {
   @ApiProperty({
     enum: SubscriptionTier,
-    description: 'Plano de assinatura do BarberPro',
+    description: 'Plano de assinatura do KlypBarber',
     required: false,
   })
   @IsOptional()

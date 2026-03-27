@@ -71,6 +71,17 @@ export class ServiceOrdersController {
   }
 
   /**
+   * Busca comanda específica por ID de agendamento
+   * Permite: ADMIN, BARBER
+   * ⚠️ DEVE vir ANTES de @Get(':id') para evitar conflito de rota no NestJS
+   */
+  @Get('appointment/:appointmentId')
+  @Roles(UserRole.ADMIN, UserRole.BARBER)
+  async findByAppointmentId(@Req() req, @Param('appointmentId') appointmentId: string) {
+    return this.serviceOrdersService.findByAppointmentId(req.user, appointmentId);
+  }
+
+  /**
    * Busca comanda específica
    * Permite: ADMIN, BARBER
    */

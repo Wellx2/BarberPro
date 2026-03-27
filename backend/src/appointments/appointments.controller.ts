@@ -22,6 +22,24 @@ import { CompleteAppointmentDto } from './dto/complete-appointment.dto';
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) { }
 
+  @Get('my-cancellations-count')
+  @Roles(UserRole.BARBER)
+  @ApiOperation({ summary: 'Obter contagem de cancelamentos do barbeiro (mensal e semanal)' })
+  async getMyCancellationsCount(@CurrentUser() user: any) {
+    const [monthly, weekly] = await Promise.all([
+      this.appointmentsService.countMonthlyCancellations(user.barberId),
+      this.appointmentsService.countWeeklyCancellations(user.barberId),
+    ]);
+    return { monthly, weekly };
+  }
+
+  @Post(':id/send-reminder')
+  @Roles(UserRole.BARBER, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Enviar lembrete manual ao cliente' })
+  async sendManualReminder(@Param('id') id: string) {
+    return this.appointmentsService.sendManualReminder(id);
+  }
+
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.BARBER, UserRole.CLIENT)
   @ApiOperation({ summary: 'Criar agendamento' })
@@ -41,10 +59,12 @@ export class AppointmentsController {
   findAll(
     @CurrentUser() user: any,
     @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('barberId') barberId?: string,
     @Query('status') status?: AppointmentStatus,
   ) {
-    return this.appointmentsService.findAll(user, { date, barberId, status });
+    return this.appointmentsService.findAll(user, { date, startDate, endDate, barberId, status });
   }
 
   @Get(':id')

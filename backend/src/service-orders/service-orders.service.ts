@@ -9,7 +9,7 @@ import { CommissionsService } from '../commissions/commissions.service';
 import { CreateServiceOrderDto } from './dto/create-service-order.dto';
 import { AddOrderItemDto } from './dto/add-order-item.dto';
 import { CompleteServiceOrderDto } from './dto/complete-service-order.dto';
-import { OrderStatus, OrderItemType } from '@prisma/client';
+import { OrderStatus, OrderItemType, AppointmentStatus } from '@prisma/client';
 
 /**
  * Service para gerenciar Comandas/Ordens de Serviço
@@ -35,6 +35,28 @@ export class ServiceOrdersService {
   async create(requester: any, dto: CreateServiceOrderDto) {
     if (!requester.shopId) {
       throw new ForbiddenException('Usuário não vinculado a uma barbearia');
+    }
+
+    // ✅ IDEMPOTÊNCIA: Se já existe uma OS para este agendamento, retorna ela diretamente
+    // Evita o erro de "Unique constraint failed on appointmentId"
+    if (dto.appointmentId) {
+      const existingOrder = await this.prisma.serviceOrder.findUnique({
+        where: { appointmentId: dto.appointmentId },
+        include: {
+          client: true,
+          barber: true,
+          appointment: true,
+          items: {
+            include: {
+              service: true,
+              product: true,
+            },
+          },
+        },
+      });
+      if (existingOrder && existingOrder.shopId === requester.shopId) {
+        return existingOrder;
+      }
     }
 
     // Valida cliente e barbeiro pertencem ao shop
@@ -283,7 +305,24 @@ export class ServiceOrdersService {
     if (order.appointmentId) {
       await this.prisma.appointment.update({
         where: { id: order.appointmentId },
-        data: { status: 'COMPLETED' },
+        data: { 
+          status: AppointmentStatus.COMPLETED,
+          totalPrice: finalTotal
+        },
+      });
+    }
+
+    // Calcula total de comissões do pedido
+    const totalCommissions = order.items.reduce(
+      (sum, item) => sum + (item.commissionValue || 0),
+      0,
+    );
+
+    // Incrementa o saldo do barbeiro no banco de dados
+    if (totalCommissions > 0) {
+      await this.prisma.barber.update({
+        where: { id: order.barberId },
+        data: { balance: { increment: totalCommissions } },
       });
     }
 
@@ -431,6 +470,29 @@ export class ServiceOrdersService {
     });
 
     if (!order) throw new NotFoundException('Comanda não encontrada');
+    return order;
+  }
+
+  /**
+   * Busca uma comanda específica por ID de agendamento
+   */
+  async findByAppointmentId(requester: any, appointmentId: string) {
+    const order = await this.prisma.serviceOrder.findFirst({
+      where: { appointmentId, shopId: requester.shopId },
+      include: {
+        client: true,
+        barber: true,
+        appointment: true,
+        items: {
+          include: {
+            service: true,
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!order) throw new NotFoundException('Comanda não encontrada para este agendamento');
     return order;
   }
 

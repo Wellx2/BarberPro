@@ -404,7 +404,7 @@ function printResults() {
 }
 
 async function main() {
-  console.log('🚀 Iniciando Análise Completa do Backend BarberPro\n');
+  console.log('🚀 Iniciando Análise Completa do Backend KlypBarber\\n');
   console.log('Data: ' + new Date().toLocaleString('pt-BR'));
   console.log('='.repeat(70));
   console.log('\n');

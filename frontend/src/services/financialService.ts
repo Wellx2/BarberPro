@@ -89,7 +89,9 @@ export interface PendingInvoice {
   amount: number;
   type: 'SERVICE' | 'PRODUCT' | 'PLAN';
   status: 'PENDING' | 'PAID' | 'CANCELLED';
+  paymentMethod?: string;
   description?: string;
+  items?: any[];
   date: string;
 }
 

@@ -37,11 +37,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Variant styles
     let variantClass = "";
     if (variant === 'primary') variantClass = "bg-tenant-primary text-white hover:opacity-90 shadow-md";
-    else if (variant === 'secondary') variantClass = "bg-gray-900 text-white hover:bg-gray-800 dark:bg-gray-700";
-    else if (variant === 'outline') variantClass = "border-2 border-tenant-primary text-tenant-primary hover:bg-tenant-primary/5";
-    else if (variant === 'danger') variantClass = "bg-red-500 text-white hover:bg-red-600";
-    else if (variant === 'success') variantClass = "bg-green-500 text-white hover:bg-green-600";
-    else if (variant === 'ghost') variantClass = "text-gray-700 hover:bg-gray-100 dark:text-gray-300";
+    else if (variant === 'secondary') variantClass = "bg-gray-900 text-white hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600";
+    else if (variant === 'outline') variantClass = "border-2 border-tenant-primary text-tenant-primary hover:bg-tenant-primary/5 dark:hover:bg-tenant-primary/10";
+    else if (variant === 'danger') variantClass = "bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700";
+    else if (variant === 'success') variantClass = "bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700";
+    else if (variant === 'ghost') variantClass = "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
 
     // Size styles
     let sizeClass = "";

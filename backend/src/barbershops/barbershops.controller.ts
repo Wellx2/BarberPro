@@ -13,6 +13,8 @@ import { UpdatePlansContentDto } from './dto/update-plans-content.dto';
 import { UpdateModulesDto } from './dto/update-modules.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { SwitchBarbershopDto } from './dto/switch-barbershop.dto';
+import { CreateBarbershopDto } from './dto/create-barbershop.dto';
+import { QuickSetupDto } from './dto/quick-setup.dto';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('barbershops')
@@ -35,6 +37,24 @@ export class BarbershopsController {
   })
   async findOnePublic(@Param('shopId') shopId: string) {
     return this.barbershopsService.findOnePublic(shopId);
+  }
+
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Criar uma nova barbearia (apenas SUPER_ADMIN)' })
+  async create(@Body() dto: CreateBarbershopDto) {
+    return this.barbershopsService.create(dto);
+  }
+
+  @Post('quick-setup')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Configuração rápida de barbearia com dados automáticos (apenas SUPER_ADMIN)' })
+  async quickSetup(@Body() dto: QuickSetupDto) {
+    return this.barbershopsService.quickSetup(dto);
   }
 
   // ===== ROTAS PROTEGIDAS =====
@@ -63,7 +83,7 @@ export class BarbershopsController {
 
   @Patch(':shopId/subscription')
   @Roles(UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Atualizar assinatura do BarberPro (apenas SUPER_ADMIN)' })
+  @ApiOperation({ summary: 'Atualizar assinatura do KlypBarber (apenas SUPER_ADMIN)' })
   async updateSubscription(@Param('shopId') shopId: string, @Body() dto: UpdateSubscriptionDto) {
     return this.barbershopsService.updateSubscription(shopId, dto);
   }

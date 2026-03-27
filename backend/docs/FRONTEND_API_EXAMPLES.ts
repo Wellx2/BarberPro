@@ -1,4 +1,4 @@
-// 🔧 API Service - BarberPro Frontend
+// 🔧 API Service - KlypBarber Frontend
 // Exemplos práticos de integração com o backend
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';

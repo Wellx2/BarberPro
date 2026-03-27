@@ -1,4 +1,4 @@
-# Dockerfile para Backend_Barberpro
+# Dockerfile para Backend_KlypBarber
 FROM node:20-alpine
 
 WORKDIR /app

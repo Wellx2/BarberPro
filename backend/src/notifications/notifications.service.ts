@@ -120,7 +120,7 @@ export class NotificationsService {
       }
 
       await this.transporter.sendMail({
-        from: process.env.MAIL_FROM || 'noreply@barberpro.com',
+        from: process.env.MAIL_FROM || 'noreply@klypbarber.com',
         to: user.email,
         subject: dto.title,
         text: dto.message,
@@ -252,6 +252,106 @@ export class NotificationsService {
       channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL, NotificationChannel.WHATSAPP],
     });
   }
+
+  // 🔥 Método para notificar o ADMINISTRADOR sobre cancelamento suspeito ou rotineiro
+  async notifyAdminOfCancellation(
+    appointment: any,
+    barber: any,
+    reason: string,
+    isSuspicious: boolean,
+    monthlyCount: number
+  ) {
+    const dateFormatted = new Date(appointment.date).toLocaleString('pt-BR');
+
+    // Encontrar o dono/admin da barbearia
+    const admins = await this.prisma.user.findMany({
+      where: {
+        shopId: appointment.shopId,
+        role: { in: ['ADMIN', 'SUPER_ADMIN'] as any },
+        active: true,
+      },
+      select: { id: true }
+    });
+
+    const title = isSuspicious ? '🚨 ALERTA: Cancelamento Suspeito' : 'Cancelamento por Barbeiro';
+    const message = isSuspicious
+      ? `ATENÇÃO: ${barber.name} atingiu ${monthlyCount} cancelamentos este mês! O agendamento de ${dateFormatted} foi cancelado. Motivo: ${reason}`
+      : `${barber.name} cancelou o agendamento de ${dateFormatted}. Motivo: ${reason}`;
+
+    for (const admin of admins) {
+      await this.create({
+        type: 'ADMIN_CANCELLATION_ALERT' as any,
+        recipientId: admin.id,
+        title,
+        message,
+        data: {
+          appointmentId: appointment.id,
+          barberId: barber.id,
+          isSuspicious,
+          monthlyCount,
+        },
+        priority: isSuspicious ? NotificationPriority.HIGH : NotificationPriority.NORMAL,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.WHATSAPP],
+      });
+    }
+  }
+
+  // 🔥 Lembrete Manual solicitado pelo barbeiro/admin
+  async sendManualReminder(appointmentId: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        client: {
+          include: { user: true }
+        },
+        barber: true,
+        services: { include: { service: true } }
+      }
+    });
+
+    if (!appointment || !appointment.client.user) {
+      throw new Error('Agendamento ou Cliente não encontrado');
+    }
+
+    const { client, barber, date, services } = appointment;
+    const clientUser = client.user;
+
+    // RESPEITO À LGPD / Configurações do Cliente
+    if (!clientUser.globalPushEnabled || !clientUser.active) {
+      console.log(`[Reminder] Ignorado para o cliente ${clientUser.name} (Notificações desativadas ou inativo)`);
+      return { success: false, reason: 'NOTIFICATIONS_DISABLED_BY_USER' };
+    }
+
+    const dateFormatted = new Date(date).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const serviceNames = services.map(s => s.service.name).join(', ');
+
+    await this.create({
+      type: 'REMINDER_2H' as any, // Reutilizando tipo de lembrete
+      recipientId: clientUser.id,
+      title: 'Lembrete de Agendamento',
+      message: `Olá ${clientUser.name}, passando para lembrar do seu horário em ${dateFormatted} com ${barber.name} (${serviceNames}).`,
+      data: {
+        appointmentId: appointment.id,
+        barberId: barber.id,
+      },
+      priority: NotificationPriority.HIGH,
+      channels: [NotificationChannel.IN_APP], // Conforme solicitado: apenas App por enquanto
+    });
+
+    /* 
+    // TODO: Implementar WhatsApp no futuro se ativado
+    // if (NotificationChannel.WHATSAPP) { ... }
+    */
+
+    return { success: true };
+  }
+
 
   // Método helper para notificar reagendamento
   async notifyRescheduled(

@@ -59,12 +59,24 @@ export class InvoicesService {
     return invoice;
   }
 
-  async findAll(requester: any, clientId?: string, status?: string) {
+  async findAll(requester: any, startDate?: string, endDate?: string, clientId?: string, status?: string) {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
 
     const whereClause: any = {
       shopId: requester.shopId,
     };
+
+    if (startDate || endDate) {
+      whereClause.createdAt = {};
+      if (startDate) {
+        whereClause.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = end;
+      }
+    }
 
     if (clientId) {
       whereClause.clientId = clientId;
@@ -74,7 +86,7 @@ export class InvoicesService {
       whereClause.status = status as InvoiceStatus;
     }
 
-    return this.prisma.invoice.findMany({
+    const invoices = await this.prisma.invoice.findMany({
       where: whereClause,
       include: {
         client: {
@@ -84,6 +96,11 @@ export class InvoicesService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return invoices.map(inv => ({
+      ...inv,
+      date: inv.createdAt.toISOString()
+    }));
   }
 
   async findOne(requester: any, id: string) {

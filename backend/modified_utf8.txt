@@ -1,4 +1,4 @@
-﻿backend/package.json
+backend/package.json
 backend/prisma/schema.prisma
 backend/src/agenda-locks/agenda-locks.module.ts
 backend/src/agenda-locks/agenda-locks.service.ts

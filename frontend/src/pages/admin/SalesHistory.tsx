@@ -19,6 +19,15 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+/** Safely parse a date string from the API and return a Date (or null on failure). */
+const safeDate = (raw: string | undefined | null): Date | null => {
+  if (!raw) return null;
+  // If it's a plain YYYY-MM-DD, append T00:00 so it's parsed as local time, not UTC
+  const normalised = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T00:00:00` : raw;
+  const d = new Date(normalised);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { shop } = useShop();
   const { addNotification } = useNotification();
@@ -162,8 +171,8 @@ export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group">
                     <td className="p-6">
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold dark:text-white">{new Date(inv.date).toLocaleDateString()}</span>
-                        <span className="text-[9px] text-gray-400 font-bold uppercase">{new Date(inv.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-sm font-bold dark:text-white">{safeDate(inv.date)?.toLocaleDateString() ?? '—'}</span>
+                        <span className="text-[9px] text-gray-400 font-bold uppercase">{safeDate(inv.date)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) ?? '—'}</span>
                       </div>
                     </td>
                     <td className="p-6">

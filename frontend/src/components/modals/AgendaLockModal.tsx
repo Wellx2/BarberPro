@@ -24,6 +24,12 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
     const [forceOverride, setForceOverride] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
+    // Garante o formato HH:mm exigido pelo backend
+    const formatTimeHHmm = (timeStr?: string): string => {
+        if (!timeStr) return '00:00';
+        return timeStr.substring(0, 5);
+    };
+
     // Sincroniza com shop hours se for dia inteiro
     useEffect(() => {
         if (isFullDay && shop) {
@@ -42,8 +48,8 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                     barberId: memberId,
                     teamMemberId: memberId,
                     date,
-                    startTime: isFullDay ? shop?.openingTime : startTime,
-                    endTime: isFullDay ? shop?.closingTime : endTime
+                    startTime: formatTimeHHmm(isFullDay ? shop?.openingTime : startTime),
+                    endTime: formatTimeHHmm(isFullDay ? shop?.closingTime : endTime)
                 });
                 const appointments = res.conflictingAppointments || (res as any).conflicts || [];
                 setConflicts(appointments);
@@ -77,8 +83,8 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
         try {
             await onConfirm({
                 date,
-                startTime: isFullDay ? shop?.openingTime : startTime,
-                endTime: isFullDay ? shop?.closingTime : endTime,
+                startTime: formatTimeHHmm(isFullDay ? shop?.openingTime : startTime),
+                endTime: formatTimeHHmm(isFullDay ? shop?.closingTime : endTime),
                 reason,
                 conflictingAppointmentIds: forceOverride ? conflicts.map(c => c.id) : [],
                 forceOverride, // Keep it if the parent needs it, but parent BarberDashboard doesn't pass it to API
@@ -110,7 +116,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                                 value={date}
                                 onChange={e => setDate(e.target.value)}
                                 min={new Date().toISOString().split('T')[0]}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-none"
                                 required
                             />
                         </div>
@@ -134,9 +140,9 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Início</label>
                                     <input
                                         type="time"
-                                        value={startTime}
+                                        value={formatTimeHHmm(startTime)}
                                         onChange={e => setStartTime(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-none"
                                         required
                                     />
                                 </div>
@@ -144,9 +150,9 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Términão</label>
                                     <input
                                         type="time"
-                                        value={endTime}
+                                        value={formatTimeHHmm(endTime)}
                                         onChange={e => setEndTime(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-none"
                                         required
                                     />
                                 </div>
@@ -161,7 +167,7 @@ export const AgendaLockModal: React.FC<AgendaLockModalProps> = ({ memberId, sele
                             value={reason}
                             onChange={e => setReason(e.target.value)}
                             placeholder="Ex: Reunião, Horário de Almoço..."
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-nãone"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary outline-none"
                             required
                         />
                     </div>

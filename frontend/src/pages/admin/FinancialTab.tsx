@@ -16,14 +16,8 @@ import {
   FinancialAnalytics, 
   AnalyticsPeriod 
 } from '../../services/financialService';
-import { 
-  expenseService, 
-  Expense, 
-  CreateExpenseDto, 
-  EXPENSE_TYPE_LABELS 
-} from '../../services/expenseService';
 import { Modal, Alert } from '../../components/feedback';
-import { Plus, Edit3, Trash2, Check, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 export const FinancialTab: React.FC = () => {
   const { shop: currentShop } = useShop();
@@ -37,16 +31,6 @@ export const FinancialTab: React.FC = () => {
   const [customRange, setCustomRange] = useState({ startDate: '', endDate: '' });
   const [useCustomRange, setUseCustomRange] = useState(false);
   
-  const [fixedCosts, setFixedCosts] = useState<Expense[]>([]);
-  const [loadingExpenses, setLoadingExpenses] = useState(false);
-  const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [editExpense, setEditExpense] = useState<Expense | null>(null);
-  const [expenseForm, setExpenseForm] = useState<CreateExpenseDto>({ 
-    type: 'RENT', 
-    description: '', 
-    amount: 0, 
-    isRecurring: false 
-  });
 
   const [showRevenueDetail, setShowRevenueDetail] = useState(false);
   const [showCommissionDetail, setShowCommissionDetail] = useState(false);
@@ -54,7 +38,10 @@ export const FinancialTab: React.FC = () => {
 
   const { shop: shopFromContext } = useShop(); // For details if needed
 
-  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  const formatDate = (date: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  };
   const maxRangeDate = formatDate(new Date());
   const minRangeDate = (() => {
     const min = new Date();
@@ -96,71 +83,6 @@ export const FinancialTab: React.FC = () => {
 
     loadData();
   }, [currentShop?.id, financialPeriod, customRange.startDate, customRange.endDate, useCustomRange, addNotification]);
-
-  // Carregar despesas
-  useEffect(() => {
-    if (!currentShop?.id) return;
-    setLoadingExpenses(true);
-    expenseService.list()
-      .then(data => setFixedCosts(data))
-      .catch(err => {
-        console.error('Erro ao carregar despesas:', err);
-        setFixedCosts([]);
-      })
-      .finally(() => setLoadingExpenses(false));
-  }, [currentShop?.id]);
-
-  const handleOpenExpenseModal = (expense?: Expense) => {
-    if (expense) {
-      setEditExpense(expense);
-      setExpenseForm({ type: expense.type, description: expense.description, amount: expense.amount, isRecurring: expense.isRecurring, dueDate: expense.dueDate });
-    } else {
-      setEditExpense(null);
-      setExpenseForm({ type: 'RENT', description: '', amount: 0, isRecurring: false, dueDate: undefined });
-    }
-    setShowExpenseModal(true);
-  };
-
-  const handleSaveExpense = async () => {
-    if (!expenseForm.description.trim()) { addNotification('error', 'Descrição é obrigatória'); return; }
-    if (!expenseForm.amount || expenseForm.amount <= 0) { addNotification('error', 'Valor deve ser maior que zero'); return; }
-    try {
-      if (editExpense) {
-        await expenseService.update(editExpense.id, expenseForm);
-        addNotification('success', 'Despesa atualizada!');
-      } else {
-        await expenseService.create(expenseForm);
-        addNotification('success', 'Despesa criada!');
-      }
-      const data = await expenseService.list();
-      setFixedCosts(data);
-      setShowExpenseModal(false);
-    } catch (err: any) {
-      addNotification('error', err?.response?.data?.message || 'Erro ao salvar despesa');
-    }
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    if (!window.confirm('Excluir esta despesa?')) return;
-    try {
-      await expenseService.remove(id);
-      addNotification('success', 'Despesa excluída!');
-      setFixedCosts(prev => prev.filter(e => e.id !== id));
-    } catch (err: any) {
-      addNotification('error', 'Erro ao excluir despesa');
-    }
-  };
-
-  const handleMarkExpensePaid = async (id: string) => {
-    try {
-      await expenseService.markAsPaid(id);
-      addNotification('success', 'Marcada como paga!');
-      const data = await expenseService.list();
-      setFixedCosts(data);
-    } catch (err: any) {
-      addNotification('error', 'Erro ao marcar como paga');
-    }
-  };
 
   useEffect(() => {
     // Carregar dados iniciais
@@ -389,27 +311,33 @@ export const FinancialTab: React.FC = () => {
             <ChevronDown size={18} className="text-gray-400" />
           </div>
           <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPie>
-                <Pie
-                  data={revenueData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {revenueData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                />
-                <Legend verticalAlign="bottom" height={36}/>
-              </RechartsPie>
-            </ResponsiveContainer>
+            {revenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie
+                    data={revenueData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {revenueData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value: number) => `R$ ${value.toFixed(2)}`}
+                  />
+                  <Legend verticalAlign="bottom" height={36}/>
+                </RechartsPie>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-gray-400 font-bold uppercase text-sm">Sem Receita no Período</span>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -425,27 +353,33 @@ export const FinancialTab: React.FC = () => {
             <ChevronDown size={18} className="text-gray-400" />
           </div>
           <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPie>
-                <Pie
-                  data={expenseData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {expenseData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                />
-                <Legend verticalAlign="bottom" height={36}/>
-              </RechartsPie>
-            </ResponsiveContainer>
+            {expenseData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPie>
+                  <Pie
+                    data={expenseData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {expenseData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value: number) => `R$ ${value.toFixed(2)}`}
+                  />
+                  <Legend verticalAlign="bottom" height={36}/>
+                </RechartsPie>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-gray-400 font-bold uppercase text-sm">Sem Despesas no Período</span>
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -514,165 +448,10 @@ export const FinancialTab: React.FC = () => {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-      {/* Seção Custos Fixos / Despesas */}
-      <Card className="mt-4">
-        <Card.Body className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-black text-base md:text-lg text-gray-900 dark:text-white uppercase">Custos Fixos & Despesas</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Gerencie aluguel, contas e outras despesas recorrentes</p>
-            </div>
-            <Button size="md" variant="primary" icon={<Plus size={18} />} onClick={() => handleOpenExpenseModal()} className="flex-shrink-0">
-              <span className="hidden sm:inline">Nova Despesa</span>
-            </Button>
-          </div>
-
-          {loadingExpenses ? (
-            <div className="text-center py-8">
-              <div className="h-8 w-8 border-4 border-tenant-primary border-t-transparent animate-spin rounded-full inline-block"></div>
-              <p className="mt-3 text-gray-500 text-sm">Carregando despesas...</p>
-            </div>
-          ) : fixedCosts.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <DollarSign size={40} className="mx-auto mb-3 opacity-40" />
-              <p className="text-sm">Nenhuma despesa cadastrada.</p>
-              <p className="text-xs mt-1">Clique em "Nova Despesa" para começar.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Descrição</th>
-                    <th className="text-left py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Tipo</th>
-                    <th className="text-right py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Valor</th>
-                    <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Recorrente</th>
-                    <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Status</th>
-                    <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fixedCosts.map(expense => (
-                    <tr key={expense.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="py-2.5 px-3 text-gray-900 dark:text-white font-medium">{expense.description}</td>
-                      <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs font-medium">
-                          {EXPENSE_TYPE_LABELS[expense.type] || expense.type}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-bold text-gray-900 dark:text-white">
-                        R$ {expense.amount.toFixed(2)}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        {expense.isRecurring ? (
-                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs font-medium">Sim</span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">Não</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        {expense.isPaid ? (
-                          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded text-xs font-bold">Paga</span>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded text-xs font-bold">Pendente</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center justify-center gap-1">
-                          {!expense.isPaid && (
-                            <button onClick={() => handleMarkExpensePaid(expense.id)} title="Marcar como paga"
-                              className="p-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100 transition-colors">
-                              <Check size={14} />
-                            </button>
-                          )}
-                          <button onClick={() => handleOpenExpenseModal(expense)} title="Editar"
-                            className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition-colors">
-                            <Edit3 size={14} />
-                          </button>
-                          <button onClick={() => handleDeleteExpense(expense.id)} title="Excluir"
-                            className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 transition-colors">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-300 dark:border-gray-600">
-                    <td colSpan={2} className="py-2.5 px-3 font-black text-gray-900 dark:text-white">Total</td>
-                    <td className="py-2.5 px-3 text-right font-black text-red-600 dark:text-red-400">
-                      R$ {fixedCosts.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
-                    </td>
-                    <td colSpan={3}></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          )}
-        </Card.Body>
-      </Card>
-    </div>
-
-      {/* Modal de Despesa */}
-      {showExpenseModal && (
-        <Modal
-          isOpen={showExpenseModal}
-          onClose={() => setShowExpenseModal(false)}
-          title={editExpense ? 'Editar Despesa' : 'Nova Despesa'}
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
-                <select
-                  value={expenseForm.type}
-                  onChange={e => setExpenseForm(prev => ({ ...prev, type: e.target.value as any }))}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-                >
-                  {Object.entries(EXPENSE_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Valor</label>
-                <Input
-                  type="number"
-                  value={expenseForm.amount}
-                  onChange={e => setExpenseForm(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
-              <Input
-                value={expenseForm.description}
-                onChange={e => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Ex: Aluguel da sala"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="recorrente"
-                checked={expenseForm.isRecurring}
-                onChange={e => setExpenseForm(prev => ({ ...prev, isRecurring: e.target.checked }))}
-                className="w-4 h-4 text-tenant-primary rounded border-gray-300"
-              />
-              <label htmlFor="recorrente" className="text-sm font-bold text-gray-700 dark:text-gray-300">Despesa Recorrente (Mensal)</label>
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" className="flex-1" onClick={() => setShowExpenseModal(false)}>Cancelar</Button>
-              <Button variant="primary" className="flex-1" onClick={handleSaveExpense}>Salvar</Button>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {/* Alertas Inteligentes */}
-      {(analytics.margin < 15 || analytics.isLoss || analytics.avgTicket < 50) && (
+      {financialPeriod !== 'TODAY' && (analytics.margin < 15 || analytics.isLoss || analytics.avgTicket < 50) && (
         <Card className="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/10 mt-6">
           <Card.Body className="space-y-3">
             <div className="flex items-center gap-2">

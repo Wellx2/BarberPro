@@ -1212,7 +1212,10 @@ export const BarberDashboard: React.FC = () => {
           <p className="font-semibold text-gray-900 dark:text-white capitalize">{formatDate(selectedDate)}</p>
           <input
             type="date"
-            value={selectedDate.toISOString().split('T')[0]}
+            value={(() => {
+              const pad = (n: number) => n.toString().padStart(2, '0');
+              return `${selectedDate.getFullYear()}-${pad(selectedDate.getMonth() + 1)}-${pad(selectedDate.getDate())}`;
+            })()}
             onChange={e => setSelectedDate(new Date(e.target.value + 'T12:00:00'))}
             className="mt-1 text-xs text-gray-500 dark:text-gray-400 border-0 bg-transparent cursor-pointer focus:outline-none"
           />

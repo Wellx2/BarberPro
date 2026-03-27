@@ -6,7 +6,6 @@ import {
   IsDateString,
   ValidateNested,
   IsArray,
-  IsPhoneNumber,
   Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -26,7 +25,8 @@ export class CreateClientDto {
   birthDate?: string;
 
   @IsNotEmpty()
-  @IsPhoneNumber('BR')
+  @IsString()
+  @Matches(/^(\+55)?\d{10,11}$/, { message: 'Telefone inválido. Use DDD + número (ex: 11999999999)' })
   phone: string;
 
   @IsOptional()

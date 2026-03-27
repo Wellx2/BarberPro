@@ -38,6 +38,7 @@ import { SupplyItemsModule } from './supply-items/supply-items.module';
   imports: [
     // Configuração
     ConfigModule.forRoot({
+      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
       isGlobal: true,
     }),
 

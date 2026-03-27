@@ -39,10 +39,12 @@ export class InvoicesController {
   @ApiOperation({ summary: 'Listar faturas' })
   findAll(
     @CurrentUser() user: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Query('clientId') clientId?: string,
     @Query('status') status?: string,
   ) {
-    return this.invoicesService.findAll(user, clientId, status);
+    return this.invoicesService.findAll(user, startDate, endDate, clientId, status);
   }
 
   @Get(':id')

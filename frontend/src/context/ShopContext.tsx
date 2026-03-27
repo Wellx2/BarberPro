@@ -213,9 +213,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // 2. Check URL Path (First segment as shopSlug) - klypbarber.com.br/nome-da-barbearia
     const pathname = window.location.pathname;
     const pathParts = pathname.split('/').filter(p => p !== '');
-    // Ignore internal system routes at root level
-    const systemRoutes = ['login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'reset-password'];
-    const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) ? pathParts[0] : null;
+    // Ignore internal system routes and static files at root level
+    const systemRoutes = [
+      'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 
+      'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico'
+    ];
+    const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) && !pathParts[0].includes('.') ? pathParts[0] : null;
 
     // Slugify function para comparar slugs 
     const slugify = (str: string) => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
@@ -310,10 +313,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const pathname = location.pathname;
     const pathParts = pathname.split('/').filter(p => p !== '');
     
-    // Ignore internal system routes at root level
-    const systemRoutes = ['login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'reset-password', 'auth'];
+    // Ignore internal system routes and static files at root level
+    const systemRoutes = [
+      'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 
+      'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico'
+    ];
     
-    const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) ? pathParts[0] : null;
+    const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) && !pathParts[0].includes('.') ? pathParts[0] : null;
 
     if (!potentialSlug) return;
 

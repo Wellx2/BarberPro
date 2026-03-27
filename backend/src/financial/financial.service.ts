@@ -468,6 +468,7 @@ export class FinancialService {
       .sort((a, b) => b.revenue - a.revenue)
       .map((barber) => ({
         ...barber,
+        commissionRate: barber.serviceRate, // Map technical name to frontend expectation
         revenue: Number(barber.revenue.toFixed(2)),
         commission: Number(barber.commission.toFixed(2)),
         netForShop: Number(barber.netForShop.toFixed(2)),

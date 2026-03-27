@@ -3,12 +3,12 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: barberpro-db
+    container_name: KlypBarber-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-barberpro}
+      POSTGRES_DB: ${POSTGRES_DB:-KlypBarber}
     ports:
       - '5432:5432'
     volumes:
@@ -16,12 +16,12 @@ services:
 
   app:
     build: .
-    container_name: barberpro-api
+    container_name: KlypBarber-api
     restart: unless-stopped
     ports:
       - '3000:3000'
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-barberpro}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-KlypBarber}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}

@@ -271,7 +271,7 @@ export class AuthService {
     await this.notificationsService.create({
       type: 'FORGOT_PASSWORD' as any,
       recipientId: user.id,
-      title: 'Recuperação de Senha - BarberPro',
+      title: 'Recuperação de Senha - KlypBarber',
       message: `Você solicitou a recuperação de senha. Clique no link abaixo para criar uma nova senha:\n\n${resetUrl}\n\nO link expira em 1 hora. Se você não solicitou isso, ignore este e-mail.`,
       priority: NotificationPriority.HIGH,
       channels: [NotificationChannel.EMAIL],

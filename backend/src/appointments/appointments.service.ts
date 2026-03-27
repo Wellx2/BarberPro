@@ -77,25 +77,23 @@ export class AppointmentsService {
     const scheduledFor = new Date(dto.date);
     const now = new Date();
 
-    // ========== VALIDAÇÃO 1: Data não pode estar no passado ==========
-    if (scheduledFor <= now) {
-      throw new BadRequestException('Não é possível agendar para data/hora passada');
-    }
-
-    // ========== VALIDAÇÃO 2: Horário anterior ao atual (mesmo dia) ==========
+    // ========== VALIDAÇÃO: Data não pode estar no passado ==========
+    // Para CLIENTE: validação estrita (não pode agendar para horário passado)
+    // Para BARBER/ADMIN: pode criar agendamento retroativo no mesmo dia (ex: cliente walk-in)
+    const isClientRole = requester.role === UserRole.CLIENT;
+    const isPastDate = scheduledFor < now;
     const isSameDay =
       scheduledFor.getFullYear() === now.getFullYear() &&
       scheduledFor.getMonth() === now.getMonth() &&
       scheduledFor.getDate() === now.getDate();
 
-    if (isSameDay && scheduledFor <= now) {
-      const minTime = now.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      throw new BadRequestException(
-        `Não é possível agendar para horário anterior. Horário mínimo para hoje: ${minTime}`,
-      );
+    if (isClientRole && isPastDate) {
+      throw new BadRequestException('Não é possível agendar para data/hora passada');
+    }
+
+    // Para qualquer papel: não pode agendar para datas anteriores ao dia atual
+    if (!isSameDay && scheduledFor < now) {
+      throw new BadRequestException('Não é possível agendar para dias anteriores ao de hoje');
     }
 
     // Valida que cliente e barbeiro pertencem ao shop
@@ -278,7 +276,13 @@ export class AppointmentsService {
 
   async findAll(
     requester: any,
-    filters?: { date?: string; barberId?: string; status?: AppointmentStatus },
+    filters?: { 
+      date?: string; 
+      startDate?: string; 
+      endDate?: string; 
+      barberId?: string; 
+      status?: AppointmentStatus 
+    },
   ) {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
 
@@ -292,6 +296,10 @@ export class AppointmentsService {
       const nextDay = new Date(date);
       nextDay.setDate(nextDay.getDate() + 1);
       where.date = { gte: date, lt: nextDay };
+    } else if (filters?.startDate || filters?.endDate) {
+      where.date = {};
+      if (filters.startDate) where.date.gte = new Date(filters.startDate);
+      if (filters.endDate) where.date.lte = new Date(filters.endDate);
     }
 
     if (filters?.barberId) {
@@ -325,6 +333,16 @@ export class AppointmentsService {
         products: { include: { product: true } },
         client: true,
         barber: true,
+        serviceOrder: {
+          include: {
+            items: {
+              include: {
+                service: true,
+                product: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { date: 'asc' },
     });
@@ -338,6 +356,16 @@ export class AppointmentsService {
         products: { include: { product: true } },
         client: true,
         barber: true,
+        serviceOrder: {
+          include: {
+            items: {
+              include: {
+                service: true,
+                product: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -480,6 +508,45 @@ export class AppointmentsService {
     return updated;
   }
 
+  async countMonthlyCancellations(barberId: string) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    return this.prisma.appointment.count({
+      where: {
+        barberId,
+        status: AppointmentStatus.CANCELLED_BY_BARBER,
+        cancelledAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+    });
+  }
+
+  async countWeeklyCancellations(barberId: string) {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Início da semana (Domingo)
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return this.prisma.appointment.count({
+      where: {
+        barberId,
+        status: AppointmentStatus.CANCELLED_BY_BARBER,
+        cancelledAt: {
+          gte: startOfWeek,
+          lte: endOfWeek,
+        },
+      },
+    });
+  }
+
   async cancel(requester: any, id: string, dto: CancelAppointmentDto) {
     // Validação já está no DTO: @IsNotEmpty, @MinLength(5)
     const appointment = await this.prisma.appointment.findUnique({
@@ -573,6 +640,30 @@ export class AppointmentsService {
           appointment.client,
           dto.cancelReason,
         );
+
+        // 🔥 ANTI-FRAUDE: Notificar Admin se for cancelamento por Barbeiro
+        if (requester.role === UserRole.BARBER) {
+          const monthlyCount = await this.countMonthlyCancellations(requester.barberId);
+          const isSuspicious = monthlyCount >= 10;
+
+          await this.notificationsService.notifyAdminOfCancellation(
+            updated,
+            appointment.barber,
+            dto.cancelReason,
+            isSuspicious,
+            monthlyCount
+          );
+
+          if (isSuspicious) {
+            await this.logAction(
+              'SUSPICIOUS_CANCELLATION_LIMIT',
+              id,
+              requester.id,
+              requester.shopId,
+              `Barbeiro atingiu ${monthlyCount} cancelamentos no mês. Possível fraude.`
+            );
+          }
+        }
       } else {
         // Cliente cancelou → notificar barbeiro
         await this.notificationsService.notifyCancellationByClient(
@@ -826,10 +917,10 @@ export class AppointmentsService {
 
     let ical = 'BEGIN:VCALENDAR\r\n';
     ical += 'VERSION:2.0\r\n';
-    ical += `PRODID:-//BarberPro//Agenda ${barber.name.replace(/\s/g, '')}//PT-BR\r\n`;
+    ical += `PRODID:-//KlypBarber//Agenda ${barber.name.replace(/\s/g, '')}//PT-BR\r\n`;
     ical += 'CALSCALE:GREGORIAN\r\n';
     ical += 'METHOD:PUBLISH\r\n';
-    ical += `X-WR-CALNAME:BarberPro - ${barber.name}\r\n`;
+    ical += `X-WR-CALNAME:KlypBarber - ${barber.name}\r\n`;
     ical += 'X-WR-TIMEZONE:America/Sao_Paulo\r\n';
 
     for (const apt of appointments) {
@@ -843,7 +934,7 @@ export class AppointmentsService {
 
       const now = new Date();
       ical += 'BEGIN:VEVENT\r\n';
-      ical += `UID:${apt.id}@barberpro.com\r\n`;
+      ical += `UID:${apt.id}@klypbarber.com\\r\\n`;
       ical += `DTSTAMP:${formatDate(now)}\r\n`;
       ical += `DTSTART:${formatDate(dtStart)}\r\n`;
       ical += `DTEND:${formatDate(dtEnd)}\r\n`;
@@ -862,5 +953,9 @@ export class AppointmentsService {
     ical += 'END:VCALENDAR\r\n';
 
     return ical;
+  }
+
+  async sendManualReminder(id: string) {
+    return this.notificationsService.sendManualReminder(id);
   }
 }

@@ -175,9 +175,17 @@ export const appointmentService = {
    * @param date - Data não formato Date
    */
   async getBarberSchedule(barberId: string | null, date: Date): Promise<Appointment[]> {
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
     // Se barberId estiver disponível, filtrar por ele; caso contrário, backend filtra por JWT (BARBER role)
-    return this.list(barberId ? { barberId, date: dateStr } : { date: dateStr });
+    return this.list({
+      ...(barberId ? { barberId } : {}),
+      startDate: startOfDay.toISOString(),
+      endDate: endOfDay.toISOString()
+    });
   },
 
   /**
@@ -185,8 +193,15 @@ export const appointmentService = {
    * @param date - Data não formato Date
    */
   async getAppointmentsByDate(date: Date): Promise<Appointment[]> {
-    const dateStr = date.toISOString().split('T')[0];
-    return this.list({ date: dateStr });
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return this.list({ 
+      startDate: startOfDay.toISOString(), 
+      endDate: endOfDay.toISOString() 
+    });
   },
 
   /**

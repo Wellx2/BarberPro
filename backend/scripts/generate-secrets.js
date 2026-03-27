@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Script para gerar secrets seguros para BarberPro
+ * Script para gerar secrets seguros para KlypBarber
  * 
  * Uso:
  *   node scripts/generate-secrets.js
@@ -9,7 +9,7 @@
 
 const crypto = require('crypto');
 
-console.log('\n🔒 Gerador de Secrets para BarberPro\n');
+console.log('\\n🔒 Gerador de Secrets para KlypBarber\\n');
 console.log('━'.repeat(70));
 
 console.log('\n📝 Copie estes valores para seu arquivo .env:\n');
@@ -23,7 +23,7 @@ const pgPassword = crypto.randomBytes(32).toString('base64').slice(0, 24);
 console.log(`POSTGRES_PASSWORD="${pgPassword}"`);
 
 console.log('\n# Atualize também a DATABASE_URL:');
-console.log(`DATABASE_URL="postgresql://postgres:${pgPassword}@localhost:5432/barberpro"`);
+console.log(`DATABASE_URL=\"postgresql://postgres:${pgPassword}@localhost:5432/klypbarber\"`);
 
 console.log('\n━'.repeat(70));
 console.log('\n⚠️  IMPORTANTE:');

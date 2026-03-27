@@ -124,6 +124,40 @@ export class BarbersService {
     });
   }
 
+  async findPublicById(id: string) {
+    const barber = await this.prisma.barber.findFirst({
+      where: {
+        id,
+        active: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        nickname: true,
+        avatar: true,
+        description: true,
+        specialties: true,
+        rating: true,
+        role: true,
+        experienceYears: true,
+        shop: {
+          select: { name: true }
+        }
+      },
+    });
+
+    if (!barber) {
+      throw new NotFoundException('Barbeiro não encontrado');
+    }
+
+    return {
+      ...barber,
+      experience: barber.experienceYears ? `${barber.experienceYears} Anos` : undefined,
+      unit: barber.shop?.name,
+      shop: undefined
+    };
+  }
+
   async findOne(requester: any, id: string) {
     const barber = await this.prisma.barber.findUnique({ where: { id } });
     if (!barber || barber.shopId !== requester.shopId)

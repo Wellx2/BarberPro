@@ -14,4 +14,10 @@ export class PublicBarbersController {
   async findPublicByShop(@Param('shopId') shopId: string) {
     return this.barbersService.findPublicByShop(shopId);
   }
+  @Public()
+  @Get('public/:id')
+  @ApiOperation({ summary: 'Buscar barbeiro publico por ID' })
+  async findPublicById(@Param('id') id: string) {
+    return this.barbersService.findPublicById(id);
+  }
 }

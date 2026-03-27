@@ -1,4 +1,4 @@
-# BarberPro Backend - Copilot Instructions
+# KlypBarber Backend - Copilot Instructions
 
 ## Arquitetura Geral
 
@@ -229,7 +229,7 @@ Implementação: [AuthService.registerShop()](src/auth/auth.service.ts)
 ### Variáveis de Ambiente
 Requeridas em `.env`:
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/barberpro"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/KlypBarber"
 JWT_SECRET="seu-secret-aqui"
 JWT_REFRESH_SECRET="seu-refresh-secret-aqui"
 FRONTEND_URL="http://localhost:3000"  # Para CORS

@@ -11,6 +11,13 @@ import {
     SupplyUnitType,
     CreateSupplyItemDto
 } from '../../services/supplyItemService';
+import { 
+    expenseService, 
+    Expense, 
+    CreateExpenseDto, 
+    EXPENSE_TYPE_LABELS 
+} from '../../services/expenseService';
+import { Check, DollarSign } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { Button, Card, Input, Select } from '../../components/ui';
 import { Modal, Alert } from '../../components/feedback';
@@ -44,19 +51,35 @@ export const Supplies: React.FC = () => {
     const [adjustDelta, setAdjustDelta] = useState(0);
     const [adjustNotes, setAdjustNotes] = useState('');
 
+    // === Expense / Custo Fixo States ===
+    const [fixedCosts, setFixedCosts] = useState<Expense[]>([]);
+    const [loadingExpenses, setLoadingExpenses] = useState(false);
+    const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [editExpense, setEditExpense] = useState<Expense | null>(null);
+    const [expenseForm, setExpenseForm] = useState<CreateExpenseDto>({ 
+        type: 'RENT', 
+        description: '', 
+        amount: 0, 
+        isRecurring: false 
+    });
+
     const loadData = async () => {
         try {
             setLoading(true);
-            const [itemsData, categoriesData] = await Promise.all([
+            setLoadingExpenses(true);
+            const [itemsData, categoriesData, expensesData] = await Promise.all([
                 supplyItemService.list(),
-                supplyItemService.listCategories().catch(() => [])
+                supplyItemService.listCategories().catch(() => []),
+                expenseService.list().catch(() => [])
             ]);
             setItems(itemsData);
             setCategories(categoriesData);
+            setFixedCosts(expensesData as Expense[]);
         } catch (error) {
-            addNotification('error', 'Erro ao carregar insumos');
+            addNotification('error', 'Erro ao carregar insumos e custos fixos');
         } finally {
             setLoading(false);
+            setLoadingExpenses(false);
         }
     };
 
@@ -145,6 +168,60 @@ export const Supplies: React.FC = () => {
         }
     };
 
+    // === Expense Actions ===
+    const handleOpenExpenseModal = (expense?: Expense) => {
+        if (expense) {
+            setEditExpense(expense);
+            setExpenseForm({ type: expense.type, description: expense.description, amount: expense.amount, isRecurring: expense.isRecurring, dueDate: expense.dueDate });
+        } else {
+            setEditExpense(null);
+            setExpenseForm({ type: 'RENT', description: '', amount: 0, isRecurring: false, dueDate: undefined });
+        }
+        setShowExpenseModal(true);
+    };
+
+    const handleSaveExpense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!expenseForm.description.trim()) { addNotification('error', 'Descrição é obrigatória'); return; }
+        if (!expenseForm.amount || expenseForm.amount <= 0) { addNotification('error', 'Valor deve ser maior que zero'); return; }
+        try {
+            if (editExpense) {
+                await expenseService.update(editExpense.id, expenseForm);
+                addNotification('success', 'Despesa atualizada!');
+            } else {
+                await expenseService.create(expenseForm);
+                addNotification('success', 'Despesa criada!');
+            }
+            const data = await expenseService.list();
+            setFixedCosts(data);
+            setShowExpenseModal(false);
+        } catch (err: any) {
+            addNotification('error', err?.response?.data?.message || 'Erro ao salvar despesa');
+        }
+    };
+
+    const handleDeleteExpense = async (id: string) => {
+        if (!window.confirm('Excluir esta despesa?')) return;
+        try {
+            await expenseService.remove(id);
+            addNotification('success', 'Despesa excluída!');
+            setFixedCosts(prev => prev.filter(e => e.id !== id));
+        } catch (err: any) {
+            addNotification('error', 'Erro ao excluir despesa');
+        }
+    };
+
+    const handleMarkExpensePaid = async (id: string) => {
+        try {
+            await expenseService.markAsPaid(id);
+            addNotification('success', 'Marcada como paga!');
+            const data = await expenseService.list();
+            setFixedCosts(data);
+        } catch (err: any) {
+            addNotification('error', 'Erro ao marcar como paga');
+        }
+    };
+
     const lowStockItems = items.filter(i => i.isLowStock);
 
     return (
@@ -206,8 +283,8 @@ export const Supplies: React.FC = () => {
                 <Card.Body className="space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Gestão de Insumos</h2>
-                            <p className="text-sm text-gray-500">Controle toalhas, lâminas, sprays e materiais de consumo</p>
+                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Insumos/Custos Fixos</h2>
+                            <p className="text-sm text-gray-500">Controle toalhas, lâminas e gerencie aluguel, contas e despesas recorrentes</p>
                         </div>
                         <div className="flex gap-2">
                             <Button
@@ -340,6 +417,105 @@ export const Supplies: React.FC = () => {
                 </Card.Body>
             </Card>
 
+            {/* Seção Custos Fixos / Despesas */}
+            <Card>
+                <Card.Body className="space-y-4">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                        <div>
+                            <h3 className="font-black text-base md:text-lg text-gray-900 dark:text-white uppercase">Custos Fixos & Despesas</h3>
+                            <p className="text-xs text-gray-500 mt-0.5">Gerencie aluguel, contas e outras despesas recorrentes</p>
+                        </div>
+                        <Button size="md" variant="primary" icon={<Plus size={18} />} onClick={() => handleOpenExpenseModal()} className="flex-shrink-0">
+                            <span>Nova Despesa</span>
+                        </Button>
+                    </div>
+
+                    {loadingExpenses ? (
+                        <div className="text-center py-8">
+                            <div className="h-8 w-8 border-4 border-tenant-primary border-t-transparent animate-spin rounded-full inline-block"></div>
+                            <p className="mt-3 text-gray-500 text-sm">Carregando despesas...</p>
+                        </div>
+                    ) : fixedCosts.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+                            <DollarSign size={40} className="mx-auto mb-3 opacity-40 text-gray-400" />
+                            <p className="text-sm">Nenhuma despesa cadastrada.</p>
+                            <p className="text-xs mt-1">Clique em "Nova Despesa" para começar.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                                        <th className="text-left py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Descrição</th>
+                                        <th className="text-left py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Tipo</th>
+                                        <th className="text-right py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Valor</th>
+                                        <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Recorrente</th>
+                                        <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Status</th>
+                                        <th className="text-center py-2 px-3 font-bold text-gray-600 dark:text-gray-400 text-xs uppercase">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {fixedCosts.map(expense => (
+                                        <tr key={expense.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <td className="py-2.5 px-3 text-gray-900 dark:text-white font-medium">{expense.description}</td>
+                                            <td className="py-2.5 px-3">
+                                                <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs font-medium tracking-tight uppercase">
+                                                    {EXPENSE_TYPE_LABELS[expense.type] || expense.type}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 px-3 text-right font-bold text-gray-900 dark:text-white">
+                                                R$ {expense.amount.toFixed(2)}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                {expense.isRecurring ? (
+                                                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs font-medium">Sim</span>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">Não</span>
+                                                )}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                {expense.isPaid ? (
+                                                    <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded text-xs font-bold">Paga</span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded text-xs font-bold">Pendente</span>
+                                                )}
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    {!expense.isPaid && (
+                                                        <button onClick={() => handleMarkExpensePaid(expense.id)} title="Marcar como paga"
+                                                            className="p-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100 transition-colors">
+                                                            <Check size={14} />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleOpenExpenseModal(expense)} title="Editar"
+                                                        className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition-colors">
+                                                        <Edit3 size={14} />
+                                                    </button>
+                                                    <button onClick={() => handleDeleteExpense(expense.id)} title="Excluir"
+                                                        className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 transition-colors">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="border-t-2 border-gray-300 dark:border-gray-600">
+                                        <td colSpan={2} className="py-2.5 px-3 font-black text-gray-900 dark:text-white uppercase tracking-widest text-xs">Total</td>
+                                        <td className="py-2.5 px-3 text-right font-black text-red-600 dark:text-red-400">
+                                            R$ {fixedCosts.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                                        </td>
+                                        <td colSpan={3}></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+                </Card.Body>
+            </Card>
+
             {/* Modals */}
             <Modal
                 isOpen={showItemModal}
@@ -455,6 +631,62 @@ export const Supplies: React.FC = () => {
                     </Button>
                 </div>
             </Modal>
+
+            {/* Modal de Despesa */}
+            {showExpenseModal && (
+                <Modal
+                    isOpen={showExpenseModal}
+                    onClose={() => setShowExpenseModal(false)}
+                    title={editExpense ? 'Editar Despesa' : 'Nova Despesa'}
+                >
+                    <form onSubmit={handleSaveExpense} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
+                                <select
+                                    value={expenseForm.type}
+                                    onChange={e => setExpenseForm(prev => ({ ...prev, type: e.target.value as any }))}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                                >
+                                    {Object.entries(EXPENSE_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Valor</label>
+                                <Input
+                                    type="number"
+                                    value={expenseForm.amount}
+                                    onChange={e => setExpenseForm(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
+                                    placeholder="0.00"
+                                    step="0.01"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Descrição</label>
+                            <Input
+                                value={expenseForm.description}
+                                onChange={e => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="Ex: Aluguel da sala"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="recorrente"
+                                checked={expenseForm.isRecurring}
+                                onChange={e => setExpenseForm(prev => ({ ...prev, isRecurring: e.target.checked }))}
+                                className="w-4 h-4 text-tenant-primary rounded border-gray-300"
+                            />
+                            <label htmlFor="recorrente" className="text-sm font-bold text-gray-700 dark:text-gray-300">Despesa Recorrente (Mensal)</label>
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                            <Button variant="outline" className="flex-1" type="button" onClick={() => setShowExpenseModal(false)}>Cancelar</Button>
+                            <Button variant="primary" className="flex-1" type="submit">Salvar</Button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
         </div>
     );
 };

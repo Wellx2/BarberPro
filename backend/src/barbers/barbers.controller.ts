@@ -103,7 +103,7 @@ export class BarbersController {
   }
 
   @Get(':id/available-slots')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.BARBER)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.BARBER, UserRole.CLIENT)
   async getAvailableSlots(@Req() req, @Param('id') id: string, @Query('date') date: string) {
     return this.barbersService.getAvailableSlots(req.user, id, date);
   }

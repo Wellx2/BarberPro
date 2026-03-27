@@ -205,7 +205,7 @@ function checkServiceValidation(modulePath: string, moduleName: string): Validat
 }
 
 function main() {
-  console.log('🔍 Análise de DTOs e Validações - BarberPro Backend\n');
+  console.log('🔍 Análise de DTOs e Validações - KlypBarber Backend\\n');
   console.log('='.repeat(70));
 
   const srcPath = path.join(__dirname, '..', 'src');

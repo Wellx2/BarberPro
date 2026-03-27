@@ -93,9 +93,15 @@ export const AdminAppointmentHistory: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const getLocalYYYYMMDD = () => {
+        const d = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+
     const [period, setPeriod] = useState<Period>('TODAY');
-    const [rangeStart, setRangeStart] = useState(new Date().toISOString().split('T')[0]);
-    const [rangeEnd, setRangeEnd] = useState(new Date().toISOString().split('T')[0]);
+    const [rangeStart, setRangeStart] = useState(getLocalYYYYMMDD());
+    const [rangeEnd, setRangeEnd] = useState(getLocalYYYYMMDD());
 
     const [barberFilter, setBarberFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');

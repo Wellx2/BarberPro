@@ -29,7 +29,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.klypbarber.com.br')) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

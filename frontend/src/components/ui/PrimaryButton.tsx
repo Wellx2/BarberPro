@@ -21,7 +21,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     return (
         <button
             onClick={onClick}
-            className={`px-8 py-5 rounded-[22px] bg-[#f59e0b] bg-tenant-primary text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl hover:opacity-90 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-3 ${widthClass} ${className}`}
+            className={`px-8 py-5 rounded-[22px] bg-tenant-primary text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl hover:opacity-90 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-3 ${widthClass} ${className}`}
         >
             {icon || <Calendar size={20} />}
             {children}
