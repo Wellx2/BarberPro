@@ -44,8 +44,7 @@ import { SupplyItemsModule } from './supply-items/supply-items.module';
 
     // Rate limiting
     ThrottlerModule.forRoot({
-      ttl: 60000,
-      limit: 100,
+      throttlers: [{ ttl: 60000, limit: 100 }],
     }),
 
     // Cron jobs

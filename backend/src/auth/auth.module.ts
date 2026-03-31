@@ -18,8 +18,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     ConfigModule,
     JwtModule.register({}),
     ThrottlerModule.forRoot({
-      ttl: 900, // 15 minutos
-      limit: 100, // 100 requisições por 15 min por IP
+      throttlers: [{ ttl: 900, limit: 100 }], // 100 req por 15 min por IP
     }),
     BarbershopModulesModule,
     NotificationsModule,
