@@ -60,3 +60,5 @@ test-*.ps1
 # Unignore docs as they contain important project guides
 !docs/
 
+.vercel
+.env*.local

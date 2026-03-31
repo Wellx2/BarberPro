@@ -90,37 +90,82 @@ export class ExpensesService {
    * Atualiza despesa
    */
   async update(requester: any, id: string, dto: UpdateExpenseDto) {
-    await this.findOne(requester, id);
+    const shopId = requester.shopId;
+    if (!shopId) throw new ForbiddenException('Usuário não vinculado a uma barbearia');
 
-    return this.prisma.expense.update({
-      where: { id },
+    const expense = await this.prisma.expense.update({
+      where: { id, shopId },
       data: dto,
     });
+
+    // Log de auditoria
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'UPDATE_EXPENSE',
+        entity: 'Expense',
+        entityId: id,
+        userId: requester.id,
+        shopId: requester.shopId,
+        details: `Despesa atualizada: ${expense.description}`,
+      },
+    });
+
+    return expense;
   }
 
   /**
    * Marca despesa como paga
    */
   async markAsPaid(requester: any, id: string, paidDate?: Date, paymentMethod?: string) {
-    await this.findOne(requester, id);
+    const shopId = requester.shopId;
+    if (!shopId) throw new ForbiddenException('Usuário não vinculado a uma barbearia');
 
-    return this.prisma.expense.update({
-      where: { id },
+    const expense = await this.prisma.expense.update({
+      where: { id, shopId },
       data: {
         isPaid: true,
         paidDate: paidDate || new Date(),
         paymentMethod: paymentMethod as any,
       },
     });
+
+    // Log de auditoria
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'MARK_EXPENSE_PAID',
+        entity: 'Expense',
+        entityId: id,
+        userId: requester.id,
+        shopId: requester.shopId,
+        details: `Despesa marcada como paga: ${expense.description}`,
+      },
+    });
+
+    return expense;
   }
 
   /**
    * Remove despesa
    */
   async remove(requester: any, id: string) {
-    await this.findOne(requester, id);
+    const shopId = requester.shopId;
+    if (!shopId) throw new ForbiddenException('Usuário não vinculado a uma barbearia');
 
-    await this.prisma.expense.delete({ where: { id } });
+    await this.prisma.expense.delete({ 
+      where: { id, shopId } 
+    });
+
+    // Log de auditoria
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'DELETE_EXPENSE',
+        entity: 'Expense',
+        entityId: id,
+        userId: requester.id,
+        shopId: requester.shopId,
+        details: `Despesa removida permanentemente: ${id}`,
+      },
+    });
 
     return { message: 'Despesa removida com sucesso' };
   }

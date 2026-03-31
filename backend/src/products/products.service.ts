@@ -71,47 +71,42 @@ export class ProductsService {
   }
 
   async update(requester: any, id: string, dto: UpdateProductDto) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product || product.shopId !== requester.shopId) {
-      throw new NotFoundException('Produto não encontrado');
-    }
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    const shopId = requester.shopId;
 
     const updated = await this.prisma.product.update({
-      where: { id },
+      where: { id, shopId },
       data: { ...dto },
     });
 
-    await this.logAction('UPDATE', id, requester.id, requester.shopId, 'Produto atualizado');
+    await this.logAction('UPDATE', id, requester.id, shopId, `Produto atualizado: ${updated.name}`);
     return updated;
   }
 
   async disable(requester: any, id: string, dto: DisableProductDto) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product || product.shopId !== requester.shopId) {
-      throw new NotFoundException('Produto não encontrado');
-    }
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    const shopId = requester.shopId;
 
     const updated = await this.prisma.product.update({
-      where: { id },
+      where: { id, shopId },
       data: { active: false },
     });
 
-    await this.logAction('DISABLE', id, requester.id, requester.shopId, dto.reason);
+    await this.logAction('DISABLE', id, requester.id, shopId, dto.reason || 'Produto desativado');
     return updated;
   }
 
   async remove(requester: any, id: string, dto: RemoveProductDto) {
-    const product = await this.prisma.product.findUnique({ where: { id } });
-    if (!product || product.shopId !== requester.shopId || product.deletedAt !== null) {
-      throw new NotFoundException('Produto não encontrado');
-    }
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    const shopId = requester.shopId;
 
-    // Soft delete com timestamp
+    // Soft delete com timestamp (validando shopId no where)
     await this.prisma.product.update({ 
-      where: { id }, 
+      where: { id, shopId }, 
       data: { deletedAt: new Date() } 
     });
-    await this.logAction('REMOVE', id, requester.id, requester.shopId, dto.reason);
+    
+    await this.logAction('REMOVE', id, requester.id, shopId, dto.reason || 'Produto removido (soft delete)');
 
     return { message: 'Produto removido com sucesso' };
   }

@@ -53,12 +53,24 @@ export class ClientsService {
       },
       include: { addresses: true },
     });
+
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'CREATE_CLIENT',
+        entity: 'Client',
+        entityId: client.id,
+        userId: requester.id,
+        shopId: requester.shopId,
+        details: `Cliente cadastrado: ${client.name}`,
+      },
+    });
+
     return client;
   }
 
   async findAll(requester: any, search?: string) {
     if (requester.shopId == null) throw new ForbiddenException('Sem barbearia vinculada');
-    return this.prisma.client.findMany({
+    const clients = await this.prisma.client.findMany({
       where: {
         shopId: requester.shopId,
         active: true,
@@ -73,6 +85,21 @@ export class ClientsService {
       include: { addresses: true },
       orderBy: { name: 'asc' },
     });
+
+    if (search) {
+      await this.prisma.auditLog.create({
+        data: {
+          action: 'SEARCH_CLIENTS',
+          entity: 'Client',
+          entityId: 'SEARCH', // Placeholder para buscas
+          userId: requester.id,
+          shopId: requester.shopId,
+          details: `Busca por clientes com termo: ${search}`,
+        },
+      });
+    }
+
+    return clients;
   }
 
   async findOne(requester: any, id: string) {
@@ -88,11 +115,10 @@ export class ClientsService {
 
   async update(requester: any, id: string, dto: UpdateClientDto) {
     if (requester.shopId == null) throw new ForbiddenException('Sem barbearia vinculada');
-    const client = await this.prisma.client.findUnique({ where: { id } });
-    if (!client || client.shopId !== requester.shopId)
-      throw new NotFoundException('Cliente não encontrado');
-    return this.prisma.client.update({
-      where: { id },
+    const shopId = requester.shopId;
+
+    const updated = await this.prisma.client.update({
+      where: { id, shopId },
       data: {
         ...dto,
         birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
@@ -100,17 +126,42 @@ export class ClientsService {
       },
       include: { addresses: true },
     });
+
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'UPDATE_CLIENT',
+        entity: 'Client',
+        entityId: id,
+        userId: requester.id,
+        shopId,
+        details: `Cliente atualizado: ${updated.name}`,
+      },
+    });
+
+    return updated;
   }
 
   async softDelete(requester: any, id: string) {
     if (requester.shopId == null) throw new ForbiddenException('Sem barbearia vinculada');
-    const client = await this.prisma.client.findUnique({ where: { id } });
-    if (!client || client.shopId !== requester.shopId)
-      throw new NotFoundException('Cliente não encontrado');
-    return this.prisma.client.update({
-      where: { id },
+    const shopId = requester.shopId;
+    
+    const client = await this.prisma.client.update({
+      where: { id, shopId },
       data: { active: false },
     });
+
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'DELETE_CLIENT',
+        entity: 'Client',
+        entityId: id,
+        userId: requester.id,
+        shopId,
+        details: `Cliente desativado: ${client.name}`,
+      },
+    });
+
+    return client;
   }
 
   async export(requester: any, id: string) {

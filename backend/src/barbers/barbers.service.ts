@@ -166,39 +166,47 @@ export class BarbersService {
   }
 
   async update(requester: any, id: string, dto: UpdateBarberDto) {
-    const barber = await this.prisma.barber.findUnique({ where: { id } });
-    if (!barber || barber.shopId !== requester.shopId)
-      throw new NotFoundException('Barbeiro não encontrado');
-    // Barbeiro só pode editar o próprio perfil
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    const shopId = requester.shopId;
+
+    // Barbeiro só pode editar o próprio perfil (se não for admin)
     if (requester.role === 'BARBER' && requester.id !== id) {
       throw new ForbiddenException('Você só pode editar seu próprio perfil');
     }
+
     const updated = await this.prisma.barber.update({
-      where: { id },
+      where: { id, shopId },
       data: { ...dto },
     });
-    await this.logAction('UPDATE', id, requester.id, requester.shopId, 'Barbeiro atualizado');
+
+    await this.logAction('UPDATE', id, requester.id, shopId, `Perfil do barbeiro ${updated.name} atualizado`);
     return updated;
   }
 
   async disable(requester: any, id: string, dto: DisableBarberDto) {
-    const barber = await this.prisma.barber.findUnique({ where: { id } });
-    if (!barber || barber.shopId !== requester.shopId)
-      throw new NotFoundException('Barbeiro não encontrado');
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    const shopId = requester.shopId;
+
     const updated = await this.prisma.barber.update({
-      where: { id },
+      where: { id, shopId },
       data: { active: false },
     });
-    await this.logAction('DISABLE', id, requester.id, requester.shopId, dto.reason);
+
+    await this.logAction('DISABLE', id, requester.id, shopId, dto.reason || 'Barbeiro desativado');
     return updated;
   }
 
   async remove(requester: any, id: string, dto: RemoveBarberDto) {
-    const barber = await this.prisma.barber.findUnique({ where: { id } });
-    if (!barber || barber.shopId !== requester.shopId)
-      throw new NotFoundException('Barbeiro não encontrado');
-    await this.prisma.barber.update({ where: { id }, data: { active: false } });
-    await this.logAction('REMOVE', id, requester.id, requester.shopId, dto.reason);
+    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    const shopId = requester.shopId;
+
+    await this.prisma.barber.update({ 
+      where: { id, shopId }, 
+      data: { active: false } 
+    });
+
+    await this.logAction('REMOVE', id, requester.id, shopId, dto.reason || 'Barbeiro removido (soft delete)');
+
     // Soft delete: marca como inativo, não remove fisicamente
     return { message: 'Barbeiro removido (soft delete)' };
   }
@@ -226,7 +234,7 @@ export class BarbersService {
     }
 
     const updated = await this.prisma.barber.update({
-      where: { id },
+      where: { id, shopId: requester.shopId },
       data: {
         workModel: dto.workModel,
         monthlySalary: dto.monthlySalary,
@@ -239,7 +247,7 @@ export class BarbersService {
       id,
       requester.id,
       requester.shopId,
-      `Modelo atualizado para ${dto.workModel}`,
+      `Modelo de trabalho atualizado para ${dto.workModel}`,
     );
 
     return updated;
@@ -405,7 +413,7 @@ export class BarbersService {
     }
 
     const updated = await this.prisma.barber.update({
-      where: { id },
+      where: { id, shopId: requester.shopId },
       data: { active: !barber.active },
     });
 
@@ -414,7 +422,7 @@ export class BarbersService {
       id,
       requester.id,
       requester.shopId,
-      `Status alterado para ${updated.active ? 'ativo' : 'inativo'}`,
+      `Status do barbeiro ${updated.name} alterado para ${updated.active ? 'ativo' : 'inativo'}`,
     );
 
     return updated;

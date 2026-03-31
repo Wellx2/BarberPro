@@ -18,9 +18,22 @@ export class SupplyItemsService {
     async create(requester: any, dto: CreateSupplyItemDto) {
         const shopId = this.resolveShopId(requester);
 
-        return (this.prisma as any).supplyItem.create({
+        const item = await (this.prisma as any).supplyItem.create({
             data: { shopId, ...dto },
         });
+
+        await this.prisma.auditLog.create({
+            data: {
+                action: 'CREATE_SUPPLY',
+                entity: 'SupplyItem',
+                entityId: item.id,
+                userId: requester.id,
+                shopId,
+                details: `Insumo criado: ${dto.name}`,
+            },
+        });
+
+        return item;
     }
 
     /**
@@ -62,11 +75,24 @@ export class SupplyItemsService {
      * Atualiza um insumo
      */
     async update(requester: any, id: string, dto: UpdateSupplyItemDto) {
-        await this.findOne(requester, id);
-        return (this.prisma as any).supplyItem.update({
-            where: { id },
+        const shopId = this.resolveShopId(requester);
+        const item = await (this.prisma as any).supplyItem.update({
+            where: { id, shopId },
             data: dto,
         });
+
+        await this.prisma.auditLog.create({
+            data: {
+                action: 'UPDATE_SUPPLY',
+                entity: 'SupplyItem',
+                entityId: id,
+                userId: requester.id,
+                shopId,
+                details: `Insumo atualizado: ${item.name}`,
+            },
+        });
+
+        return item;
     }
 
     /**
@@ -77,21 +103,47 @@ export class SupplyItemsService {
         const item = await this.findOne(requester, id);
         const newQty = Math.max(0, Number(item.quantity) + delta);
 
-        return (this.prisma as any).supplyItem.update({
+        const updated = await (this.prisma as any).supplyItem.update({
             where: { id, shopId },
             data: { quantity: newQty, notes: notes ?? item.notes },
         });
+
+        await this.prisma.auditLog.create({
+            data: {
+                action: 'ADJUST_SUPPLY',
+                entity: 'SupplyItem',
+                entityId: id,
+                userId: requester.id,
+                shopId,
+                details: `Estoque de ${item.name} ajustado em ${delta}. Nova qtd: ${newQty}`,
+            },
+        });
+
+        return updated;
     }
 
     /**
      * Remove (desativa) um insumo
      */
     async remove(requester: any, id: string) {
-        await this.findOne(requester, id);
+        const shopId = this.resolveShopId(requester);
+        
         await (this.prisma as any).supplyItem.update({
-            where: { id },
+            where: { id, shopId },
             data: { isActive: false },
         });
+
+        await this.prisma.auditLog.create({
+            data: {
+                action: 'DELETE_SUPPLY',
+                entity: 'SupplyItem',
+                entityId: id,
+                userId: requester.id,
+                shopId,
+                details: `Insumo removido (desativado): ${id}`,
+            },
+        });
+
         return { message: 'Insumo removido com sucesso' };
     }
 

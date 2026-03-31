@@ -10,6 +10,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterShopDto } from './dto/register-shop.dto';
 import { LoginDto } from './dto/login.dto';
@@ -27,12 +28,14 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register-shop')
   @HttpCode(HttpStatus.CREATED)
   async registerShop(@Body() dto: RegisterShopDto) {
     return this.authService.registerShop(dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
@@ -99,6 +102,7 @@ export class AuthController {
 
   // ===== PASSWORD RECOVERY =====
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Solicitar recuperação de senha' })
@@ -106,6 +110,7 @@ export class AuthController {
     return this.authService.forgotPassword(dto);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Redefinir senha com token' })

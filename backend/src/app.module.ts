@@ -33,6 +33,8 @@ import { FinancialModule } from './financial/financial.module';
 import { AgendaLocksModule } from './agenda-locks/agenda-locks.module';
 // Módulo de Insumos
 import { SupplyItemsModule } from './supply-items/supply-items.module';
+// Módulo de Auditoria (Logs)
+import { AuditLogsModule } from './audit-logs/audit-logs.module';
 
 @Module({
   imports: [
@@ -87,6 +89,9 @@ import { SupplyItemsModule } from './supply-items/supply-items.module';
 
     // Módulo de Insumos da Barbearia
     SupplyItemsModule,
+
+    // Auditoria Geral de Sistema 
+    AuditLogsModule,
   ],
   providers: [
     {

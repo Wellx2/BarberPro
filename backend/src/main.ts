@@ -29,20 +29,23 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
+      // Em desenvolvimento, permitir localhost. Em produção, ser estrito.
+      const isDevelopment = process.env.NODE_ENV !== 'production';
       if (
         !origin ||
         allowedOrigins.includes(origin) ||
-        origin.endsWith('.klypbarber.com.br') ||
-        origin.endsWith('.vercel.app')
+        (isDevelopment && (origin.includes('localhost') || origin.includes('127.0.0.1')))
       ) {
         callback(null, true);
       } else {
+        // Log de tentativa de acesso suspeito
+        console.warn(`[SECURITY] Tentativa de acesso de origem não autorizada: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'x-tenant-id'],
     exposedHeaders: ['Authorization'],
   });
 
