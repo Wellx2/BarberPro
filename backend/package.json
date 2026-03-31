@@ -15,7 +15,8 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:seed:stage": "ts-node prisma/seed-stage.ts",
     "prisma:reset": "prisma migrate reset --force",
-    "vercel-build": "prisma generate && npm run build"
+    "vercel-build": "prisma generate && npm run build",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

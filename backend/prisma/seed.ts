@@ -93,7 +93,84 @@ async function main() {
     console.log(`======================================================\n`);
   }
 
-  console.log('🎉 Seed de Produção finalizado.');
+  console.log('💈 Criando barbearias reais (StudioJBlack e Barbearia de Oz)...');
+
+  const shop1 = await prisma.barbershop.create({
+    data: {
+      name: 'StudioJBlack',
+      cnpj: '11.111.111/0001-11',
+      phone: '(11) 99999-1111',
+      address: 'Rua Principal do Studio JBlack, 100',
+      openingTime: '09:00',
+      closingTime: '20:00',
+      intervalMinutes: 30,
+      active: true,
+      subscriptionTier: 'PREMIUM',
+      heroSettings: {
+        create: {
+          title: 'Estilo & Tradição',
+          subtitle: 'StudioJBlack - Excelência no atendimento',
+        }
+      }
+    }
+  });
+
+  const shop2 = await prisma.barbershop.create({
+    data: {
+      name: 'Barbearia de Oz',
+      cnpj: '22.222.222/0001-22',
+      phone: '(11) 99999-2222',
+      address: 'Avenida Mágica de Oz, 200',
+      openingTime: '09:00',
+      closingTime: '20:00',
+      intervalMinutes: 30,
+      active: true,
+      subscriptionTier: 'PREMIUM',
+      heroSettings: {
+        create: {
+          title: 'A Mais Mágica',
+          subtitle: 'Barbearia de Oz - O seu estilo',
+        }
+      }
+    }
+  });
+
+  // Vinculando acesso do SuperAdmin às duas lojas
+  await prisma.userShopAccess.createMany({
+    data: [
+      { userId: superAdmin.id, shopId: shop1.id, role: UserRole.SUPER_ADMIN },
+      { userId: superAdmin.id, shopId: shop2.id, role: UserRole.SUPER_ADMIN }
+    ]
+  });
+
+  console.log(`✅ Barbearias criadas e atreladas ao admin!\n`);
+
+  console.log('✂️ Criando serviços base de exemplo nas barbearias...');
+  
+  const baseServices = [
+    { name: 'Corte Degradê', duration: 45, price: 45, category: 'Cortes' },
+    { name: 'Barba Terapia', duration: 45, price: 35, category: 'Barba' },
+    { name: 'Corte Infantil', duration: 30, price: 30, category: 'Cortes' },
+  ];
+
+  for (const s of baseServices) {
+    await prisma.service.create({ data: { ...s, shopId: shop1.id } });
+    await prisma.service.create({ data: { ...s, shopId: shop2.id } });
+  }
+
+  console.log('📦 Criando produtos base nas barbearias...');
+
+  const baseProducts = [
+    { name: 'Pomada Modeladora', price: 40, stock: 20, category: 'Finalizadores' },
+    { name: 'Óleo para Barba', price: 35, stock: 15, category: 'Cuidados' },
+  ];
+
+  for (const p of baseProducts) {
+    await prisma.product.create({ data: { ...p, shopId: shop1.id } });
+    await prisma.product.create({ data: { ...p, shopId: shop2.id } });
+  }
+
+  console.log('🎉 Seed de Produção finalizado com as lojas StudioJBlack e Barbearia de Oz!');
 }
 
 main()
@@ -105,3 +182,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
