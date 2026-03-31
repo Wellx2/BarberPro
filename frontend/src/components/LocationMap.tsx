@@ -35,7 +35,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({ shop }) => {
                     </h2>
 
                     <p className="text-gray-600 dark:text-gray-400 font-medium mb-8 leading-relaxed">
-                        Localizada no coração de {address.split(',')[1] || 'nossa cidade'}, nossa barbearia oferece um ambiente premium e fácil acesso para você.
+                        Localizada no coração de {address?.split(',')[1] || 'nossa cidade'}, nossa barbearia oferece um ambiente premium e fácil acesso para você.
                     </p>
 
                     <div className="space-y-4">

@@ -92,7 +92,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
         {/* Nome e role - desktop only */}
         <div className="hidden md:flex flex-col items-start">
           <span className="text-sm font-bold text-white truncate max-w-[120px]">
-            {user.name.split(' ')[0]}
+            {user.name?.split(' ')[0]}
           </span>
           <span className="text-xs text-gray-400 font-medium">
             {roleLabels[user.role]}

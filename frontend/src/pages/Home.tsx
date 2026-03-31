@@ -127,7 +127,7 @@ export const Home: React.FC = () => {
 
   const heroTitleRaw = shop.heroSettings?.title || 'Estilo & Tradição';
   const heroSubtitleRaw = shop.heroSettings?.subtitle || `Excelência no atendimento para a unidade ${shop.name}.`;
-  const [heroTitleFirst, heroTitleSecond] = heroTitleRaw.includes('&') ? heroTitleRaw.split('&') : [heroTitleRaw, null];
+  const [heroTitleFirst, heroTitleSecond] = heroTitleRaw?.includes('&') ? heroTitleRaw.split('&') : [heroTitleRaw, null];
   const heroBackgroundImage = shop.heroSettings?.backgroundImage || shop.bannerUrl || shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80';
 
   const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
@@ -484,7 +484,7 @@ export const Home: React.FC = () => {
                         </p>
                         {review.barber && (
                           <p className="text-[10px] font-bold text-tenant-primary uppercase tracking-widest">
-                            Atendido por {review.barber.name.split(' ')[0]}
+                            Atendido por {review.barber?.name?.split(' ')[0]}
                           </p>
                         )}
                       </div>
