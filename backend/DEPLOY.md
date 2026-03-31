@@ -180,26 +180,59 @@ Você verá no terminal:
 
 ---
 
-## Passo 7: Atualizar o Frontend com a URL do Backend 🔗
+---
 
-Agora que a API está no ar, volte no painel do seu **projeto frontend** na Vercel:
+## Passo 7: Domínio Personalizado (`api.klypbarber.com.br`) 🌐
 
-1. Vá em **"Settings"** → **"Environment Variables"**.
-2. Encontre a variável `VITE_API_URL`.
-3. Troque o valor pelo link real da sua API: `https://klypbarber-api.vercel.app/api`
-4. Clique em **"Save"**.
-5. Para aplicar a mudança, vá em **"Deployments"**, clique nos 3 pontinhos do último deploy e escolha **"Redeploy"**.
+Agora você tem uma URL temporária da Vercel (ex: `barber-pro-tawny.vercel.app`). Para usar o seu próprio domínio, siga os passos abaixo.
+
+### 7.1 — Adicionar o domínio na Vercel
+1. No painel da Vercel, abra o projeto do **backend**.
+2. Vá em **"Settings"** → **"Domains"**.
+3. Digite `api.klypbarber.com.br` e clique em **"Add"**.
+4. A Vercel vai mostrar um registro DNS para você configurar. Anote ele.
+
+### 7.2 — Configurar o DNS no seu registrador de domínio
+Acesse o painel onde você comprou/registrou o domínio `klypbarber.com.br` (Registro.br, Hostinger, GoDaddy, etc.).
+
+Adicione o seguinte registro DNS:
+
+| Tipo | Nome/Host | Valor/Apontamento |
+|------|-----------|-------------------|
+| `CNAME` | `api` | `cname.vercel-dns.com` |
+
+> ⏳ Aguarde entre 10 minutos e 2 horas para o DNS propagar. A Vercel vai gerar o **cadeado verde (HTTPS/SSL)** automaticamente depois.
+
+### 7.3 — Verificar se funcionou
+Acesse no navegador: `https://api.klypbarber.com.br/api`
+
+Se aparecer a documentação (Swagger) ou uma resposta JSON, o domínio está funcionando! ✅
+
+---
+
+## Passo 8: Atualizar o Frontend com o novo domínio 🔗
+
+Agora que o backend tem seu próprio domínio, atualize o frontend na Vercel:
+
+1. Vá no painel do seu **projeto frontend** na Vercel.
+2. Clique em **"Settings"** → **"Environment Variables"**.
+3. Encontre a variável `VITE_API_URL`.
+4. Troque o valor para: `https://api.klypbarber.com.br/api`
+5. Clique em **"Save"**.
+6. Para aplicar a mudança, vá em **"Deployments"**, clique nos 3 pontinhos do último deploy e escolha **"Redeploy"**.
 
 ---
 
 ## ✅ Checklist Final
 
-Antes de testar, confirme que tudo está ok:
+Antes de considerar o deploy completo, confirme que tudo está ok:
 - [ ] Banco de dados criado no Supabase
 - [ ] Migrations rodadas (`npx prisma migrate deploy`)
 - [ ] Super Admin criado (`npm run prisma:seed:stage`)
 - [ ] Backend publicado na Vercel com todas as variáveis de ambiente
-- [ ] Frontend atualizado com a URL correta do backend
+- [ ] Domínio `api.klypbarber.com.br` configurado e funcionando
+- [ ] Frontend atualizado com `VITE_API_URL=https://api.klypbarber.com.br/api`
+- [ ] Frontend redeploy feito após atualizar a variável
 
 ---
 
@@ -207,12 +240,20 @@ Antes de testar, confirme que tudo está ok:
 
 Acesse no navegador:
 ```
-https://klypbarber-api.vercel.app/api/health
+https://api.klypbarber.com.br/api
 ```
-Ou tente fazer login:
+Ou o endpoint de login:
 ```
-https://klypbarber-api.vercel.app/api/auth/login
+https://api.klypbarber.com.br/api/auth/login
 ```
+
+Se retornar alguma resposta JSON (mesmo que seja de erro de credenciais), significa que a API está funcionando! 🎉
+
+---
+
+**Dica de Ouro:**
+A partir de agora, toda vez que você fizer **commit** e **push** para a branch `main`, a Vercel vai recompilar e atualizar a API automaticamente — sem você precisar clicar em mais nada!
+
 
 Se retornar alguma resposta JSON (mesmo que seja de erro de credenciais), significa que a API está funcionando! 🎉
 
