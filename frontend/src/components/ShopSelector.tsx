@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Navigation, Check, X, Store, ArrowRight, Compass, AlertCircle, Lock } from 'lucide-react';
 import { useGeolocation, findNearbyShops } from '../hooks/useGeolocation';
 import { UserRole } from '../types';
@@ -8,6 +9,8 @@ import { UserRole } from '../types';
 export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { user } = useAuth();
     const { shops, shop: currentShop, setShop, switchShop, calculateDistance } = useShop();
+    const navigate = useNavigate();
+    const locationPath = useLocation();
     const { location, loading: geoLoading, error: geoError, requestLocation } = useGeolocation();
     const [distances, setDistances] = useState<Record<string, string>>({});
     const [loadingLocation, setLoadingLocation] = useState(false);
@@ -34,7 +37,7 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                             Nenhuma Barbearia Disponível
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mb-6">
-                            O backend não retornãou nenhuma barbearia. Verifique:
+                            O backend não retornou nenhuma barbearia. Verifique:
                         </p>
                         <div className="text-left bg-gray-100 dark:bg-gray-900 rounded p-4 mb-4 text-xs font-monão">
                             <p className="text-red-600 dark:text-red-400 mb-2">Backend rodando?</p>
@@ -112,11 +115,25 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         setErrorMessage(null);
 
         const token = localStorage.getItem('accessToken');
+        const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        const newShopSlug = slugify(selectedShop.name);
+
+        // Helper para navegação multitenant
+        const navigateToNewShop = () => {
+            // Se estivermos em uma rota específica da loja (ex: /shop-a/agendar), 
+            // queremos manter a sub-rota (agendar) mas trocar o slug
+            const pathParts = locationPath.pathname.split('/').filter(p => p !== '');
+            const subPath = pathParts.length > 1 ? pathParts.slice(1).join('/') : '';
+
+            const newPath = subPath ? `/${newShopSlug}/${subPath}` : `/${newShopSlug}/`;
+            navigate(newPath);
+            onClose();
+        };
 
         // Sem auth ou CLIENT: apenas troca local (visualização)
         if (!token || isClient) {
             setShop(selectedShop);
-            setTimeout(() => onClose(), 200);
+            setTimeout(() => navigateToNewShop(), 200);
             return;
         }
 
@@ -127,7 +144,7 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                 return;
             }
             setShop(selectedShop);
-            setTimeout(() => onClose(), 200);
+            setTimeout(() => navigateToNewShop(), 200);
             return;
         }
 
@@ -148,7 +165,7 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             await switchShop(selectedShop.id);
             clearTimeout(timeoutId);
             setSwitching(false);
-            onClose();
+            navigateToNewShop();
         } catch (error: any) {
             clearTimeout(timeoutId);
             setSwitching(false);
@@ -159,7 +176,7 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                 // Fallback silencioso para erros de rede
                 console.warn('⚠️ Erro na API, alternando para modo local...');
                 setShop(selectedShop);
-                setTimeout(() => onClose(), 200);
+                setTimeout(() => navigateToNewShop(), 200);
             }
         }
     };
