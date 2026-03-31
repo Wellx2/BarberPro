@@ -24,12 +24,17 @@ async function bootstrap() {
     frontendUrl,
     'http://localhost:3002',
     'https://www.klypbarber.com.br',
-    'https://klypbarber.com.br'
+    'https://klypbarber.com.br',
   ];
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.klypbarber.com.br')) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.klypbarber.com.br') ||
+        origin.endsWith('.vercel.app')
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -56,10 +61,10 @@ async function bootstrap() {
   // Exception filter global
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Interceptores globais (Response Sanitize & Tenant Isolation Context)
+  // Interceptores globais
   app.useGlobalInterceptors(
     new SanitizeResponseInterceptor(),
-    new TenantInterceptor()
+    new TenantInterceptor(),
   );
 
   // Swagger
@@ -90,11 +95,34 @@ async function bootstrap() {
     res.redirect('/api/docs');
   });
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-
-  // console.log(`🚀 KlypBarber API running on http://localhost:${port}/api`);
-  // console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  await app.init();
+  return app;
 }
 
-bootstrap();
+// Instância reutilizada entre invocações serverless (evita cold start repetido)
+let cachedApp: any;
+
+// Handler exportado para o Vercel (serverless)
+export default async function handler(req: any, res: any) {
+  if (!cachedApp) {
+    cachedApp = await bootstrap();
+  }
+  const expressInstance = cachedApp.getHttpAdapter().getInstance();
+  return expressInstance(req, res);
+}
+
+// Permite rodar localmente com `npm run start:dev`
+if (process.env.NODE_ENV !== 'production') {
+  bootstrap().then((app) => {
+    const port = process.env.PORT || 3000;
+    app
+      .getHttpAdapter()
+      .getInstance()
+      .listen(port, () => {
+        console.log(
+          `🚀 KlypBarber API rodando em http://localhost:${port}/api`,
+        );
+        console.log(`📚 Swagger: http://localhost:${port}/api/docs`);
+      });
+  });
+}
