@@ -67,7 +67,8 @@ export class SanitizeResponseInterceptor implements NestInterceptor {
     const isProductObject = 'costPrice' in cleaned;
 
     // EXCEÇÃO: Se for uma barbearia (Shop), o e-mail, telefone e endereço são públicos
-    const isShopObject = isUserObject && ('ownerId' in cleaned || 'cnpj' in cleaned);
+    // Diferenciamos de 'User' pela ausência do campo 'role'
+    const isShopObject = isUserObject && !('role' in cleaned);
 
     if ((isUserObject || isProductObject) && !isShopObject) {
       // Regra: Somente o DONO do dado ou um ADMIN/SUPER_ADMIN podem ver PII/Custos
