@@ -118,15 +118,17 @@ export interface UpdateProfileDto {
 // ============================================================================
 
 export enum ShopSubscriptionTier {
-  SIMPLE = 'SIMPLE',
+  BASIC = 'BASIC',
   PLUS = 'PLUS',
-  PREMIUM = 'PREMIUM',
+  PRO = 'PRO',
+  MASTER = 'MASTER',
 }
 
 export const SHOP_TIER_LABELS: Record<ShopSubscriptionTier, string> = {
-  [ShopSubscriptionTier.SIMPLE]: 'Plano Simples',
+  [ShopSubscriptionTier.BASIC]: 'Plano Basic',
   [ShopSubscriptionTier.PLUS]: 'Plano Plus',
-  [ShopSubscriptionTier.PREMIUM]: 'Plano Premium',
+  [ShopSubscriptionTier.PRO]: 'Plano Pro',
+  [ShopSubscriptionTier.MASTER]: 'Plano Master',
 };
 
 export interface ShopSubscription {
@@ -139,27 +141,27 @@ export interface ShopSubscription {
 
 export interface ShopFeatures {
   // Core features
-  maxTeamMembers: number; // Simples: 3, Plus: 10, Premium: ilimitado
+  maxTeamMembers: number; // Basic: 2, Plus: 6, Pro: 20, Master: ilimitado
   hasAppointments: boolean; // Todos: true
-  hasCashier: boolean; // Simples: true, Plus: true, Premium: true
+  hasCashier: boolean; // Todos: true
 
   // Financial features
-  hasFinancialDashboard: boolean; // Simples: false, Plus: true, Premium: true
-  hasCommissionReports: boolean; // Simples: false, Plus: true, Premium: true
-  commissionReportPeriods: ('WEEKLY' | 'BIWEEKLY' | 'MONTHLY')[]; // Plus/Premium
+  hasFinancialDashboard: boolean; // Todos: true
+  hasCommissionReports: boolean; // Todos: true
+  commissionReportPeriods: ('WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'ANNUAL')[]; // Todos agora tem acesso
 
   // Product & Inventory features
-  hasProducts: boolean; // Simples: false, Plus: false, Premium: true
-  hasInventory: boolean; // Simples: false, Plus: false, Premium: true
-  hasProductReports: boolean; // Simples: false, Plus: false, Premium: true
+  hasProducts: boolean; // Todos: true
+  hasInventory: boolean; // Todos: true
+  hasProductReports: boolean; // Todos: true
 
-  // Advanced reports
-  hasAdvancedReports: boolean; // Simples: false, Plus: limited, Premium: true
-  hasAIAnalysis: boolean; // Simples: false, Plus: false, Premium: true
-
-  // Support
-  hasPrioritySupport: boolean; // Simples: false, Plus: false, Premium: true
-  hasConfigurationSupport: boolean; // Simples: false, Plus: false, Premium: true
+  // Advanced reports & Security
+  hasAdvancedReports: boolean; // Todos: true
+  hasAIAnalysis: boolean; // Pro/Master: true
+  hasPrioritySupport: boolean; // Pro/Master: true
+  hasConfigurationSupport: boolean; // Master: true
+  hasAuditLogs: boolean; // Plus/Pro/Master: true
+  hasWhiteLabel: boolean; // Plus/Pro/Master: true
 }
 
 export interface Shop {

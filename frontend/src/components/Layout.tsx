@@ -150,11 +150,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
             <span className="text-[10px] font-bold uppercase mt-1 text-tenant-primary">Agendar</span>
           </Link>
-          <Link to={getShopPath('/produtos')} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive(getShopPath('/produtos')) ? 'text-tenant-primary' : 'text-gray-400'}`}>
+          <Link to={getShopPath('/produtos')} className={`flex flex-col items-center gap-1 flex-1 ${location.pathname.includes('/produtos') ? 'text-tenant-primary' : 'text-gray-400'}`}>
             <ShoppingBag size={20} />
             <span className="text-[10px] font-bold uppercase">Loja</span>
           </Link>
-          <Link to={isAuthenticated ? "/dashboard" : "/login"} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/dashboard') || isTabActive('/profile') ? 'text-tenant-primary' : 'text-gray-400'}`}>
+          <Link to={isAuthenticated ? "/dashboard" : "/login"} className={`flex flex-col items-center gap-1 flex-1 ${isTabActive('/dashboard') || isTabActive('/profile') || isTabActive('/login') ? 'text-tenant-primary' : 'text-gray-400'}`}>
             <User size={20} />
             <span className="text-[10px] font-bold uppercase">Perfil</span>
           </Link>

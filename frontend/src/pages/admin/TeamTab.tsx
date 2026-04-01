@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users, Edit3, Power, Lock, Trash2 } from 'lucide-react';
+import { Plus, Users, Edit3, Power, Lock, Trash2, UserCheck } from 'lucide-react';
 import { Card, Button, Input, Select } from '../../components/ui';
 import { Modal } from '../../components/feedback';
 import { 
@@ -14,10 +14,14 @@ import { teamService } from '../../services/teamService';
 import { useShop } from '../../context/ShopContext';
 import { useNotification } from '../../context/NotificationContext';
 import { AgendaLockModal } from '../../components/modals/AgendaLockModal';
+import { useAuth } from '../../context/AuthContext';
+import { userService } from '../../services/userService';
 
 export const TeamTab: React.FC = () => {
   const { shop: currentShop } = useShop();
   const { addNotification } = useNotification();
+  const { user, updateUserProfile } = useAuth();
+  const [isLinking, setIsLinking] = useState(false);
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
@@ -180,6 +184,25 @@ export const TeamTab: React.FC = () => {
     setSelectedTeamMember(member);
     setShowLockAgendaModal(true);
   };
+
+  const handleLinkToMe = async (barberId: string) => {
+    if (isLinking) return;
+    try {
+      setIsLinking(true);
+      // Atualiza no banco via userService e reflete no AuthContext
+      await userService.update(user!.id, { barberId } as any);
+      // Notar: Aqui usamos o userService direto porque o updateProfile do AuthContext 
+      // pode ter restrições de DTO no backend.
+      addNotification('success', 'Perfil vinculado com sucesso! Sua agenda agora está disponível no painel.');
+      
+      // Forçar recarregamento do usuário para ativar a aba híbrida
+      window.location.reload(); 
+    } catch (error: any) {
+      addNotification('error', 'Erro ao vincular perfil');
+    } finally {
+      setIsLinking(false);
+    }
+  };
   return (
     <Card>
       <Card.Body className="space-y-4">
@@ -298,6 +321,26 @@ export const TeamTab: React.FC = () => {
                       <Lock size={14} />
                       <span className="text-xs font-bold">Trancar</span>
                     </button>
+
+                    {/* Botão Vinculação Híbrida - Apenas para ADMIN e se o barbeiro não for vinculado a outro */}
+                    {member.role === TeamMemberRole.BARBER && user?.barberId !== member.id && (
+                      <button
+                        onClick={() => handleLinkToMe(member.id)}
+                        disabled={isLinking}
+                        className="w-full mt-2 p-2.5 bg-tenant-primary/10 hover:bg-tenant-primary text-tenant-primary hover:text-white rounded-xl transition-all flex items-center justify-center gap-2 group shadow-sm"
+                        title="Vincular este barbeiro ao meu perfil de Administrador"
+                      >
+                        <UserCheck size={16} className="group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-widest">Este Barbeiro sou eu</span>
+                      </button>
+                    )}
+
+                    {user?.barberId === member.id && (
+                      <div className="w-full mt-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl flex items-center justify-center gap-2">
+                        <UserCheck size={16} className="text-green-600" />
+                        <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Vinculado a você</span>
+                      </div>
+                    )}
 
                     <button
                       onClick={() => handleDeleteTeamMember(member.id, member.name)}

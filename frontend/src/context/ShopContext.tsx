@@ -62,6 +62,29 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
         financial: barbershop.settings?.modulesEnabled?.financial ?? true,
         reports: barbershop.settings?.modulesEnabled?.reports ?? true
       }
+    },
+    subscription: {
+      tier: (barbershop.subscriptionTier as any) || 'BASIC',
+      status: 'ACTIVE',
+      startDate: new Date().toISOString(),
+      endDate: new Date().toISOString(),
+      features: {
+        maxTeamMembers: barbershop.maxTeamMembers || 2,
+        hasAppointments: true,
+        hasCashier: true,
+        hasFinancialDashboard: true,
+        hasCommissionReports: true,
+        commissionReportPeriods: ['WEEKLY', 'BIWEEKLY', 'MONTHLY'],
+        hasProducts: true,
+        hasInventory: true,
+        hasProductReports: true,
+        hasAdvancedReports: true,
+        hasAIAnalysis: barbershop.subscriptionTier === 'PRO' || barbershop.subscriptionTier === 'MASTER',
+        hasPrioritySupport: barbershop.subscriptionTier === 'PRO' || barbershop.subscriptionTier === 'MASTER',
+        hasConfigurationSupport: barbershop.subscriptionTier === 'MASTER',
+        hasAuditLogs: barbershop.subscriptionTier !== 'BASIC' && !!barbershop.subscriptionTier,
+        hasWhiteLabel: barbershop.subscriptionTier !== 'BASIC' && !!barbershop.subscriptionTier,
+      }
     }
   };
 };

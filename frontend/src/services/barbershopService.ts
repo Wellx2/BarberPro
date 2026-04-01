@@ -41,6 +41,8 @@ export interface Barbershop {
       reports?: boolean;
     };
   };
+  subscriptionTier?: string;
+  maxTeamMembers?: number;
 }
 
 export interface SwitchShopResponse {
@@ -227,6 +229,14 @@ export const barbershopService = {
    */
   async updateHeroSettings(shopId: string, data: any): Promise<any> {
     const response = await api.patch(`/barbershops/${shopId}/hero`, data);
+    return response.data;
+  },
+
+  /**
+   * Atualiza assinatura do KlypBarber (apenas SUPER_ADMIN)
+   */
+  async updateSubscription(shopId: string, data: any): Promise<any> {
+    const response = await api.patch(`/barbershops/${shopId}/subscription`, data);
     return response.data;
   },
 };

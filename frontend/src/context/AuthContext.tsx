@@ -61,7 +61,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(userData);
     } catch (error: any) {
       console.error('Erro no login:', error);
-      throw new Error(error.message || 'Erro ao fazer login');
+      const errorMessage = error.response?.data?.message || error.message || 'Erro ao fazer login';
+      throw new Error(errorMessage);
     }
   };
 

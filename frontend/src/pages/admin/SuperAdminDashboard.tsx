@@ -66,6 +66,17 @@ export const SuperAdminDashboard: React.FC = () => {
         loadData();
     }, []);
 
+    // Helper para mapear cores e nomes dos planos
+    const getTierConfig = (tier: string | undefined) => {
+        switch (tier) {
+            case 'BASIC': return { label: 'Plano Basic', color: 'bg-gray-100 text-gray-600', icon: Shield };
+            case 'PLUS': return { label: 'Plano Plus', color: 'bg-blue-50 text-blue-600', icon: Zap };
+            case 'PRO': return { label: 'Plano Pro', color: 'bg-amber-50 text-amber-600', icon: ShieldCheck };
+            case 'MASTER': return { label: 'Plano Master', color: 'bg-indigo-50 text-indigo-600', icon: RocketIcon };
+            default: return { label: 'Sem Plano', color: 'bg-gray-50 text-gray-400', icon: Lock };
+        }
+    };
+
     const handleSaveShop = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editShop) return;
@@ -77,7 +88,17 @@ export const SuperAdminDashboard: React.FC = () => {
             if (isNew) {
                 addNotification('info', 'Use o Onboarding Rápido para novas barbearias.');
             } else {
+                // 1. Atualizar dados básicos
                 await barbershopService.update(editShop.id, editShop);
+                
+                // 2. Atualizar Assinatura (se for SUPER_ADMIN)
+                if ((editShop as any).subscriptionTier) {
+                    await barbershopService.updateSubscription(editShop.id, {
+                        subscriptionTier: (editShop as any).subscriptionTier,
+                        maxTeamMembers: (editShop as any).maxTeamMembers || 2
+                    });
+                }
+
                 updateShopSettings(editShop);
                 addNotification('success', `Unidade ${editShop.name} atualizada com sucesso!`);
             }
@@ -88,6 +109,21 @@ export const SuperAdminDashboard: React.FC = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const onTierChange = (tier: string) => {
+        if (!editShop) return;
+        
+        let maxMembers = 2;
+        if (tier === 'PLUS') maxMembers = 6;
+        if (tier === 'PRO') maxMembers = 20;
+        if (tier === 'MASTER') maxMembers = 999;
+
+        setEditShop({
+            ...editShop,
+            subscriptionTier: tier,
+            maxTeamMembers: maxMembers
+        } as any);
     };
 
     const handleQuickSetup = async (e: React.FormEvent) => {
@@ -209,7 +245,13 @@ export const SuperAdminDashboard: React.FC = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-2xl font-black uppercase dark:text-white leading-none">{s.name}</h3>
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{s.address || 'Endereço não informado'}</p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 ${getTierConfig((s as any).subscriptionTier).color}`}>
+                                                    {React.createElement(getTierConfig((s as any).subscriptionTier).icon, { size: 10 })}
+                                                    {getTierConfig((s as any).subscriptionTier).label}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{s.address ? s.address.split(',')[0] : 'Endereço não informado'}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <button onClick={() => setEditShop(s)} className="p-4 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-tenant-primary rounded-2xl transition-all">
@@ -409,7 +451,37 @@ export const SuperAdminDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-8">
-                                    <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">2. Liberação de Recursos</h4>
+                                    <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">2. Plano & Assinatura (KlypBarber)</h4>
+                                    
+                                    <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-[35px] border-2 border-dashed dark:border-gray-700">
+                                        <div className="space-y-2 text-left">
+                                            <label className="text-[10px] font-black uppercase text-gray-400 ml-4 block">Nivel de Assinatura</label>
+                                            <Select 
+                                                value={(editShop as any).subscriptionTier || 'BASIC'} 
+                                                onChange={e => onTierChange(e.target.value)} 
+                                                fullWidth
+                                            >
+                                                <option value="BASIC">KlypBarber BASIC (Até 2 Prof.)</option>
+                                                <option value="PLUS">KlypBarber PLUS (Até 6 Prof.)</option>
+                                                <option value="PRO">KlypBarber PRO (Até 20 Prof.)</option>
+                                                <option value="MASTER">KlypBarber MASTER (Ilimitado)</option>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2 text-left">
+                                            <label className="text-[10px] font-black uppercase text-gray-400 ml-4 block">Limite de Profissionais (Time)</label>
+                                            <Input 
+                                                type="number" 
+                                                value={(editShop as any).maxTeamMembers || 2} 
+                                                onChange={e => setEditShop({ ...editShop, maxTeamMembers: parseInt(e.target.value) } as any)} 
+                                                fullWidth 
+                                                placeholder="Ex: 5"
+                                            />
+                                            <p className="text-[9px] font-bold text-gray-400 mt-1 ml-4 uppercase">Este limite trava a criação de novos profissionais na unidade</p>
+                                        </div>
+                                    </div>
+
+                                    <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em] pt-4">3. Liberação de Recursos</h4>
                                     <div className="grid grid-cols-1 gap-4">
                                         {[
                                             { label: 'Loja de Produtos', key: 'products', icon: ShoppingBag },

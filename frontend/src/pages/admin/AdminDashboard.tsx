@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   DollarSign, Users, Scissors, ShoppingBag, Layers,
   Calculator, Settings, Package, Info, Clock,
-  Menu, MoreHorizontal, Share2, Store
+  Menu, MoreHorizontal, Share2, Store, ShieldCheck
 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
@@ -14,36 +14,55 @@ import { ServicesTab } from './ServicesTab';
 import { ProductsTab } from './ProductsTab';
 import { StockTab } from './StockTab';
 import { PlansTab } from './PlansTab';
+import { SubscriptionTab } from './SubscriptionTab';
 import { SettingsTab } from './SettingsTab';
 import { Cashier } from './Cashier';
 import { Supplies } from './Supplies';
 import AdminAppointmentHistory from './AdminAppointmentHistory';
+import { BarberScheduleView } from '../../components/admin/BarberScheduleView';
 
-const TABS = [
-  { id: 'FINANCIAL', label: 'Financeiro', icon: DollarSign, short: 'Grana' },
-  { id: 'CASHIER', label: 'Caixa Operacional', icon: Calculator, short: 'Caixa' },
-  { id: 'BARBERS', label: 'Equipe', icon: Users, short: 'Equipe' },
-  { id: 'SERVICES', label: 'Serviços', icon: Scissors, short: 'Serviços' },
-  { id: 'PRODUCTS', label: 'Produtos', icon: ShoppingBag, short: 'Itens' },
-  { id: 'STOCK', label: 'Estoque', icon: Package, short: 'Estoque' },
-  { id: 'SUPPLIES', label: 'Insumos', icon: Layers, short: 'Insumos' },
-  { id: 'HISTORY', label: 'Histórico', icon: Clock, short: 'Agenda' },
-  { id: 'PLANS', label: 'Planos', icon: Info, short: 'Planos' },
-  { id: 'SETTINGS', label: 'Configurações', icon: Settings, short: 'Config' },
-];
+const getTabs = (hasBarberId: boolean) => {
+  const baseTabs = [
+    { id: 'FINANCIAL', label: 'Financeiro', icon: DollarSign, short: 'Grana' },
+    { id: 'CASHIER', label: 'Caixa Operacional', icon: Calculator, short: 'Caixa' },
+    { id: 'BARBERS', label: 'Equipe', icon: Users, short: 'Equipe' },
+    { id: 'SERVICES', label: 'Serviços', icon: Scissors, short: 'Serviços' },
+    { id: 'PRODUCTS', label: 'Produtos', icon: ShoppingBag, short: 'Itens' },
+    { id: 'STOCK', label: 'Estoque', icon: Package, short: 'Estoque' },
+    { id: 'SUPPLIES', label: 'Insumos', icon: Layers, short: 'Insumos' },
+    { id: 'HISTORY', label: 'Histórico', icon: Clock, short: 'Agenda' },
+    { id: 'PLANS', label: 'Planos', icon: Info, short: 'Planos' },
+    { id: 'SUBSCRIPTION', label: 'Assinatura', icon: ShieldCheck, short: 'Assinatura' },
+    { id: 'SETTINGS', label: 'Configurações', icon: Settings, short: 'Config' },
+  ];
 
-const MOBILE_PRIMARY = TABS.slice(0, 4);
-const MOBILE_OVERFLOW = TABS.slice(4);
+  if (hasBarberId) {
+    return [
+      { id: 'MY_SCHEDULE', label: 'Minha Agenda', icon: Clock, short: 'Minha Agenda' },
+      ...baseTabs
+    ];
+  }
+
+  return baseTabs;
+};
+
 
 export const AdminDashboard: React.FC = () => {
   const { shop: currentShop } = useShop();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('FINANCIAL');
+  
+  const hasBarberId = !!user?.barberId;
+  const TABS = getTabs(hasBarberId);
+  const MOBILE_PRIMARY = TABS.slice(0, 4);
+  const MOBILE_OVERFLOW = TABS.slice(4);
+
+  const [activeTab, setActiveTab] = useState(hasBarberId ? 'MY_SCHEDULE' : 'FINANCIAL');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showShopSelector, setShowShopSelector] = useState(false);
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'MY_SCHEDULE': return <BarberScheduleView barberId={user?.barberId || ''} userName={user?.name || ''} />;
       case 'FINANCIAL': return <FinancialTab />;
       case 'CASHIER': return <Cashier />;
       case 'BARBERS': return <TeamTab />;
@@ -53,8 +72,9 @@ export const AdminDashboard: React.FC = () => {
       case 'SUPPLIES': return <Supplies />;
       case 'HISTORY': return <AdminAppointmentHistory />;
       case 'PLANS': return <PlansTab />;
+      case 'SUBSCRIPTION': return <SubscriptionTab />;
       case 'SETTINGS': return <SettingsTab />;
-      default: return <FinancialTab />;
+      default: return hasBarberId ? <BarberScheduleView barberId={user?.barberId || ''} userName={user?.name || ''} /> : <FinancialTab />;
     }
   };
 

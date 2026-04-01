@@ -273,12 +273,12 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
 
                                         {/* Info da loja */}
                                         <div className="flex-1 min-w-0 pt-1">
-                                            <h3 className={`font-black uppercase text-lg tracking-tight transition-colors ${accessible ? 'text-white group-hover:text-amber-400' : 'text-gray-500'}`}>
+                                            <h3 className={`font-black uppercase text-lg tracking-tight truncate transition-colors ${accessible ? 'text-white group-hover:text-amber-400' : 'text-gray-500'}`} title={shop.name}>
                                                 {shop.name}
                                             </h3>
                                             <p className="text-xs text-gray-400 font-semibold uppercase mt-2 flex items-center gap-1">
                                                 <MapPin size={14} className="text-amber-500 flex-shrink-0" />
-                                                <span>{shop.address}</span>
+                                                <span className="truncate" title={shop.address}>{shop.address}</span>
                                             </p>
                                             {!accessible && (
                                                 <p className="text-xs text-gray-600 font-semibold mt-1 flex items-center gap-1">
@@ -343,8 +343,8 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                             </>
                         ) : (
                             <>
-                                Continuar para {selectedShop.name}
-                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                <span className="truncate min-w-0">Continuar para {selectedShop.name}</span>
+                                <ArrowRight size={18} className="flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                             </>
                         )}
                     </button>

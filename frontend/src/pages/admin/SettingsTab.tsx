@@ -8,10 +8,15 @@ import { useNotification } from '../../context/NotificationContext';
 
 export const SettingsTab: React.FC = () => {
   const { shop: currentShop, setShop: setCurrentShop } = useShop();
+  // Trava KlypBarber: Verifica se tem permissão para White Label
+  const hasWhiteLabel = currentShop.subscription?.features?.hasWhiteLabel ?? false;
+
   const { addNotification } = useNotification();
   const [wlPrimaryColor, setWlPrimaryColor] = useState(currentShop.primaryColor || '#f59e0b');
   const [whatsapp, setWhatsapp] = useState(currentShop.whatsapp || '');
   const [email, setEmail] = useState(currentShop.email || '');
+  const [instagram, setInstagram] = useState(currentShop.socialInstagram || '');
+  const [googleReview, setGoogleReview] = useState(currentShop.socialGoogleReview || '');
   const [heroTitle, setHeroTitle] = useState(currentShop.heroSettings?.title || 'Estilo & Tradição');
   const [heroSubtitle, setHeroSubtitle] = useState(currentShop.heroSettings?.subtitle || `Excelência no atendimento para a unidade ${currentShop.name}.`);
   const [heroImage, setHeroImage] = useState(currentShop.heroSettings?.backgroundImage || '');
@@ -90,6 +95,8 @@ export const SettingsTab: React.FC = () => {
         primaryColor: wlPrimaryColor,
         whatsapp,
         email,
+        socialInstagram: instagram,
+        socialGoogleReview: googleReview,
         settings: updatedSettings
       } as any);
 
@@ -106,6 +113,8 @@ export const SettingsTab: React.FC = () => {
         primaryColor: wlPrimaryColor,
         whatsapp,
         email,
+        socialInstagram: instagram,
+        socialGoogleReview: googleReview,
         settings: updatedSettings,
         heroSettings: { title: heroTitle, subtitle: heroSubtitle, backgroundImage: heroImage || null }
       };
@@ -153,13 +162,40 @@ export const SettingsTab: React.FC = () => {
             <div className="p-2 bg-tenant-primary/10 rounded-lg text-tenant-primary">
               <Palette size={20} />
             </div>
-            <div>
-              <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Personalização (White Label)</h3>
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h3 className="font-black text-gray-900 dark:text-white uppercase tracking-tight">Personalização (White Label)</h3>
+                {!hasWhiteLabel && (
+                  <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                    <Lock size={10} /> Recurso Fechado
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500">Ajuste a identidade visual da sua barbearia no app do cliente</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          {!hasWhiteLabel && (
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-3xl text-left shadow-2xl relative overflow-hidden group border border-gray-700">
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/5 mb-4 text-[10px] font-black uppercase tracking-widest text-tenant-primary">
+                  <Shield size={12} /> Assinatura
+                </div>
+                <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-2">Desbloqueie sua Marca</h3>
+                <p className="text-xs text-gray-400 font-medium max-w-lg leading-relaxed">
+                  O plano <span className="text-white font-bold">KlypBarber BASIC</span> usa a identidade padrão do sistema. Ao fazer o upgrade para o plano <span className="text-tenant-primary font-bold">PLUS</span>, você poderá aplicar sua logomarca, cores próprias e ter um app exclusivo para seus clientes.
+                </p>
+                <button className="mt-5 px-6 py-2.5 bg-tenant-primary hover:bg-tenant-primary/90 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 duration-200">
+                  Fazer Upgrade 🚀
+                </button>
+              </div>
+              <div className="absolute top-0 right-0 p-8 opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                <Palette size={120} className="text-white" />
+              </div>
+            </div>
+          )}
+
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-start transition-opacity duration-300 ${!hasWhiteLabel ? 'opacity-40 pointer-events-none grayscale' : ''}`}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Cor Primária do App</label>
@@ -224,6 +260,24 @@ export const SettingsTab: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="contato@barbearia.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Instagram (Username ou Link)</label>
+                <Input
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  placeholder="Ex: @minhabarbearia ou link completo"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Link Avaliações Google</label>
+                <Input
+                  value={googleReview}
+                  onChange={(e) => setGoogleReview(e.target.value)}
+                  placeholder="Cole o link curto do Google Maps/Reviews"
                 />
               </div>
 
@@ -295,6 +349,7 @@ export const SettingsTab: React.FC = () => {
                 variant="primary"
                 onClick={handleSaveWhiteLabel}
                 loading={isSavingWl}
+                disabled={!hasWhiteLabel}
                 className="w-full sm:w-auto"
               >
                 Salvar Alterações
