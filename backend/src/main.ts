@@ -34,7 +34,8 @@ async function bootstrap() {
       if (
         !origin ||
         allowedOrigins.includes(origin) ||
-        (isDevelopment && (origin.includes('localhost') || origin.includes('127.0.0.1')))
+        (isDevelopment && (origin.includes('localhost') || origin.includes('127.0.0.1'))) ||
+        origin.endsWith('.vercel.app')
       ) {
         callback(null, true);
       } else {
