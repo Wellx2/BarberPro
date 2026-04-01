@@ -71,33 +71,41 @@ async function bootstrap() {
     new TenantInterceptor(),
   );
 
-  // Swagger
-  const config = new DocumentBuilder()
-    .setTitle('KlypBarber API')
-    .setDescription('Backend SaaS multi-tenant para gestão de barbearias')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Autenticação e autorização')
-    .addTag('barbershops', 'Gestão de barbearias')
-    .addTag('barbers', 'Gestão de barbeiros')
-    .addTag('services', 'Gestão de serviços')
-    .addTag('products', 'Gestão de produtos')
-    .addTag('clients', 'Gestão de clientes')
-    .addTag('appointments', 'Gestão de agendamentos')
-    .addTag('blocked-times', 'Bloqueio de horários')
-    .addTag('plans', 'Planos de assinatura')
-    .addTag('invoices', 'Faturas')
-    .addTag('reviews', 'Avaliações')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
-
-  // Rota raiz da API - redireciona para documentação
+  // Swagger (Desabilitado em produção por segurança)
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get('/api', (req, res) => {
-    res.redirect('/api/docs');
-  });
+  
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('KlypBarber API')
+      .setDescription('Backend SaaS multi-tenant para gestão de barbearias')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('auth', 'Autenticação e autorização')
+      .addTag('barbershops', 'Gestão de barbearias')
+      .addTag('barbers', 'Gestão de barbeiros')
+      .addTag('services', 'Gestão de serviços')
+      .addTag('products', 'Gestão de produtos')
+      .addTag('clients', 'Gestão de clientes')
+      .addTag('appointments', 'Gestão de agendamentos')
+      .addTag('blocked-times', 'Bloqueio de horários')
+      .addTag('plans', 'Planos de assinatura')
+      .addTag('invoices', 'Faturas')
+      .addTag('reviews', 'Avaliações')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+
+    // Rota raiz da API - redireciona para documentação em dev
+    expressApp.get('/api', (req, res) => {
+      res.redirect('/api/docs');
+    });
+  } else {
+    // Em produção, a rota /api exibe apenas status
+    expressApp.get('/api', (req, res) => {
+      res.status(200).send({ status: 'ok', environment: 'production', message: 'KlypBarber API is running securely' });
+    });
+  }
 
   await app.init();
   return app;
