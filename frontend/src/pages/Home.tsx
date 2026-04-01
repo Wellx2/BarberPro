@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Star, Calendar, MapPin, ChevronDown, MessageSquare, Scissors, Award, ArrowRight } from 'lucide-react';
+import { Star, Calendar, MapPin, ChevronDown, MessageSquare, Scissors, Award, ArrowRight, Instagram } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
 import { ShopSelector } from '../components/ShopSelector';
@@ -131,7 +131,7 @@ export const Home: React.FC = () => {
   const heroBackgroundImage = shop.heroSettings?.backgroundImage || shop.bannerUrl || shop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80';
 
   const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-  const shopSlug = slugify(shop.name);
+  const shopSlug = shop.slug || slugify(shop.name);
 
   // Função auxiliar para verificar login antes de navegar
   const navigateWithAuth = (path: string) => {
@@ -215,6 +215,32 @@ export const Home: React.FC = () => {
             </PrimaryButton>
 
             <QuickReschedule shopId={shop.id} />
+          </div>
+
+          {/* Social Links (Marketing) */}
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            {shop.socialInstagram && (
+              <a 
+                href={`https://instagram.com/${shop.socialInstagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white font-bold text-sm hover:bg-white/20 transition-all hover:scale-105"
+              >
+                <Instagram size={20} className="text-pink-500" />
+                Nosso Instagram
+              </a>
+            )}
+            {shop.socialGoogleReview && (
+              <a 
+                href={shop.socialGoogleReview}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white font-bold text-sm hover:bg-white/20 transition-all hover:scale-105"
+              >
+                <Star size={20} className="text-yellow-400" fill="currentColor" />
+                Avaliações Google
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -512,7 +538,13 @@ export const Home: React.FC = () => {
       </section>
 
       {/* 8. Contact Section */}
-      <ContactSection whatsapp={shop.whatsapp} email={shop.email} phone={shop.phone} />
+      <ContactSection 
+        whatsapp={shop.socialWhatsapp || shop.whatsapp} 
+        email={shop.email} 
+        phone={shop.phone}
+        instagram={shop.socialInstagram}
+        googleReview={shop.socialGoogleReview}
+      />
 
       {showLocationModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/95 backdrop-blur-md">

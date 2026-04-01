@@ -17,7 +17,7 @@ export const ShareLink: React.FC<ShareLinkProps> = ({ isOpen, onClose }) => {
 
   // Gerar slugs para os links
   const slugify = (str: string) => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-  const shopSlug = slugify(shop.name);
+  const shopSlug = shop.slug || slugify(shop.name);
 
   // URLs de compartilhamento
   const subdomainUrl = `https://${shopSlug}.klypbarber.com`;

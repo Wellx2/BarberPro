@@ -33,7 +33,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isTabActive = (path: string) => location.pathname === path;
 
   const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-  const shopSlug = slugify(shop.name);
+  const shopSlug = shop.slug || slugify(shop.name);
 
   // Helper paths
   const getShopPath = (path: string) => `/${shopSlug}${path}`;

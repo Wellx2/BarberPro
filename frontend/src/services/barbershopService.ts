@@ -7,6 +7,7 @@ import { api } from './api';
 export interface Barbershop {
   id: string;
   name: string;
+  slug?: string;
   address: string;
   phone: string;
   image: string;
@@ -16,6 +17,9 @@ export interface Barbershop {
   primaryColor?: string | null;  // 🎨 White Label Cor primária
   whatsapp?: string | null;
   email?: string | null;
+  socialWhatsapp?: string | null;
+  socialInstagram?: string | null;
+  socialGoogleReview?: string | null;
   heroSettings?: {
     title: string;
     subtitle: string;
@@ -73,6 +77,7 @@ export interface BarbershopPreview {
   shop: {
     id: string;
     name: string;
+    slug?: string;
     phone: string;
     address: string;
     openingTime: string;
@@ -84,6 +89,9 @@ export interface BarbershopPreview {
     primaryColor?: string | null; // 🎨 White Label
     whatsapp?: string | null;
     email?: string | null;
+    socialWhatsapp?: string | null;
+    socialInstagram?: string | null;
+    socialGoogleReview?: string | null;
     heroSettings?: {
       title: string;
       subtitle: string;

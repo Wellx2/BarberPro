@@ -7,6 +7,11 @@ export class CreateBarbershopDto {
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({ example: 'barbearia-do-joao', required: false })
+  @IsString()
+  @IsOptional()
+  slug?: string;
+
   @ApiProperty({ example: '(11) 99999-9999' })
   @IsString()
   @IsNotEmpty()

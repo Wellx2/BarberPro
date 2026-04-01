@@ -5,7 +5,6 @@ import { map } from 'rxjs/operators';
 // Campos sensíveis que devem ser removidos de objetos user/client/barber
 const SENSITIVE_FIELDS = [
   'passwordHash',
-  'refreshToken',
   'resetToken',
   'passwordResetToken',
   'passwordResetExpires',

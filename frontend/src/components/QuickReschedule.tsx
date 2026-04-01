@@ -95,7 +95,7 @@ export const QuickReschedule: React.FC<QuickRescheduleProps> = ({ shopId, classN
 
   const handleReschedule = () => {
     const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-    const shopSlug = slugify(shop.name);
+    const shopSlug = shop.slug || slugify(shop.name);
 
     navigate(`/${shopSlug}/agendar`, {
       state: {

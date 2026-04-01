@@ -183,7 +183,7 @@ const AppRoutes: React.FC = () => {
   const { shop } = useShop();
   // Slugify function to match ShopContext
   const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-  const shopSlug = slugify(shop.name);
+  const shopSlug = shop.slug || slugify(shop.name);
 
   return (
     <Routes>

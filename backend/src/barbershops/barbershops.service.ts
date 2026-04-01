@@ -216,6 +216,7 @@ export class BarbershopsService {
       select: {
         id: true,
         name: true,
+        slug: true,
         phone: true,
         whatsapp: true,
         email: true,
@@ -243,12 +244,18 @@ export class BarbershopsService {
    * Busca dados públicos de uma barbearia específica
    * Retorna: 3 serviços, 3 produtos, 3 barbeiros (preview)
    */
-  async findOnePublic(shopId: string) {
-    const shop = await this.prisma.barbershop.findUnique({
-      where: { id: shopId },
+  async findOnePublic(identifier: string) {
+    const shop = await this.prisma.barbershop.findFirst({
+      where: {
+        OR: [
+          { id: identifier },
+          { slug: identifier }
+        ]
+      },
       select: {
         id: true,
         name: true,
+        slug: true,
         phone: true,
         whatsapp: true,
         email: true,
@@ -277,7 +284,7 @@ export class BarbershopsService {
 
     // Buscar 3 serviços mais vendidos/populares
     const services = await this.prisma.service.findMany({
-      where: { shopId, active: true, deletedAt: null },
+      where: { shopId: shop.id, active: true, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -293,7 +300,7 @@ export class BarbershopsService {
 
     // Buscar 3 produtos top
     const products = await this.prisma.product.findMany({
-      where: { shopId, active: true },
+      where: { shopId: shop.id, active: true },
       select: {
         id: true,
         name: true,
@@ -308,7 +315,7 @@ export class BarbershopsService {
 
     // Buscar 3 barbeiros com melhor avaliação
     const barbers = await this.prisma.barber.findMany({
-      where: { shopId, active: true },
+      where: { shopId: shop.id, active: true },
       select: {
         id: true,
         name: true,

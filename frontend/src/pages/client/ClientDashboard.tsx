@@ -15,7 +15,7 @@ export const ClientDashboard: React.FC = () => {
   const { shop } = useShop();
 
   const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-  const shopSlug = slugify(shop.name);
+  const shopSlug = shop.slug || slugify(shop.name);
 
   const [cancelModalId, setCancelModalId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');

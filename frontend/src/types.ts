@@ -165,6 +165,7 @@ export interface ShopFeatures {
 export interface Shop {
   id: string;
   name: string;
+  slug?: string;
   address: string;
   phone: string;
   image: string;
@@ -191,6 +192,7 @@ export interface Shop {
   };
   socialWhatsapp?: string;
   socialInstagram?: string;
+  socialGoogleReview?: string;
   whatsapp?: string;
   email?: string;
   coordinates?: { lat: number; lng: number };
@@ -217,6 +219,7 @@ export interface CreateShopDto {
   loyaltyProgramTarget?: number;
   socialWhatsapp?: string;
   socialInstagram?: string;
+  socialGoogleReview?: string;
   coordinates?: { lat: number; lng: number };
   logoUrl?: string | null;
   bannerUrl?: string | null;
@@ -235,6 +238,7 @@ export interface UpdateShopDto {
   loyaltyProgramTarget?: number;
   socialWhatsapp?: string;
   socialInstagram?: string;
+  socialGoogleReview?: string;
   coordinates?: { lat: number; lng: number };
   logoUrl?: string | null;
   bannerUrl?: string | null;

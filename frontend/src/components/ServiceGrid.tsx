@@ -27,7 +27,7 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
     const navigate = useNavigate();
 
     const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-    const shopSlug = slugify(shop.name);
+    const shopSlug = shop.slug || slugify(shop.name);
 
     const filteredServices = services
         .filter(service =>

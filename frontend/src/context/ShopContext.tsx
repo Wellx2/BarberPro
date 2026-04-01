@@ -28,6 +28,7 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
   return {
     id: barbershop.id,
     name: barbershop.name,
+    slug: barbershop.slug,
     address: barbershop.address,
     phone: barbershop.phone,
     image: barbershop.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800',
@@ -230,7 +231,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // A. Try match from path slug
         if (potentialSlug) {
-          const foundFromPath = storedShops.find((s: Shop) => slugify(s.name) === potentialSlug);
+          const foundFromPath = storedShops.find((s: Shop) => 
+            s.slug === potentialSlug || slugify(s.name) === potentialSlug
+          );
           if (foundFromPath && !foundFromPath.id.startsWith('shop-')) {
             return foundFromPath;
           }
@@ -241,7 +244,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const subdomain = hostname.split('.')[0];
 
         if (subdomain !== 'localhost' && subdomain !== 'www' && subdomain !== 'klypbarber') {
-          const foundFromSubdomain = storedShops.find((s: Shop) => slugify(s.name) === subdomain);
+          const foundFromSubdomain = storedShops.find((s: Shop) => 
+            s.slug === subdomain || slugify(s.name) === subdomain
+          );
           if (foundFromSubdomain && !foundFromSubdomain.id.startsWith('shop-')) {
             return foundFromSubdomain;
           }
@@ -323,14 +328,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (!potentialSlug) return;
 
-    // Se o slug na URL já é o da loja atual (slugificado), não faz nada
-    if (shop.id && slugify(shop.name) === potentialSlug) {
+    // Se o slug na URL já é o da loja atual (campo slug ou nome slugificado), não faz nada
+    if (shop.id && (shop.slug === potentialSlug || slugify(shop.name) === potentialSlug)) {
       return;
     }
 
     // Tentar encontrar a loja pelo slug na lista carregada
     if (shops.length > 0) {
-      const foundFromPath = shops.find((s: Shop) => slugify(s.name) === potentialSlug);
+      const foundFromPath = shops.find((s: Shop) => 
+        s.slug === potentialSlug || slugify(s.name) === potentialSlug
+      );
       if (foundFromPath && foundFromPath.id !== shop.id) {
         console.log(`🔄 ShopContext: Trocando loja para ${foundFromPath.name} devido ao slug na URL: ${potentialSlug}`);
         setShop(foundFromPath);

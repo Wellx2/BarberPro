@@ -7,6 +7,10 @@ export class UpdateBarbershopDto {
 
   @IsOptional()
   @IsString()
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
   cnpj?: string;
 
   @IsOptional()

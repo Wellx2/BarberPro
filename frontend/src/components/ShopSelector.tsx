@@ -116,7 +116,7 @@ export const ShopSelector: React.FC<{ onClose: () => void }> = ({ onClose }) => 
 
         const token = localStorage.getItem('accessToken');
         const slugify = (str: string = '') => str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-        const newShopSlug = slugify(selectedShop.name);
+        const newShopSlug = selectedShop.slug || slugify(selectedShop.name);
 
         // Helper para navegação multitenant
         const navigateToNewShop = () => {

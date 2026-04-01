@@ -8,37 +8,39 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-
 model Barbershop {
   id                     String                    @id @default(uuid())
   name                   String
   cnpj                   String?                   @unique
   phone                  String
-  whatsapp               String?
-  email                  String?
   address                String?
   logo                   String?
-  logoUrl                String?
-  bannerUrl              String?
-  primaryColor           String?                   @default("#f59e0b")
   openingTime            String                    @default("09:00")
   closingTime            String                    @default("20:00")
   intervalMinutes        Int                       @default(30)
   loyaltyEnabled         Boolean                   @default(true)
   subscriptionEnabled    Boolean                   @default(true)
-  active                 Boolean                   @default(true)
-  vipBannerTitle         String                    @default("Benefício de Assinante")
-  vipBannerText          String                    @default("Assine qualquer plano e ganhe até 40% de desconto em todos os produtos")
-
-  subscriptionTier       SubscriptionTier?         @default(SIMPLE)
-  subscriptionStatus     SubscriptionStatus?       @default(ACTIVE)
-  subscriptionStartDate  DateTime?
-  subscriptionEndDate    DateTime?
-  maxTeamMembers         Int?                      @default(3)
-  modulesEnabled         Json?
-  settings               Json?                     @default("{}")
   createdAt              DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
+  active                 Boolean                   @default(true)
+  vipBannerText          String                    @default("Assine qualquer plano e ganhe até 40% de desconto em todos os produtos")
+  vipBannerTitle         String                    @default("Benefício de Assinante")
+  maxTeamMembers         Int?                      @default(3)
+  modulesEnabled         Json?
+  subscriptionEndDate    DateTime?
+  subscriptionStartDate  DateTime?
+  subscriptionStatus     SubscriptionStatus?       @default(ACTIVE)
+  subscriptionTier       SubscriptionTier?         @default(SIMPLE)
+  bannerUrl              String?
+  logoUrl                String?
+  primaryColor           String?                   @default("#f59e0b")
+  email                  String?
+  whatsapp               String?
+  settings               Json?                     @default("{}")
+  socialGoogleReview     String?
+  socialInstagram        String?
+  socialWhatsapp         String?
+  slug                   String?                   @unique
   agendaLocks            AgendaLock[]
   appointments           Appointment[]
   barberCommissions      BarberCommission[]
@@ -63,8 +65,8 @@ model Barbershop {
   analytics              ServiceProductAnalytics[]
   services               Service[]
   supplyItems            SupplyItem[]
-  users                  User[]
   usersWithAccess        UserShopAccess[]
+  users                  User[]
 
   @@map("barbershops")
 }
@@ -80,24 +82,24 @@ model User {
   planId              String?
   credits             Int?                   @default(0)
   active              Boolean                @default(true)
-  globalPushEnabled   Boolean                @default(true)
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
   refreshToken        String?
-  resetToken          String?
-  resetTokenExpires   DateTime?
-  provider            AuthProvider           @default(LOCAL)
-  providerId          String?
   avatar              String?
   emailVerified       Boolean                @default(false)
+  provider            AuthProvider           @default(LOCAL)
+  providerId          String?
+  resetToken          String?
+  resetTokenExpires   DateTime?
+  globalPushEnabled   Boolean                @default(true)
   agendaLocks         AgendaLock[]           @relation("AgendaLockCreator")
   createdAppointments Appointment[]          @relation("CreatedAppointments")
   barberProfile       Barber?                @relation("UserBarberProfile")
   clientProfile       Client?                @relation("UserClientProfile")
   stockMovements      ProductStockMovement[]
+  shopAccess          UserShopAccess[]
   plan                Plan?                  @relation(fields: [planId], references: [id])
   shop                Barbershop?            @relation(fields: [shopId], references: [id])
-  shopAccess          UserShopAccess[]
 
   @@unique([provider, providerId])
   @@map("users")
@@ -106,30 +108,30 @@ model User {
 model Barber {
   id               String             @id @default(uuid())
   shopId           String
-  userId           String?            @unique
   name             String
   nickname         String?
-  email            String?
-  phone            String?
   description      String?
-  bio              String?
   specialties      String[]
   rating           Float              @default(0)
   avatar           String?
   experienceYears  Int?
   services         String[]           @default([])
   active           Boolean            @default(true)
-  role             TeamMemberRole     @default(BARBER)
-  commissionRate   Float?
-  birthDate        DateTime?
-  hireDate         DateTime?
   workModel        BarberWorkModel    @default(COMMISSION_ONLY)
   monthlySalary    Float?
   chairRentalFee   Float?
-  balance          Float              @default(0)
-  iCalToken        String?            @unique @default(uuid())
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+  bio              String?
+  birthDate        DateTime?
+  commissionRate   Float?
+  email            String?
+  hireDate         DateTime?
+  phone            String?
+  role             TeamMemberRole     @default(BARBER)
+  userId           String?            @unique
+  iCalToken        String?            @unique @default(uuid())
+  balance          Float              @default(0)
   agendaLocks      AgendaLock[]       @relation("AgendaLocks")
   appointments     Appointment[]
   commissions      BarberCommission[]
@@ -153,15 +155,15 @@ model Service {
   name            String
   duration        Int
   price           Float
-  supplyCost      Float                     @default(0)
   category        String
   description     String?
-  image           String?
   active          Boolean                   @default(true)
-  featured        Boolean                   @default(false)
-  deletedAt       DateTime?
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
+  image           String?
+  featured        Boolean                   @default(false)
+  deletedAt       DateTime?
+  supplyCost      Float                     @default(0)
   appointments    AppointmentService[]
   commissions     BarberCommission[]
   invoiceItems    InvoiceItem[]
@@ -198,20 +200,20 @@ model Product {
   shopId         String
   name           String
   price          Float
-  costPrice      Float?
   stock          Int
-  unit           String?
   category       String?
   description    String?
+  image          String?
+  active         Boolean                   @default(true)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  costPrice      Float?
+  unit           String?
   formulation    String?
   howToUse       String?
   recommendedFor String?
-  image          String?
-  active         Boolean                   @default(true)
   featured       Boolean                   @default(false)
   deletedAt      DateTime?
-  createdAt      DateTime                  @default(now())
-  updatedAt      DateTime                  @updatedAt
   appointments   AppointmentProduct[]
   commissions    BarberCommission[]
   invoiceItems   InvoiceItem[]
@@ -227,7 +229,6 @@ model Product {
 model Client {
   id               String               @id @default(uuid())
   shopId           String
-  userId           String?              @unique
   name             String
   nickname         String?
   birthDate        DateTime?
@@ -237,6 +238,7 @@ model Client {
   active           Boolean              @default(true)
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
+  userId           String?              @unique
   addresses        Address[]
   appointments     Appointment[]        @relation("ClientAppointments")
   shop             Barbershop           @relation(fields: [shopId], references: [id])
@@ -289,18 +291,18 @@ model Appointment {
   date             DateTime
   status           AppointmentStatus    @default(SCHEDULED)
   totalPrice       Float
-  totalDuration    Int                  @default(0)
-  notes            String?
-  reminderEnabled  Boolean              @default(true)
+  cancelReason     String?
   createdAt        DateTime             @default(now())
-  createdBy        String
   updatedAt        DateTime             @updatedAt
-  updatedBy        String?
   cancelledAt      DateTime?
   cancelledBy      String?
-  cancelReason     String?
+  createdBy        String
   deletedAt        DateTime?
   deletedBy        String?
+  notes            String?
+  totalDuration    Int                  @default(0)
+  updatedBy        String?
+  reminderEnabled  Boolean              @default(true)
   products         AppointmentProduct[]
   services         AppointmentService[]
   barber           Barber               @relation(fields: [barberId], references: [id])
@@ -388,20 +390,20 @@ model AgendaLock {
 
 model Plan {
   id               String        @id @default(uuid())
-  shopId           String?
   name             String
   price            Float
   benefits         String[]
   discount         Float         @default(0)
-  benefitMonths    Int?          @default(1)
-  benefitServices  Int?          @default(0)
-  benefitProducts  Int?          @default(0)
-  benefitMoneyback Float?        @default(0)
-  description      String?
-  isPopular        Boolean       @default(false)
-  active           Boolean       @default(true)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+  active           Boolean       @default(true)
+  benefitMoneyback Float?        @default(0)
+  benefitMonths    Int?          @default(1)
+  benefitProducts  Int?          @default(0)
+  benefitServices  Int?          @default(0)
+  description      String?
+  isPopular        Boolean       @default(false)
+  shopId           String?
   invoiceItems     InvoiceItem[]
   users            User[]
 
@@ -684,18 +686,18 @@ model Invoice {
   id            String         @id @default(uuid())
   shopId        String
   clientId      String?
-  clientName    String
-  type          InvoiceType
-  status        InvoiceStatus  @default(PENDING)
   amount        Float
-  description   String?
+  status        InvoiceStatus  @default(PENDING)
+  type          InvoiceType
   paymentMethod PaymentMethod?
-  paidAt        DateTime?
-  barberId      String?
-  appointmentId String?        @unique
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  appointmentId String?        @unique
+  barberId      String?
   cancelledAt   DateTime?
+  clientName    String
+  description   String?
+  paidAt        DateTime?
   items         InvoiceItem[]
   appointment   Appointment?   @relation(fields: [appointmentId], references: [id])
   barber        Barber?        @relation(fields: [barberId], references: [id])
@@ -807,6 +809,24 @@ model SupplyItem {
   @@index([shopId, category])
   @@index([isActive])
   @@map("supply_items")
+}
+
+model UserShopAccess {
+  id        String     @id @default(uuid())
+  userId    String
+  shopId    String
+  role      UserRole   @default(ADMIN)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  shop      Barbershop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shopId])
+  @@index([userId])
+  @@index([shopId])
+  @@index([isActive])
+  @@map("user_shop_access")
 }
 
 enum UserRole {
@@ -974,22 +994,4 @@ enum SupplyUnitType {
   LITERS
   KG
   METERS
-}
-
-model UserShopAccess {
-  id        String     @id @default(uuid())
-  userId    String
-  shopId    String
-  role      UserRole   @default(ADMIN)
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  shop      Barbershop @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, shopId])
-  @@index([userId])
-  @@index([shopId])
-  @@index([isActive])
-  @@map("user_shop_access")
 }
