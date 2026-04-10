@@ -27,10 +27,13 @@ export const Booking: React.FC = () => {
   const [blockedPeriods] = useState<BlockedPeriod[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtrar barbeiros da loja atual
-  // Se barbeiro não tem shopId/barbershopId (veio do endpoint público), assume que já está filtrado
+  // Filtrar barbeiros ativos da loja atual
+  // Barbeiros do endpoint público (/barbers/public/shop/:id) já vêm filtrados por loja
+  // Barbeiros autenticados têm shopId. Ambos os casos precisam funcionar.
   const shopBarbers = allBarbers.filter(b => {
-    const belongsToShop = !b.barbershopId && !b.shopId || b.barbershopId === shop.id || b.shopId === shop.id;
+    // Se não tem nenhum shopId (veio do endpoint público), confiar que já é da loja correta
+    const hasNoShopId = !b.barbershopId && !b.shopId;
+    const belongsToShop = hasNoShopId || b.barbershopId === shop.id || b.shopId === shop.id;
     return belongsToShop && b.active !== false;
   });
   const activeServices = allServices.filter(s => s.active !== false);
@@ -194,20 +197,24 @@ export const Booking: React.FC = () => {
   const isBlocked = (date: string, time: string, barberId: string) => {
     if (barberId === 'any') return false;
 
-    // ðŸŽ¨ UX: Desabilitar horários passados não dia atual (visual apenas)
-    const today = new Date().toISOString().split('T')[0];
-    if (date === today) {
-      const nãow = new Date();
-      const [slotHour, slotMinute] = time.split(':').map(Number);
-      const slotTime = new Date(nãow);
-      slotTime.setHours(slotHour, slotMinute, 0, 0);
-
-      if (slotTime <= nãow) {
-        return true; // Horário já passou
+    // 🚫 Para CLIENTEs: bloquear horários passados do dia atual (UX + segurança)
+    // ADMIN e BARBER podem agendar retroativamente (esquecimento na correria)
+    if (user?.role === 'CLIENT') {
+      const today = new Date().toISOString().split('T')[0];
+      if (date === today) {
+        const now = new Date();
+        const [slotHour, slotMinute] = time.split(':').map(Number);
+        const slotTime = new Date(now);
+        slotTime.setHours(slotHour, slotMinute, 0, 0);
+        // Early return antes de checar a lista da API
+        // (a API não filtra horários passados, então faríamos isso aqui)
+        if (slotTime <= now) {
+          return true; // Horário já passou — bloquear visualmente
+        }
       }
     }
 
-    // Se temos slots da API, usar eles
+    // Se temos slots da API, usar eles (disponibilidade do barbeiro)
     if (availableSlots.length > 0) {
       return !availableSlots.includes(time);
     }
@@ -247,15 +254,35 @@ export const Booking: React.FC = () => {
 
     try {
       // Para BARBER: não precisa de finalBarberId (backend usa JWT)
-      let finalBarberId = selectedBarber === 'any' ? (shopBarbers[0]?.id || '') : (selectedBarber || '');
+      // Para CLIENT/ADMIN: resolver o ID final do barbeiro
+      let finalBarberId: string;
+      if (selectedBarber === 'any') {
+        // 'Qualquer um' selecionado: usar o primeiro barbeiro disponível
+        const firstBarber = shopBarbers[0];
+        if (!firstBarber) {
+          addNotification('error', 'Nenhum barbeiro disponível no momento.', 'Erro no Agendamento');
+          return;
+        }
+        finalBarberId = firstBarber.id;
+      } else {
+        finalBarberId = selectedBarber || '';
+      }
 
-      // Fix: Use local date parts to avoid timezone shift to 23:59/00:00 UTC
+      // UX apenas: garantir que uma escolha foi feita antes de enviar
+      // Toda validação de dados (UUID, existência do barbeiro, vínculo à loja) é responsabilidade do backend
+      if (user.role !== 'BARBER' && !finalBarberId) {
+        addNotification('error', 'Selecione um barbeiro para continuar.', 'Barbeiro obrigatório');
+        return;
+      }
+
       const [year, month, day] = selectedDate.split('-').map(Number);
       const [hour, minute] = selectedTime.split(':').map(Number);
-      const appointmentDate = new Date(year, month - 1, day, hour, minute);
+      
+      // Criar a data localmente com precisão de segundos zerados
+      const appointmentDate = new Date(year, month - 1, day, hour, minute, 0, 0);
 
       if (Number.isNaN(appointmentDate.getTime())) {
-        addNotification('error', 'Data ou horário inválido para agendamento', 'Erro não Agendamento');
+        addNotification('error', 'Data ou horário inválido para agendamento', 'Erro no Agendamento');
         return;
       }
 
@@ -316,22 +343,23 @@ export const Booking: React.FC = () => {
     } catch (error: any) {
       console.error('Erro ao criar agendamento:', error);
 
-      // Tratar erro 403 (vínculo)
-      if (error?.statusCode === 403 || error?.status === 403) {
-        addNotification(
-          'error',
-          'Você só pode agendar para seu próprio perfil. Contate o administrador se precisar de ajáuda.',
-          'Acesso Negado'
-        );
-        return;
-      }
-
       // Exibir mensagem de erro do backend (validações centralizadas lá)
       const rawMessage = error.response?.data?.message || error.message;
       const errorMessage = Array.isArray(rawMessage)
         ? rawMessage.join(' | ')
         : (rawMessage || 'Erro ao criar agendamento');
-      addNotification('error', errorMessage, 'Erro não Agendamento');
+
+      // Tratar erro 403 (vínculo) priorizando mensagem do backend
+      if (error?.response?.status === 403 || error?.status === 403) {
+        addNotification(
+          'error',
+          errorMessage !== 'Erro ao criar agendamento' ? errorMessage : 'Você só pode agendar para seu próprio perfil. Contate o administrador se precisar de ajuda.',
+          'Acesso Negado'
+        );
+        return;
+      }
+
+      addNotification('error', errorMessage, 'Erro no Agendamento');
     }
   };
 

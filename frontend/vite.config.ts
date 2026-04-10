@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         useCredentials: true,
         devOptions: {
-          enabled: true
+          enabled: false
         },
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'android-chrome-192x192.png', 'android-chrome-512x512.png'],
         manifest: {
@@ -74,6 +74,9 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       }
+    },
+    build: {
+      sourcemap: false,
     }
   };
 });

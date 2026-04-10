@@ -9,13 +9,17 @@ interface LoginCredentials {
   password: string;
 }
 
-interface RegisterShopData {
+interface RegisterUserData {
   name: string;
   email: string;
   password: string;
+  phone: string;
+}
+
+interface RegisterShopData extends RegisterUserData {
   shopName: string;
   shopAddress: string;
-  phone?: string;
+  cnpj?: string;
 }
 
 interface AuthResponse {
@@ -57,7 +61,17 @@ export const authService = {
       console.error('Formato recebido:', authData);
       throw new Error('Login não retornou tokens válidos');
     }
+    return authData;
+  },
 
+  async register(data: RegisterUserData): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/register-client', data);
+    const authData = response.data;
+    if (authData.accessToken) {
+      localStorage.setItem('accessToken', authData.accessToken);
+      localStorage.setItem('refreshToken', authData.refreshToken);
+      localStorage.setItem('user', JSON.stringify(authData.user));
+    }
     return authData;
   },
 

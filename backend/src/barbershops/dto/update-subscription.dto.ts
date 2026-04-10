@@ -1,19 +1,7 @@
 import { IsEnum, IsOptional, IsInt, Min, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-// Enums temporários até migration ser executada
-enum SubscriptionTier {
-  SIMPLE = 'SIMPLE',
-  PLUS = 'PLUS',
-  PREMIUM = 'PREMIUM',
-}
-
-enum SubscriptionStatus {
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  SUSPENDED = 'SUSPENDED',
-  CANCELLED = 'CANCELLED',
-}
+import { SubscriptionTier, SubscriptionStatus } from '@prisma/client';
 
 export class UpdateSubscriptionDto {
   @ApiProperty({

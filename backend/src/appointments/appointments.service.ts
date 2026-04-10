@@ -26,25 +26,43 @@ export class AppointmentsService {
   ) { }
 
   async create(requester: any, dto: CreateAppointmentDto) {
-    if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    let effectiveShopId = requester.shopId;
+
+    // CLIENT não tem shopId no JWT — inferir a partir do barbeiro informado
+    if (requester.role === 'CLIENT' || requester.role === UserRole.CLIENT) {
+      if (!dto.barberId) {
+        throw new BadRequestException('barberId é obrigatório para realizar um agendamento');
+      }
+      // Buscar o shopId real a partir do barbeiro
+      const barberForShop = await this.prisma.barber.findUnique({
+        where: { id: dto.barberId },
+        select: { shopId: true },
+      });
+      if (!barberForShop) {
+        throw new NotFoundException('Barbeiro não encontrado');
+      }
+      effectiveShopId = barberForShop.shopId;
+    }
+
+    if (!effectiveShopId) {
+      this.logger.error(`[CREATE APPOINTMENT] Sem barbearia vinculada. Requester Role: ${requester.role}, BarberID: ${dto.barberId}, Requester Shop: ${requester.shopId}`);
+      throw new ForbiddenException('Sem barbearia vinculada');
+    }
 
     let effectiveClientId = dto.clientId;
     let effectiveBarberId = dto.barberId;
 
-    if (requester.role === UserRole.CLIENT) {
-      const requesterClient = await this.resolveRequesterClient(requester);
+    if (requester.role === 'CLIENT' || requester.role === UserRole.CLIENT) {
+      // Substituir requester.shopId pelo shopId inferido para que resolveRequesterClient funcione
+      const requesterWithShop = { ...requester, shopId: effectiveShopId };
+      const requesterClient = await this.resolveRequesterClient(requesterWithShop);
       if (!requesterClient) {
-        throw new ForbiddenException('Cliente autenticado não está vinculado a este tenant');
+        throw new ForbiddenException('Não foi possível vincular o perfil de cliente à barbearia');
       }
       if (dto.clientId && dto.clientId !== requesterClient.id) {
         throw new ForbiddenException('CLIENT só pode agendar para si próprio');
       }
       effectiveClientId = requesterClient.id;
-
-      // CLIENT precisa informar barberId no payload
-      if (!dto.barberId) {
-        throw new BadRequestException('barberId é obrigatório para CLIENT');
-      }
       effectiveBarberId = dto.barberId;
     }
 
@@ -103,20 +121,20 @@ export class AppointmentsService {
       this.prisma.service.findMany({
         where: {
           id: { in: dto.serviceIds },
-          shopId: requester.shopId,
+          shopId: effectiveShopId,
           active: true,
           deletedAt: null,
         },
       }),
-      this.prisma.barbershop.findUnique({ where: { id: requester.shopId } }),
+      this.prisma.barbershop.findUnique({ where: { id: effectiveShopId } }),
     ]);
 
-    if (!client || client.shopId !== requester.shopId) {
+    if (!client || client.shopId !== effectiveShopId) {
       throw new NotFoundException('Cliente não encontrado');
     }
 
     // ========== VALIDAÇÃO 3: Barbeiro deve estar ativo ==========
-    if (!barber || barber.shopId !== requester.shopId || !barber.active) {
+    if (!barber || barber.shopId !== effectiveShopId || !barber.active) {
       throw new BadRequestException('Barbeiro indisponível');
     }
 
@@ -131,20 +149,29 @@ export class AppointmentsService {
     const endAt = new Date(scheduledFor.getTime() + totalDuration * 60000);
 
     // ========== VALIDAÇÃO 4: Horário de funcionamento ==========
-    const startTime = `${scheduledFor.getHours().toString().padStart(2, '0')}:${scheduledFor.getMinutes().toString().padStart(2, '0')}`;
-    const endTime = `${endAt.getHours().toString().padStart(2, '0')}:${endAt.getMinutes().toString().padStart(2, '0')}`;
+    // 🛡️ CORREÇÃO SÊNIOR: Converter para fuso de Brasília antes de validar horário de expediente
+    // Se o servidor for UTC, getHours() retornará o valor errado para comparação com strings locais.
+    const formatter = new Intl.DateTimeFormat('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    const startTime = formatter.format(scheduledFor);
+    const endTime = formatter.format(endAt);
 
     if (startTime < shop.openingTime || endTime > shop.closingTime) {
       throw new BadRequestException(
-        `Horário fora do expediente. Funcionamento: ${shop.openingTime} - ${shop.closingTime}`,
+        `Horário fora do expediente. Funcionamento: ${shop.openingTime} - ${shop.closingTime} (Seu horário: ${startTime})`,
       );
     }
 
     // ========== VALIDAÇÃO 5: Verificar conflitos de horário ==========
-    await this.checkAppointmentConflicts(barber.id, requester.shopId, scheduledFor, endAt);
+    await this.checkAppointmentConflicts(barber.id, effectiveShopId, scheduledFor, endAt);
 
     // ========== VALIDAÇÃO 6: Verificar horários bloqueados ==========
-    await this.checkBlockedTimeConflicts(barber.id, requester.shopId, scheduledFor);
+    await this.checkBlockedTimeConflicts(barber.id, effectiveShopId, scheduledFor);
 
     // Calcula preço total
     let totalPrice = services.reduce((sum, s) => sum + s.price, 0);
@@ -155,7 +182,7 @@ export class AppointmentsService {
       const products = await this.prisma.product.findMany({
         where: {
           id: { in: dto.products.map((p) => p.id) },
-          shopId: requester.shopId,
+          shopId: effectiveShopId,
           active: true,
           deletedAt: null,
         },
@@ -163,7 +190,7 @@ export class AppointmentsService {
 
       for (const productDto of dto.products) {
         const product = products.find((p) => p.id === productDto.id);
-        if (!product || product.shopId !== requester.shopId) {
+        if (!product || product.shopId !== effectiveShopId) {
           throw new NotFoundException(`Produto ${productDto.id} não encontrado`);
         }
 
@@ -186,7 +213,7 @@ export class AppointmentsService {
     // ========== CRIAR AGENDAMENTO COM AUDITORIA ==========
     const appointment = await this.prisma.appointment.create({
       data: {
-        shopId: requester.shopId,
+        shopId: effectiveShopId,
         clientId: effectiveClientId,
         barberId: effectiveBarberId,
         date: scheduledFor,
@@ -238,7 +265,7 @@ export class AppointmentsService {
       'CREATE',
       appointment.id,
       requester.id,
-      requester.shopId,
+      effectiveShopId,
       'Agendamento criado',
     );
 
@@ -253,7 +280,7 @@ export class AppointmentsService {
   }
 
   private async resolveRequesterClient(requester: any) {
-    return this.prisma.client.findFirst({
+    let client = await this.prisma.client.findFirst({
       where: {
         shopId: requester.shopId,
         active: true,
@@ -261,6 +288,27 @@ export class AppointmentsService {
       },
       select: { id: true },
     });
+
+    if (!client) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: requester.id },
+      });
+      if (user && user.role === 'CLIENT') {
+        client = await this.prisma.client.create({
+          data: {
+            shopId: requester.shopId,
+            userId: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone || '00000000000',
+            active: true,
+          },
+          select: { id: true },
+        });
+      }
+    }
+
+    return client;
   }
 
   private async resolveRequesterBarber(requester: any) {
@@ -292,10 +340,17 @@ export class AppointmentsService {
     };
 
     if (filters?.date) {
-      const date = new Date(filters.date);
-      const nextDay = new Date(date);
-      nextDay.setDate(nextDay.getDate() + 1);
-      where.date = { gte: date, lt: nextDay };
+      // 🇧🇷 Ajuste para fuso de Brasília (UTC-3)
+      // Se filtrarmos apenas pelo dia UTC, agendamentos após as 21:00 local 
+      // desaparecem da lista do dia atual pois viram o dia seguinte em UTC.
+      
+      const startOfDay = new Date(filters.date); // YYYY-MM-DD vira 00:00 UTC no server
+      startOfDay.setHours(startOfDay.getHours() + 3); // Ajusta para 03:00 UTC (00:00 Brasília)
+      
+      const endOfDay = new Date(startOfDay);
+      endOfDay.setHours(endOfDay.getHours() + 24); // Próximo dia (00:00 Brasília / 03:00 UTC)
+      
+      where.date = { gte: startOfDay, lt: endOfDay };
     } else if (filters?.startDate || filters?.endDate) {
       where.date = {};
       if (filters.startDate) where.date.gte = new Date(filters.startDate);
@@ -312,17 +367,11 @@ export class AppointmentsService {
 
     // CLIENT só vê próprios agendamentos
     if (requester.role === UserRole.CLIENT) {
-      const client = await this.prisma.client.findFirst({
-        where: {
-          shopId: requester.shopId,
-          active: true,
-          userId: requester.id,
-        },
-      });
+      const client = await this.resolveRequesterClient(requester);
       if (client) {
         where.clientId = client.id;
       } else {
-        throw new ForbiddenException('Cliente autenticado não está vinculado a este tenant');
+        return []; // Se não conseguiu resolver/criar o cliente, retorna vazio em vez de 403
       }
     }
 
@@ -819,8 +868,8 @@ export class AppointmentsService {
           {
             type: 'DAY',
             date: {
-              gte: new Date(newStartAt.setHours(0, 0, 0, 0)),
-              lt: new Date(newStartAt.setHours(23, 59, 59, 999)),
+              gte: new Date(new Date(newStartAt).setHours(0, 0, 0, 0)),
+              lt: new Date(new Date(newStartAt).setHours(23, 59, 59, 999)),
             },
           },
           // TIME - bloqueia horário específico

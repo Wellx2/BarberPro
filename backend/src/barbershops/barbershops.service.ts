@@ -205,14 +205,17 @@ export class BarbershopsService {
    */
   async findAllPublic(search?: string) {
     return this.prisma.barbershop.findMany({
-      where: search
-        ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { address: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-        : {},
+      where: {
+        active: true,
+        ...(search
+          ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { address: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+          : {}),
+      },
       select: {
         id: true,
         name: true,
@@ -330,11 +333,35 @@ export class BarbershopsService {
       take: 3,
     });
 
+    // Buscar 6 últimas avaliações da loja
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        barber: {
+          shopId: shop.id,
+        },
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        date: true,
+        barber: {
+          select: { id: true, name: true, avatar: true },
+        },
+        client: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { date: 'desc' },
+      take: 6,
+    });
+
     return {
       shop,
       services,
       products,
       barbers,
+      reviews,
     };
   }
 
@@ -531,15 +558,15 @@ export class BarbershopsService {
     if (!shop) throw new NotFoundException('Barbearia não encontrada');
 
     // Mapear features baseado no tier
-    const features = this.getFeaturesByTier(shop.subscriptionTier || SubscriptionTier.SIMPLE);
+    const features = this.getFeaturesByTier(shop.subscriptionTier || SubscriptionTier.BASIC);
 
     return {
       subscription: {
-        tier: shop.subscriptionTier || SubscriptionTier.SIMPLE,
+        tier: shop.subscriptionTier || ('BASIC' as any),
         status: shop.subscriptionStatus || SubscriptionStatus.ACTIVE,
         startDate: shop.subscriptionStartDate,
         endDate: shop.subscriptionEndDate,
-        maxTeamMembers: shop.maxTeamMembers || 3,
+        maxTeamMembers: shop.maxTeamMembers || 2,
         features,
       },
       modulesEnabled: shop.modulesEnabled || {
@@ -567,26 +594,26 @@ export class BarbershopsService {
 
     if (!shop) throw new NotFoundException('Barbearia não encontrada');
 
-    const tier = shop.subscriptionTier || SubscriptionTier.SIMPLE;
+    const tier = shop.subscriptionTier || ('BASIC' as any);
     const features = this.getFeaturesByTier(tier);
 
     // Validar se os módulos solicitados estão disponíveis no plano
     if (dto.modulesEnabled) {
       if (dto.modulesEnabled.products && !features.hasProducts) {
         throw new BadRequestException(
-          'Módulo de Produtos não disponível no plano atual. Faça upgrade para Premium.',
+          'Módulo de Produtos não disponível no plano atual. Faça upgrade para o plano PLUS ou superior.',
         );
       }
 
       if (dto.modulesEnabled.financial && !features.hasFinancialDashboard) {
         throw new BadRequestException(
-          'Dashboard Financeiro não disponível no plano atual. Faça upgrade para Plus ou Premium.',
+          'Dashboard Financeiro não disponível no plano atual. Faça upgrade para o plano PLUS.',
         );
       }
 
       if (dto.modulesEnabled.reports && !features.hasAdvancedReports) {
         throw new BadRequestException(
-          'Relatórios Avançados não disponíveis no plano atual. Faça upgrade para Plus ou Premium.',
+          'Relatórios Avançados não disponíveis no plano atual. Faça upgrade para os planos PLUS, PRO ou MASTER.',
         );
       }
     }
@@ -638,8 +665,8 @@ export class BarbershopsService {
     if (dto.subscriptionTier && dto.subscriptionTier !== shop.subscriptionTier) {
       const newFeatures = this.getFeaturesByTier(dto.subscriptionTier);
 
-      // Se está fazendo downgrade de PREMIUM para PLUS/SIMPLE e tem produtos cadastrados
-      if (shop.subscriptionTier === SubscriptionTier.PREMIUM && !newFeatures.hasProducts) {
+      // Se está fazendo downgrade de um plano que tinha produtos para um que não tem (atualmente todos tem, mas mantendo lógica de segurança)
+      if ((shop.subscriptionTier as any) === 'PRO' && !newFeatures.hasProducts) {
         const productsCount = await this.prisma.product.count({
           where: { shopId, active: true },
         });
@@ -648,15 +675,15 @@ export class BarbershopsService {
           throw new BadRequestException(
             `Não é possível fazer downgrade para ${dto.subscriptionTier}. ` +
             `Barbearia possui ${productsCount} produtos cadastrados. ` +
-            `Desative todos os produtos ou mantenha o plano PREMIUM.`,
+            `Desative todos os produtos ou mantenha o plano PRO.`,
           );
         }
       }
 
       // Se está fazendo downgrade para SIMPLE e tem módulos financeiros em uso
       if (
-        dto.subscriptionTier === SubscriptionTier.SIMPLE &&
-        shop.subscriptionTier !== SubscriptionTier.SIMPLE
+        (dto.subscriptionTier as any) === 'BASIC' &&
+        (shop.subscriptionTier as any) !== 'BASIC'
       ) {
         const financialData = await this.prisma.serviceOrder.count({
           where: { shopId, status: 'OPEN' },
@@ -664,7 +691,7 @@ export class BarbershopsService {
 
         if (financialData > 0) {
           throw new BadRequestException(
-            `Não é possível fazer downgrade para SIMPLE. ` +
+            `Não é possível fazer downgrade para o plano BASIC. ` +
             `Existe ${financialData} comanda(s) em aberto. ` +
             `Finalize todas as comandas antes de fazer downgrade.`,
           );
@@ -701,47 +728,52 @@ export class BarbershopsService {
     const baseFeatures = {
       hasAppointments: true,
       hasCashier: true,
-      maxTeamMembers: 3,
-      hasFinancialDashboard: false,
-      hasCommissionReports: false,
-      commissionReportPeriods: [],
-      hasProducts: false,
-      hasInventory: false,
-      hasProductReports: false,
-      hasAdvancedReports: false,
+      maxTeamMembers: 2,
+      hasFinancialDashboard: true,
+      hasCommissionReports: true,
+      commissionReportPeriods: ['WEEKLY', 'BIWEEKLY', 'MONTHLY'],
+      hasProducts: true,
+      hasInventory: true,
+      hasProductReports: true,
+      hasAdvancedReports: true,
       hasAIAnalysis: false,
       hasPrioritySupport: false,
       hasConfigurationSupport: false,
+      hasAuditLogs: false, // Bloqueado no BASIC
+      hasWhiteLabel: false, // Bloqueado no BASIC
     };
 
-    switch (tier) {
-      case SubscriptionTier.SIMPLE:
+    switch (tier as any) {
+      case 'BASIC':
         return baseFeatures;
 
-      case SubscriptionTier.PLUS:
+      case 'PLUS':
         return {
           ...baseFeatures,
-          maxTeamMembers: 10,
-          hasFinancialDashboard: true,
-          hasCommissionReports: true,
-          commissionReportPeriods: ['WEEKLY', 'BIWEEKLY', 'MONTHLY'],
-          hasAdvancedReports: true,
+          maxTeamMembers: 6,
+          hasAuditLogs: true,
+          hasWhiteLabel: true,
         };
 
-      case SubscriptionTier.PREMIUM:
+      case 'PRO':
+        return {
+          ...baseFeatures,
+          maxTeamMembers: 20,
+          hasAIAnalysis: true,
+          hasPrioritySupport: true,
+          hasAuditLogs: true,
+          hasWhiteLabel: true,
+        };
+
+      case 'MASTER':
         return {
           ...baseFeatures,
           maxTeamMembers: 999, // Ilimitado
-          hasFinancialDashboard: true,
-          hasCommissionReports: true,
-          commissionReportPeriods: ['WEEKLY', 'BIWEEKLY', 'MONTHLY', 'ANNUAL'],
-          hasProducts: true,
-          hasInventory: true,
-          hasProductReports: true,
-          hasAdvancedReports: true,
           hasAIAnalysis: true,
           hasPrioritySupport: true,
           hasConfigurationSupport: true,
+          hasAuditLogs: true,
+          hasWhiteLabel: true,
         };
 
       default:

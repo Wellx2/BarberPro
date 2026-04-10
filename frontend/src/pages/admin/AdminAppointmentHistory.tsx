@@ -53,15 +53,22 @@ interface Apt {
 const getDate = (a: Apt): Date | null => {
     const raw = a.date || a.scheduledFor;
     if (!raw) return null;
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? null : d;
+
+    if ((raw as any) instanceof Date) return raw as any as Date;
+
+    const date = new Date(raw);
+    return isNaN(date.getTime()) ? null : date;
 };
 
 const fmtDt = (d: Date | null) =>
     d
         ? new Intl.DateTimeFormat('pt-BR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit',
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit',
+            timeZone: 'America/Sao_Paulo'
         }).format(d)
         : '—';
 

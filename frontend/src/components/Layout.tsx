@@ -103,20 +103,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </div>
       </nav>
 
-      {/* Global Offline Banner */}
-      {fetchError && (
-        <div className="bg-red-500/10 border-b border-red-500/20 text-red-600 dark:text-red-400 px-4 py-2 flex items-center justify-between text-xs sm:text-sm animate-fade-in z-40">
-          <div className="flex items-center gap-2 w-full max-w-7xl mx-auto">
-            <span>⚠️ <strong>Modo Offline.</strong> O sistema não conseguiu se conectar ao servidor.</span>
-            <button
-              onClick={() => window.location.reload()}
-              className="ml-auto bg-red-500/20 hover:bg-red-500/30 px-3 py-1 rounded font-bold transition-colors"
-            >
-              Recarregar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <main className="flex-grow">

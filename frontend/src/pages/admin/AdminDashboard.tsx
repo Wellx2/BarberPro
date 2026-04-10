@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DollarSign, Users, Scissors, ShoppingBag, Layers,
   Calculator, Settings, Package, Info, Clock,
@@ -110,6 +111,20 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </header>
+
+        {/* Banner Voltar ao Console Master - apenas para SUPER_ADMIN */}
+        {user?.role === 'SUPER_ADMIN' && (
+          <div
+            onClick={() => { window.location.href = '/admin/super'; }}
+            className="flex items-center justify-between gap-3 mb-6 px-5 py-3 bg-gray-900 text-white rounded-2xl cursor-pointer hover:bg-tenant-primary transition-all duration-200 group"
+          >
+            <div className="flex items-center gap-3">
+              <ShieldCheck size={18} className="text-tenant-primary group-hover:text-white transition-colors" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Modo Gestor de Unidade &mdash; Clique para voltar ao Console Master</span>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">&#x2190; Voltar</span>
+          </div>
+        )}
 
         {/* Navigation - Desktop */}
         <nav className="hidden lg:flex flex-wrap gap-2 mb-8 p-1.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-x-auto no-scrollbar">

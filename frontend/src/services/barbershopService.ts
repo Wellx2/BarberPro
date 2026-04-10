@@ -127,6 +127,21 @@ export interface BarbershopPreview {
     avatar: string | null;
     role: string;
   }>;
+  reviews?: Array<{
+    id: string;
+    rating: number;
+    comment: string;
+    date: string | Date;
+    barber: {
+      id: string;
+      name: string;
+      avatar: string | null;
+    };
+    client: {
+      id: string;
+      name: string;
+    };
+  }>;
 }
 
 export const barbershopService = {
@@ -237,6 +252,14 @@ export const barbershopService = {
    */
   async updateSubscription(shopId: string, data: any): Promise<any> {
     const response = await api.patch(`/barbershops/${shopId}/subscription`, data);
+    return response.data;
+  },
+
+  /**
+   * Ativa ou desativa uma barbearia (apenas SUPER_ADMIN)
+   */
+  async updateStatus(id: string, active: boolean): Promise<Barbershop> {
+    const response = await api.patch<Barbershop>(`/barbershops/${id}`, { active });
     return response.data;
   },
 };

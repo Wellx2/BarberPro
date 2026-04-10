@@ -1,0 +1,14 @@
+
+# Connect to Supabase via connectio.txt
+*.txt
+backend/check_db.js
+backend/inspect-dates.ts
+backend/test-*.js
+backend/test-*.ts
+backend/tmp_*.js
+backend/tmp_*.ts
+frontend/test-*.js
+frontend/test-*.ts
+frontend/test-*.json
+
+backend/prisma/reset-password.ts

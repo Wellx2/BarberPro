@@ -18,6 +18,21 @@ export class AuditLogsService {
     },
   ) {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
+    
+    // Buscar barbearia para verificar o plano (Tier)
+    const shop = await this.prisma.barbershop.findUnique({
+      where: { id: requester.shopId },
+      select: { subscriptionTier: true }
+    });
+
+    if (!shop) throw new ForbiddenException('Barbearia não encontrada');
+
+    // Mapeamento manual de permissão (deve ser sincronizado com BarbershopsService)
+    // No BASIC, hasAuditLogs é false.
+    if ((shop.subscriptionTier as any) === 'BASIC' || !shop.subscriptionTier) {
+      throw new ForbiddenException('Seu plano atual (BASIC) não possui acesso aos logs de auditoria. Faça upgrade para o plano PLUS.');
+    }
+
     if (requester.role !== UserRole.ADMIN && requester.role !== UserRole.SUPER_ADMIN) {
       throw new ForbiddenException('Apenas administradores podem ver relatórios de log');
     }

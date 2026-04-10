@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useShop } from '../../context/ShopContext';
+import { useNavigate } from 'react-router-dom';
 import {
   Calendar, CheckCircle, ChevronLeft, ChevronRight,
   Phone, X, Plus, Minus, ShoppingBag, Scissors, AlertCircle,
@@ -893,6 +894,7 @@ const BalanceModal: React.FC<BalanceModalProps> = ({
 };
 
 export const BarberDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { shop } = useShop();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -970,29 +972,20 @@ export const BarberDashboard: React.FC = () => {
   const safeFormatTime = (dateValue: any) => {
     if (!dateValue) return '--:--';
 
-    // Se for objeto vazio
     if (typeof dateValue === 'object' && !(dateValue instanceof Date) && Object.keys(dateValue || {}).length === 0) {
       return '--:--';
     }
 
-    let date = new Date(dateValue);
-
-    // Se falhar o parse direto (pode ser string em formato pt-BR vindo do backend ou SQLite)
-    if (Number.isNaN(date.getTime()) && typeof dateValue === 'string') {
-      // Tenta extrair DD/MM/YYYY e HH:mm via Regex
-      const match = dateValue.match(/(\d{2})\/(\d{2})\/(\d{4})(?:.*?(\d{2}):(\d{2}))?/);
-      if (match) {
-        const [_, d, m, y, h, min] = match;
-        // Cria objeto Date tratando como hora local para evitar shifts
-        date = new Date(Number(y), Number(m) - 1, Number(d), Number(h || '0'), Number(min || '0'));
-      } else if (/^\d+$/.test(dateValue)) {
-        // Se for apenas timestamp em string
-        date = new Date(Number(dateValue));
-      }
-    }
+    const date = new Date(dateValue);
 
     if (Number.isNaN(date.getTime())) return '--:--';
-    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // 🇧🇷 Forçamos a exibição no fuso de Brasília para garantir consistência
+    return new Intl.DateTimeFormat('pt-BR', {
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
+    }).format(date);
   };
 
 
@@ -1192,6 +1185,23 @@ export const BarberDashboard: React.FC = () => {
           >
             <Plus className="w-5 h-5" />
             Agendar Cliente
+          </button>
+          <button
+            onClick={() => {
+              const currentUrl = window.location.pathname;
+              if (currentUrl.includes('/admin')) {
+                // Se estiver dentro do Admin (BarberScheduleView), tenta trocar a aba
+                const historyBtn = document.querySelector('[data-tab-id="HISTORY"]') as HTMLElement;
+                if (historyBtn) historyBtn.click();
+              } else {
+                // Se estiver no dashboard puro do barbeiro (/barber), navega para a rota de admin history
+                navigate('/admin?tab=HISTORY');
+              }
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <Clock className="w-5 h-5 text-tenant-primary" />
+            Histórico
           </button>
           <button
             onClick={() => setShowLockModal(true)}

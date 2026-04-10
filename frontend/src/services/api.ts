@@ -31,11 +31,13 @@ class ApiClient {
     retry = true
   ): Promise<{ data: T }> {
     const token = this.getAuthToken();
+    const tenantId = localStorage.getItem('selected_shop_id');
     const fullURL = `${this.baseURL}${endpoint}`;
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
+      ...(tenantId && { 'x-tenant-id': tenantId }),
       ...options.headers,
     };
 

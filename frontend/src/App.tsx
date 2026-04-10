@@ -32,6 +32,7 @@ import { Cashier } from './pages/admin/Cashier';
 import { StockMovements } from './pages/admin/StockMovements';
 import { LoadingSkeletonCompact } from './components/LoadingSkeleton';
 import { ShopLoadError } from './components/ShopLoadError';
+import { OnboardingWizard } from './pages/admin/OnboardingWizard';
 
 // Component to handle global background tasks (notifications)
 const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,7 +43,8 @@ const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Notification Check Interval
   useEffect(() => {
-    if (!user || user?.role !== 'CLIENT') return;
+    // Só executar para clientes autenticados COM barbearia vinculada
+    if (!user || user?.role !== 'CLIENT' || !user.shopId) return;
 
     const checkAppointments = async () => {
       const globalEnabled = localStorage.getItem('global_notifications_enabled') !== 'false';
@@ -117,17 +119,22 @@ const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const handleShopChange = () => {
       setIsTransitioning(true);
-      // Auto-hide after 1.5s (tempo para contextos atualizarem)
-      setTimeout(() => setIsTransitioning(false), 1500);
+      // Auto-hide after 0.5s (tempo reduzido para maior agilidade)
+      setTimeout(() => setIsTransitioning(false), 500);
     };
 
     window.addEventListener('shop-changed', handleShopChange);
     return () => window.removeEventListener('shop-changed', handleShopChange);
   }, []);
 
-  // Proteção de transição (Skeleton) - Não bloqueia mais em caso de fetchError (Layout cuida disso com um Banner)
+  // Se estiver trocando de loja, mostra o skeleton
   if (isTransitioning) {
     return <LoadingSkeletonCompact />;
+  }
+
+  // Se houver erro crítico ao carregar as barbearias (ex: backend off), entra em Modo Offline bloqueante
+  if (fetchError) {
+    return <ShopLoadError />;
   }
 
   return <>{children}</>;
@@ -235,6 +242,11 @@ const AppRoutes: React.FC = () => {
       <Route path="/profile" element={
         <ProtectedRoute>
           <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/onboarding" element={
+        <ProtectedRoute allowedRoles={[UserRole.CLIENT, UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+          <OnboardingWizard />
         </ProtectedRoute>
       } />
 

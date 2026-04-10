@@ -362,7 +362,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         s.slug === potentialSlug || slugify(s.name) === potentialSlug
       );
       if (foundFromPath && foundFromPath.id !== shop.id) {
-        console.log(`🔄 ShopContext: Trocando loja para ${foundFromPath.name} devido ao slug na URL: ${potentialSlug}`);
         setShop(foundFromPath);
         localStorage.setItem('selected_shop_id', foundFromPath.id);
         return;

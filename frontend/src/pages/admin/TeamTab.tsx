@@ -100,7 +100,9 @@ export const TeamTab: React.FC = () => {
         await teamService.update(editTeamMember.id, teamForm);
         addNotification('success', 'Profissional atualizado com sucesso!');
       } else {
-        await teamService.create(teamForm);
+        // Clean payload for API (remove frontend specific fields like active, workModel)
+        const { active, workModel, ...cleanData } = teamForm;
+        await teamService.create(cleanData as any);
         addNotification('success', 'Profissional adicionado com sucesso!');
       }
       setShowTeamModal(false);

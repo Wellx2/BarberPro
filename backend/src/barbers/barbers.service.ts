@@ -18,6 +18,7 @@ import {
   BlockedBy,
   AppointmentStatus,
   UserRole,
+  SubscriptionTier,
 } from '@prisma/client';
 
 @Injectable()
@@ -169,15 +170,43 @@ export class BarbersService {
     if (!requester.shopId) throw new ForbiddenException('Sem barbearia vinculada');
     const shopId = requester.shopId;
 
+    const barber = await this.prisma.barber.findUnique({ 
+      where: { id },
+      include: { shop: true } 
+    });
+    
+    if (!barber || barber.shopId !== shopId) {
+      throw new NotFoundException('Barbeiro não encontrado');
+    }
+
     // Barbeiro só pode editar o próprio perfil (se não for admin)
     if (requester.role === 'BARBER' && requester.id !== id) {
       throw new ForbiddenException('Você só pode editar seu próprio perfil');
     }
 
+    // Trava de Plano BASIC para alteração de e-mail (Apenas para ADMIN comum)
+    if (
+      requester.role === UserRole.ADMIN && 
+      barber.shop.subscriptionTier === SubscriptionTier.BASIC && 
+      dto.email && 
+      dto.email !== barber.email
+    ) {
+      throw new ForbiddenException('O plano BASIC não permite a alteração de e-mails de colaboradores. Faça upgrade para o plano PLUS ou PRO.');
+    }
+
+    // Realizar a atualização do barbeiro
     const updated = await this.prisma.barber.update({
       where: { id, shopId },
       data: { ...dto },
     });
+
+    // Sincronização com a conta de usuário (User)
+    if (dto.email && updated.userId) {
+      await this.prisma.user.update({
+        where: { id: updated.userId },
+        data: { email: dto.email },
+      });
+    }
 
     await this.logAction('UPDATE', id, requester.id, shopId, `Perfil do barbeiro ${updated.name} atualizado`);
     return updated;
@@ -432,12 +461,25 @@ export class BarbersService {
    * Busca horários disponíveis de um barbeiro em uma data específica
    */
   async getAvailableSlots(requester: any, id: string, date: string) {
-    if (!requester.shopId) {
+    let effectiveShopId = requester.shopId;
+
+    if (requester.role === 'CLIENT') {
+      const barberForShop = await this.prisma.barber.findUnique({
+        where: { id },
+        select: { shopId: true },
+      });
+      if (!barberForShop) {
+        throw new NotFoundException('Barbeiro não encontrado');
+      }
+      effectiveShopId = barberForShop.shopId;
+    }
+
+    if (!effectiveShopId) {
       throw new ForbiddenException('Sem barbearia vinculada');
     }
 
     const barber = await this.prisma.barber.findFirst({
-      where: { id, shopId: requester.shopId },
+      where: { id, shopId: effectiveShopId },
     });
 
     if (!barber) {
@@ -445,7 +487,7 @@ export class BarbersService {
     }
 
     const shop = await this.prisma.barbershop.findUnique({
-      where: { id: requester.shopId },
+      where: { id: effectiveShopId },
     });
 
     if (!shop) {

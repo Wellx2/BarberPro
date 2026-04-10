@@ -8,7 +8,6 @@ import {
   Patch,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { ServiceOrdersService } from './service-orders.service';
 import { CreateServiceOrderDto } from './dto/create-service-order.dto';
@@ -19,6 +18,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { ModuleAccessGuard, RequireModule } from '../common/guards/module-access.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole, OrderStatus, ModuleType } from '@prisma/client';
 
 /**
@@ -42,8 +42,8 @@ export class ServiceOrdersController {
    */
   @Post()
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async create(@Req() req, @Body() dto: CreateServiceOrderDto) {
-    return this.serviceOrdersService.create(req.user, dto);
+  async create(@CurrentUser() user: any, @Body() dto: CreateServiceOrderDto) {
+    return this.serviceOrdersService.create(user, dto);
   }
 
   /**
@@ -53,7 +53,7 @@ export class ServiceOrdersController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.BARBER)
   async findAll(
-    @Req() req,
+    @CurrentUser() user: any,
     @Query('status') status?: OrderStatus,
     @Query('clientId') clientId?: string,
     @Query('barberId') barberId?: string,
@@ -67,7 +67,7 @@ export class ServiceOrdersController {
     if (startDate) filters.startDate = new Date(startDate);
     if (endDate) filters.endDate = new Date(endDate);
 
-    return this.serviceOrdersService.findAll(req.user, filters);
+    return this.serviceOrdersService.findAll(user, filters);
   }
 
   /**
@@ -77,8 +77,8 @@ export class ServiceOrdersController {
    */
   @Get('appointment/:appointmentId')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async findByAppointmentId(@Req() req, @Param('appointmentId') appointmentId: string) {
-    return this.serviceOrdersService.findByAppointmentId(req.user, appointmentId);
+  async findByAppointmentId(@CurrentUser() user: any, @Param('appointmentId') appointmentId: string) {
+    return this.serviceOrdersService.findByAppointmentId(user, appointmentId);
   }
 
   /**
@@ -87,8 +87,8 @@ export class ServiceOrdersController {
    */
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async findOne(@Req() req, @Param('id') id: string) {
-    return this.serviceOrdersService.findOne(req.user, id);
+  async findOne(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.serviceOrdersService.findOne(user, id);
   }
 
   /**
@@ -97,8 +97,8 @@ export class ServiceOrdersController {
    */
   @Post(':id/items')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async addItem(@Req() req, @Param('id') orderId: string, @Body() dto: AddOrderItemDto) {
-    return this.serviceOrdersService.addItem(req.user, orderId, dto);
+  async addItem(@CurrentUser() user: any, @Param('id') orderId: string, @Body() dto: AddOrderItemDto) {
+    return this.serviceOrdersService.addItem(user, orderId, dto);
   }
 
   /**
@@ -107,8 +107,8 @@ export class ServiceOrdersController {
    */
   @Delete(':id/items/:itemId')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async removeItem(@Req() req, @Param('id') orderId: string, @Param('itemId') itemId: string) {
-    return this.serviceOrdersService.removeItem(req.user, orderId, itemId);
+  async removeItem(@CurrentUser() user: any, @Param('id') orderId: string, @Param('itemId') itemId: string) {
+    return this.serviceOrdersService.removeItem(user, orderId, itemId);
   }
 
   /**
@@ -117,8 +117,8 @@ export class ServiceOrdersController {
    */
   @Patch(':id/start')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async startService(@Req() req, @Param('id') id: string) {
-    return this.serviceOrdersService.startService(req.user, id);
+  async startService(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.serviceOrdersService.startService(user, id);
   }
 
   /**
@@ -127,8 +127,8 @@ export class ServiceOrdersController {
    */
   @Patch(':id/complete')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async complete(@Req() req, @Param('id') id: string, @Body() dto: CompleteServiceOrderDto) {
-    return this.serviceOrdersService.complete(req.user, id, dto);
+  async complete(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: CompleteServiceOrderDto) {
+    return this.serviceOrdersService.complete(user, id, dto);
   }
 
   /**
@@ -137,8 +137,8 @@ export class ServiceOrdersController {
    */
   @Patch(':id/cancel')
   @Roles(UserRole.ADMIN)
-  async cancel(@Req() req, @Param('id') id: string, @Body('reason') reason: string) {
-    return this.serviceOrdersService.cancel(req.user, id, reason);
+  async cancel(@CurrentUser() user: any, @Param('id') id: string, @Body('reason') reason: string) {
+    return this.serviceOrdersService.cancel(user, id, reason);
   }
 
   /**
@@ -147,8 +147,8 @@ export class ServiceOrdersController {
    */
   @Get('client/:clientId/history')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
-  async getClientHistory(@Req() req, @Param('clientId') clientId: string) {
-    return this.serviceOrdersService.getClientHistory(req.user, clientId);
+  async getClientHistory(@CurrentUser() user: any, @Param('clientId') clientId: string) {
+    return this.serviceOrdersService.getClientHistory(user, clientId);
   }
 
   /**
@@ -158,7 +158,7 @@ export class ServiceOrdersController {
   @Get('barber/:barberId/history')
   @Roles(UserRole.ADMIN, UserRole.BARBER)
   async getBarberHistory(
-    @Req() req,
+    @CurrentUser() user: any,
     @Param('barberId') barberId: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -167,6 +167,6 @@ export class ServiceOrdersController {
     if (startDate) filters.startDate = new Date(startDate);
     if (endDate) filters.endDate = new Date(endDate);
 
-    return this.serviceOrdersService.getBarberHistory(req.user, barberId, filters);
+    return this.serviceOrdersService.getBarberHistory(user, barberId, filters);
   }
 }

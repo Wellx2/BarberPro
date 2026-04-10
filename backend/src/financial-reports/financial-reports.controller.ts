@@ -1,10 +1,11 @@
-import { Controller, Get, Query, UseGuards, Req, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Param, ParseIntPipe } from '@nestjs/common';
 import { FinancialReportsService } from './financial-reports.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { ModuleAccessGuard, RequireModule } from '../common/guards/module-access.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole, ModuleType } from '@prisma/client';
 
 /**
@@ -31,12 +32,12 @@ export class FinancialReportsController {
    */
   @Get('consolidated')
   async getConsolidated(
-    @Req() req,
+    @CurrentUser() user: any,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
     return this.financialReportsService.getConsolidatedReport(
-      req.user,
+      user,
       new Date(startDate),
       new Date(endDate),
     );
@@ -47,8 +48,8 @@ export class FinancialReportsController {
    * Query param: date (formato ISO, ex: 2026-01-29)
    */
   @Get('daily')
-  async getDaily(@Req() req, @Query('date') date: string) {
-    return this.financialReportsService.getDailyReport(req.user, new Date(date));
+  async getDaily(@CurrentUser() user: any, @Query('date') date: string) {
+    return this.financialReportsService.getDailyReport(user, new Date(date));
   }
 
   /**
@@ -56,8 +57,8 @@ export class FinancialReportsController {
    * Query param: weekStart (data de início da semana)
    */
   @Get('weekly')
-  async getWeekly(@Req() req, @Query('weekStart') weekStart: string) {
-    return this.financialReportsService.getWeeklyReport(req.user, new Date(weekStart));
+  async getWeekly(@CurrentUser() user: any, @Query('weekStart') weekStart: string) {
+    return this.financialReportsService.getWeeklyReport(user, new Date(weekStart));
   }
 
   /**
@@ -65,8 +66,8 @@ export class FinancialReportsController {
    * Query param: startDate (data de início)
    */
   @Get('fortnightly')
-  async getFortnightly(@Req() req, @Query('startDate') startDate: string) {
-    return this.financialReportsService.getFortnightlyReport(req.user, new Date(startDate));
+  async getFortnightly(@CurrentUser() user: any, @Query('startDate') startDate: string) {
+    return this.financialReportsService.getFortnightlyReport(user, new Date(startDate));
   }
 
   /**
@@ -76,11 +77,11 @@ export class FinancialReportsController {
    */
   @Get('monthly/:year/:month')
   async getMonthly(
-    @Req() req,
+    @CurrentUser() user: any,
     @Param('year', ParseIntPipe) year: number,
     @Param('month', ParseIntPipe) month: number,
   ) {
-    return this.financialReportsService.getMonthlyReport(req.user, year, month);
+    return this.financialReportsService.getMonthlyReport(user, year, month);
   }
 
   /**
@@ -89,8 +90,8 @@ export class FinancialReportsController {
    * Exemplo: /financial-reports/annual/2026
    */
   @Get('annual/:year')
-  async getAnnual(@Req() req, @Param('year', ParseIntPipe) year: number) {
-    return this.financialReportsService.getAnnualReport(req.user, year);
+  async getAnnual(@CurrentUser() user: any, @Param('year', ParseIntPipe) year: number) {
+    return this.financialReportsService.getAnnualReport(user, year);
   }
 
   /**
@@ -102,7 +103,7 @@ export class FinancialReportsController {
    */
   @Get('top-selling')
   async getTopSelling(
-    @Req() req,
+    @CurrentUser() user: any,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('days') days?: string,
@@ -127,7 +128,7 @@ export class FinancialReportsController {
 
     const limitNum = limit ? parseInt(limit, 10) : 10;
 
-    return this.financialReportsService.getTopSellingItems(req.user, start, end, limitNum);
+    return this.financialReportsService.getTopSellingItems(user, start, end, limitNum);
   }
 
   /**
@@ -137,13 +138,13 @@ export class FinancialReportsController {
    */
   @Get('barber-performance/:barberId')
   async getBarberPerformance(
-    @Req() req,
+    @CurrentUser() user: any,
     @Param('barberId') barberId: string,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
     return this.financialReportsService.getBarberPerformance(
-      req.user,
+      user,
       barberId,
       new Date(startDate),
       new Date(endDate),
@@ -156,12 +157,12 @@ export class FinancialReportsController {
    */
   @Get('costs-analysis')
   async getCostsAnalysis(
-    @Req() req,
+    @CurrentUser() user: any,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
     return this.financialReportsService.getCostsAnalysis(
-      req.user,
+      user,
       new Date(startDate),
       new Date(endDate),
     );

@@ -13,6 +13,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterShopDto } from './dto/register-shop.dto';
+import { RegisterClientDto } from './dto/register-client.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -33,6 +34,14 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async registerShop(@Body() dto: RegisterShopDto) {
     return this.authService.registerShop(dto);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('register-client')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Cadastrar novo cliente (sem barbearia)' })
+  async registerClient(@Body() dto: RegisterClientDto) {
+    return this.authService.registerClient(dto);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })

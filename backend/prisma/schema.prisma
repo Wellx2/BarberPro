@@ -30,7 +30,7 @@ model Barbershop {
   subscriptionEndDate    DateTime?
   subscriptionStartDate  DateTime?
   subscriptionStatus     SubscriptionStatus?       @default(ACTIVE)
-  subscriptionTier       SubscriptionTier?         @default(SIMPLE)
+  subscriptionTier       SubscriptionTier?         @default(BASIC)
   bannerUrl              String?
   logoUrl                String?
   primaryColor           String?                   @default("#f59e0b")
@@ -891,12 +891,14 @@ enum TeamMemberRole {
 }
 
 enum SubscriptionTier {
-  SIMPLE
+  BASIC
   PLUS
-  PREMIUM
+  PRO
+  MASTER
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   EXPIRED
   SUSPENDED

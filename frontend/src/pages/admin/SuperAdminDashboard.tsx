@@ -3,7 +3,8 @@ import {
     ShieldCheck, Store, Users, Settings, Plus, Edit3, Trash2,
     Check, X, Search, Smartphone, MapPin, Layers,
     ShoppingBag, Package, PieChart, ArrowRight, UserPlus,
-    ChevronRight, Save, Shield, Info, Lock, Zap, RefreshCw, Loader2
+    ChevronRight, Save, Shield, Info, Lock, Zap, RefreshCw, Loader2,
+    ToggleLeft, ToggleRight, ExternalLink, Building2
 } from 'lucide-react';
 import { Shop, User, UserRole } from '../../types';
 import { useNotification } from '../../context/NotificationContext';
@@ -11,6 +12,7 @@ import { useShop } from '../../context/ShopContext';
 import { Button, Card, Input, Select } from '../../components/ui';
 import { barbershopService, QuickSetupData } from '../../services/barbershopService';
 import { userService } from '../../services/userService';
+import { onboardingService } from '../../services/onboardingService';
 
 // Helper local para o ícone Rocket se não estiver no lucide
 const RocketIcon = ({ size, className }: { size?: number, className?: string }) => (
@@ -25,8 +27,12 @@ export const SuperAdminDashboard: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [togglingShopId, setTogglingShopId] = useState<string | null>(null);
+    const [isNewUnit, setIsNewUnit] = useState(false);
+    const [newUnitData, setNewUnitData] = useState({ name: '', phone: '', address: '', ownerName: '', ownerEmail: '', ownerPassword: '' });
 
-    const [activeTab, setActiveTab] = useState<'SHOPS' | 'USERS' | 'GLOBAL'>('SHOPS');
+    const [activeTab, setActiveTab] = useState<'SHOPS' | 'USERS' | 'GLOBAL' | 'ACTIVATIONS'>('SHOPS');
+    const [pendingRequests, setPendingRequests] = useState<any[]>([]);
     const [editShop, setEditShop] = useState<Shop | null>(null);
     const [editUser, setEditUser] = useState<User | null>(null);
     const [isQuickSetup, setIsQuickSetup] = useState(false);
@@ -46,14 +52,16 @@ export const SuperAdminDashboard: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [shopsData, usersData] = await Promise.all([
+            const [shopsData, usersData, onboardingData] = await Promise.all([
                 barbershopService.list(),
-                userService.list()
+                userService.list(),
+                onboardingService.listPendingRequests().catch(() => [])
             ]);
             // Converte minimamente para Shop do frontend se necessário
             // O ideal seria usar o convertBarbershopToShop do context, mas aqui listamos todas
             setShops(shopsData as any);
             setUsers(usersData);
+            setPendingRequests(onboardingData);
         } catch (error) {
             console.error('Erro ao carregar dados do console master:', error);
             addNotification('error', 'Não foi possível carregar os dados do sistema.');
@@ -187,6 +195,36 @@ export const SuperAdminDashboard: React.FC = () => {
         }
     };
 
+    const toggleStatus = async (id: string, currentStatus: boolean) => {
+        try {
+            // No backend o campo é 'active'
+            await barbershopService.updateStatus(id, !currentStatus);
+            addNotification('success', `Unidade ${!currentStatus ? 'ativada' : 'desativada'} com sucesso.`);
+            loadData();
+        } catch (error) {
+            addNotification('error', 'Erro ao alterar status da unidade.');
+        }
+    };
+
+    const handleManageShop = async (shopId: string) => {
+        try {
+            const data = await barbershopService.switch(shopId);
+            
+            // Salvar novos tokens e dados do usuário (com o novo shopId)
+            localStorage.setItem('@KlypBarber:token', data.accessToken);
+            localStorage.setItem('@KlypBarber:refreshToken', data.refreshToken);
+            localStorage.setItem('@KlypBarber:user', JSON.stringify(data.user));
+            
+            addNotification('success', `Entrando na gestão da unidade: ${data.shop.name}`);
+            
+            // Redirecionar para o dashboard de admin
+            // Usamos window.location para forçar o recarregamento dos contextos com o novo shopId do token
+            window.location.href = '/admin';
+        } catch (error) {
+            addNotification('error', 'Erro ao acessar gestão da unidade.');
+        }
+    };
+
     if (loading && shops.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -215,6 +253,17 @@ export const SuperAdminDashboard: React.FC = () => {
                     </Button>
                     <div className="flex items-center bg-white dark:bg-gray-800 p-2 rounded-[30px] shadow-xl border dark:border-gray-700">
                         <button onClick={() => setActiveTab('SHOPS')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'SHOPS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-tenant-primary'}`}>Unidades</button>
+                        <button onClick={() => setActiveTab('ACTIVATIONS')} className={`relative px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'ACTIVATIONS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-tenant-primary'}`}>
+                            Ativações
+                            {pendingRequests.length > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-tenant-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-4 w-4 bg-tenant-primary text-[8px] items-center justify-center text-white">
+                                        {pendingRequests.length}
+                                    </span>
+                                </span>
+                            )}
+                        </button>
                         <button onClick={() => setActiveTab('USERS')} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'USERS' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-400 hover:text-tenant-primary'}`}>Operadores</button>
                     </div>
                 </div>
@@ -228,6 +277,9 @@ export const SuperAdminDashboard: React.FC = () => {
                             <p className="text-xs font-bold text-gray-400 uppercase mt-1">Configure permissões e limites por unidade</p>
                         </div>
                         <div className="flex gap-4">
+                            <Button variant="secondary" className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300" onClick={() => setIsNewUnit(true)}>
+                                <Building2 size={20} /> Nova Unidade
+                            </Button>
                             <Button variant="secondary" className="bg-tenant-primary/10 border-tenant-primary/20 text-tenant-primary hover:bg-tenant-primary/20" onClick={() => setIsQuickSetup(true)}>
                                 <Zap size={20} /> Onboarding Rápido
                             </Button>
@@ -274,16 +326,137 @@ export const SuperAdminDashboard: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="mt-auto flex justify-between items-center pt-6 border-t dark:border-gray-700">
+                                <div className="mt-auto flex flex-wrap justify-between items-center gap-3 pt-6 border-t dark:border-gray-700">
                                     <div className="flex gap-4">
                                         <div><p className="text-[8px] font-black text-gray-400 uppercase mb-0.5 tracking-tighter">ID</p><p className="text-[10px] font-mono dark:text-white">{s.id.split('-')[0]}...</p></div>
                                         <div><p className="text-[8px] font-black text-gray-400 uppercase mb-0.5 tracking-tighter">Fone</p><p className="text-[10px] font-bold dark:text-white">{s.phone}</p></div>
                                     </div>
-                                    <span className="text-[10px] font-black uppercase text-tenant-primary bg-tenant-primary/5 px-4 py-2 rounded-full border border-tenant-primary/10">Ativa</span>
+                                    <div className="flex items-center gap-2">
+                                        {/* Toggle de Status */}
+                                        <button
+                                            onClick={async () => {
+                                                setTogglingShopId(s.id);
+                                                await toggleStatus(s.id, (s as any).active !== false);
+                                                setTogglingShopId(null);
+                                            }}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                                (s as any).active !== false
+                                                    ? 'bg-green-50 border-green-200 text-green-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                                                    : 'bg-red-50 border-red-200 text-red-500 hover:bg-green-50 hover:border-green-200 hover:text-green-600'
+                                            }`}
+                                            title={(s as any).active !== false ? 'Clique para desativar' : 'Clique para ativar'}
+                                        >
+                                            {togglingShopId === s.id ? (
+                                                <Loader2 size={12} className="animate-spin" />
+                                            ) : (s as any).active !== false ? (
+                                                <><ToggleRight size={14} /> Ativa</>
+                                            ) : (
+                                                <><ToggleLeft size={14} /> Inativa</>
+                                            )}
+                                        </button>
+                                        {/* Botão Administrar */}
+                                        <button
+                                            onClick={() => handleManageShop(s.id)}
+                                            className="flex items-center gap-2 px-3 py-2 bg-gray-900 hover:bg-tenant-primary text-white rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                            title="Entrar como administrador desta unidade"
+                                        >
+                                            <ExternalLink size={12} /> Administrar
+                                        </button>
+                                    </div>
                                 </div>
                             </Card>
                         ))}
                     </div>
+                </div>
+            )}
+            {activeTab === 'ACTIVATIONS' && (
+                <div className="space-y-10 animate-fade-in">
+                    <div>
+                        <h2 className="text-2xl font-black uppercase tracking-tight dark:text-white">Solicitações de Ativação</h2>
+                        <p className="text-xs font-bold text-gray-400 uppercase mt-1">Valide pagamentos PIX e libere o acesso dos parceiros</p>
+                    </div>
+
+                    <Card className="overflow-hidden border-orange-100 shadow-orange-900/5">
+                        {pendingRequests.length === 0 ? (
+                            <div className="p-20 text-center flex flex-col items-center gap-4">
+                                <Check size={48} className="text-gray-200" />
+                                <p className="text-sm font-black uppercase tracking-widest text-gray-300">Nenhuma ativação pendente</p>
+                            </div>
+                        ) : (
+                            <table className="w-full text-left">
+                                <thead className="bg-orange-500 text-white">
+                                    <tr>
+                                        <th className="p-6 text-[10px] font-black uppercase tracking-widest">Unidade / Solicitante</th>
+                                        <th className="p-6 text-[10px] font-black uppercase tracking-widest">Plano / Valor</th>
+                                        <th className="p-6 text-[10px] font-black uppercase tracking-widest">Data Solicitação</th>
+                                        <th className="p-6 text-[10px] font-black uppercase tracking-widest text-center">Ações de Ativação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y dark:divide-gray-700">
+                                    {pendingRequests.map(req => (
+                                        <tr key={req.id} className="hover:bg-orange-50/30 dark:hover:bg-gray-800/40 transition-colors">
+                                            <td className="p-6">
+                                                <div>
+                                                    <p className="font-black uppercase text-sm dark:text-white leading-none mb-2">{req.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                                                        {req.users?.[0]?.name} • {req.users?.[0]?.email}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getTierConfig(req.subscriptionTier).color}`}>
+                                                        {req.subscriptionTier}
+                                                    </span>
+                                                    <span className="text-xs font-black dark:text-white">
+                                                        R$ {req.subscriptionTier === 'BASIC' ? '65,00' : req.subscriptionTier === 'PLUS' ? '75,00' : '115,00'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="p-6 text-xs font-bold text-gray-400 uppercase">
+                                                {new Date(req.createdAt).toLocaleDateString('pt-BR')}
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex justify-center gap-3">
+                                                    <button 
+                                                        onClick={async () => {
+                                                            if (!window.confirm('Confirmar ativação e liberação de acesso?')) return;
+                                                            try {
+                                                                await onboardingService.approveRequest(req.id);
+                                                                addNotification('success', 'Barbearia ativada com sucesso!');
+                                                                loadData();
+                                                            } catch (error) {
+                                                                addNotification('error', 'Erro ao ativar barbearia.');
+                                                            }
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-md"
+                                                    >
+                                                        <Check size={14} /> Ativar
+                                                    </button>
+                                                    <button 
+                                                        onClick={async () => {
+                                                            if (!window.confirm('Inativar esta solicitação definitivamente?')) return;
+                                                            try {
+                                                                await onboardingService.rejectRequest(req.id);
+                                                                addNotification('info', 'Solicitação inativada.');
+                                                                loadData();
+                                                            } catch (error) {
+                                                                addNotification('error', 'Erro ao inativar.');
+                                                            }
+                                                        }}
+                                                        className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-400 hover:text-red-500 rounded-xl transition-all"
+                                                        title="Inativar"
+                                                    >
+                                                        <X size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </Card>
                 </div>
             )}
 
@@ -332,6 +505,68 @@ export const SuperAdminDashboard: React.FC = () => {
                             </tbody>
                         </table>
                     </Card>
+                </div>
+            )}
+
+            {/* Modal Nova Unidade */}
+            {isNewUnit && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-gray-900/95 backdrop-blur-md animate-fade-in overflow-y-auto">
+                    <form
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            setSaving(true);
+                            try {
+                                await barbershopService.create({
+                                    name: newUnitData.name,
+                                    phone: newUnitData.phone,
+                                    address: newUnitData.address,
+                                    ownerName: newUnitData.ownerName,
+                                    ownerEmail: newUnitData.ownerEmail,
+                                    ownerPassword: newUnitData.ownerPassword,
+                                });
+                                addNotification('success', `Unidade "${newUnitData.name}" criada com sucesso!`);
+                                setIsNewUnit(false);
+                                setNewUnitData({ name: '', phone: '', address: '', ownerName: '', ownerEmail: '', ownerPassword: '' });
+                                loadData();
+                            } catch (error: any) {
+                                addNotification('error', error.message || 'Erro ao criar unidade.');
+                            } finally {
+                                setSaving(false);
+                            }
+                        }}
+                        className="bg-white dark:bg-gray-800 rounded-[50px] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col border dark:border-gray-700 my-8"
+                    >
+                        <div className="p-8 bg-gray-900 text-white flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className="p-4 bg-white/10 rounded-[20px]"><Building2 size={28} /></div>
+                                <div>
+                                    <h3 className="text-xl font-black uppercase tracking-tighter leading-none">Nova Unidade</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Cadastro básico de barbearia</p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setIsNewUnit(false)}><X size={32} /></button>
+                        </div>
+
+                        <div className="p-10 space-y-10 max-h-[75vh] overflow-y-auto text-left">
+                            <div className="space-y-6">
+                                <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">1. Dados da Barbearia</h4>
+                                <Input label="Nome da Barbearia" placeholder="Ex: Barber Studio Centro" required value={newUnitData.name} onChange={e => setNewUnitData({ ...newUnitData, name: e.target.value })} fullWidth />
+                                <Input label="Telefone de Contato" placeholder="(11) 99999-9999" required value={newUnitData.phone} onChange={e => setNewUnitData({ ...newUnitData, phone: e.target.value })} fullWidth />
+                                <Input label="Endereço (Opcional)" placeholder="Rua, Número, Bairro" value={newUnitData.address} onChange={e => setNewUnitData({ ...newUnitData, address: e.target.value })} fullWidth />
+                            </div>
+
+                            <div className="space-y-6">
+                                <h4 className="text-xs font-black uppercase text-tenant-primary tracking-[0.3em]">2. Conta do Administrador</h4>
+                                <Input label="Nome Completo do Dono" placeholder="Ex: João da Silva" required value={newUnitData.ownerName} onChange={e => setNewUnitData({ ...newUnitData, ownerName: e.target.value })} fullWidth />
+                                <Input label="E-mail de Acesso" type="email" placeholder="admin@barbearia.com" required value={newUnitData.ownerEmail} onChange={e => setNewUnitData({ ...newUnitData, ownerEmail: e.target.value })} fullWidth />
+                                <Input label="Senha Temporária" type="password" placeholder="Mínimo 6 caracteres" required value={newUnitData.ownerPassword} onChange={e => setNewUnitData({ ...newUnitData, ownerPassword: e.target.value })} fullWidth />
+                            </div>
+
+                            <Button type="submit" variant="primary" size="lg" fullWidth disabled={saving}>
+                                {saving ? <Loader2 size={24} className="animate-spin" /> : <><Building2 size={20} className="mr-2" /> Criar Unidade</>}
+                            </Button>
+                        </div>
+                    </form>
                 </div>
             )}
 

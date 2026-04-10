@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { authService } from '../services';
-import { Scissors, ArrowLeft, Key, Phone } from 'lucide-react';
+import { Scissors, ArrowLeft, Key, Phone, Building2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -16,8 +15,7 @@ export const Login: React.FC = () => {
 
   const from = location.state?.from || '/dashboard';
 
-  const [view, setView] = useState<'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'PHONE_LOGIN'>('LOGIN');
-  const [loginMethod, setLoginMethod] = useState<'EMAIL' | 'PHONE'>('EMAIL');
+  const [view, setView] = useState<'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD'>('LOGIN');
   const [isLoading, setIsLoading] = useState(false);
   const [loginData, setLoginData] = useState({
     email: '',
@@ -28,37 +26,18 @@ export const Login: React.FC = () => {
     email: '',
     password: '',
     phone: '',
-    isShopOwner: false, // Nova flag
-    shopName: '',
-    shopAddress: ''
   });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Usar o novo método de login que faz requisição real ao backend
       await login(loginData.email, loginData.password);
-
       addNotification('success', `Bem-vindo!`);
       navigate(from, { replace: true, state: location.state });
     } catch (error: any) {
-      console.error('Erro não login:', error);
+      console.error('Erro no login:', error);
       addNotification('error', error.message || 'Erro ao fazer login');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePhoneLogin = async (phone: string) => {
-    setIsLoading(true);
-    try {
-      // Simulação de envio de OTP (Em um app real, chamaria o backend)
-      addNotification('success', `Código enviado para ${phone}`);
-      // setView('VERIFY_OTP'); // Futura implementação
-      alert("Recurso de login por telefone (OTP) em desenvolvimento. Use e-mail por enquanto.");
-    } catch (error: any) {
-      addNotification('error', 'Erro ao enviar código');
     } finally {
       setIsLoading(false);
     }
@@ -80,25 +59,12 @@ export const Login: React.FC = () => {
       return;
     }
 
-    // Se isShopOwner for false (cliente comum), não exigir dados da barbearia.
-    // Enviamos "Cliente" como shopName provisório ou a service decide.
-    // (A documentação não informou o exato endpoint de client public, 
-    // assumindo registrarShop por manter compatibilidade preexistente caso não modificado não back)
-
     setIsLoading(true);
     try {
-      const cleanPhone = registerData.phone.replace(/\D/g, ''); // Fix the 400 Bad Request
-      const basePayload = { ...registerData, phone: cleanPhone };
+      const cleanPhone = registerData.phone.replace(/\D/g, '');
+      const payload = { ...registerData, phone: cleanPhone };
       
-      const payload = registerData.isShopOwner ? basePayload : {
-        ...basePayload,
-        shopName: 'Client Account', // Bypass validation if required by DTO
-        shopAddress: 'N/A'
-      };
-
-      const response = await authService.registerShop(payload);
-
-      // Após registrar, fazer login automático
+      const response = await authService.register(payload);
       await login(payload.email, payload.password);
 
       addNotification('success', `Bem-vindo, ${response.user.name}!`);
@@ -113,8 +79,10 @@ export const Login: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-9rem)] md:min-h-[calc(100vh-4rem)] bg-gray-100 dark:bg-gray-900 p-4 transition-all">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-50 dark:border-gray-700">
+        
+        {/* Header Section */}
         <div className="bg-gray-900 p-8 md:p-10 text-center relative">
-          {view !== 'LOGIN' && view !== 'ROLES' && (
+          {view !== 'LOGIN' && (
             <button
               onClick={() => setView('LOGIN')}
               className="absolute top-6 left-6 text-gray-400 hover:text-white transition-colors"
@@ -122,18 +90,14 @@ export const Login: React.FC = () => {
               <ArrowLeft size={24} />
             </button>
           )}
-          <div className="inline-block p-4 rounded-2xl bg-tenant-primary/10 mb-4">
+          <div className="inline-block p-4 rounded-2xl bg-tenant-primary/10 mb-4 transition-transform hover:scale-110 duration-300">
             <Scissors className="h-8 w-8 text-tenant-primary" />
           </div>
           <h2 className="text-4xl font-black text-white uppercase tracking-tighter">
-            {view === 'LOGIN' ? 'Klypbarber' : view === 'REGISTER' ? 'Nova Conta' : 'Escolha seu Perfil'}
+            {view === 'LOGIN' ? 'Klypbarber' : 'Nova Conta'}
           </h2>
           <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-3">
-            {view === 'LOGIN'
-              ? 'Faça login para continuar'
-              : view === 'REGISTER'
-                ? 'Crie sua conta e barbearia'
-                : 'Selecione como deseja acessar'}
+            {view === 'LOGIN' ? 'Faça login para continuar' : 'Cadastre-se para agendar seu horário'}
           </p>
         </div>
 
@@ -162,14 +126,13 @@ export const Login: React.FC = () => {
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
 
-              <div className="flex flex-col gap-2 mt-4">
-                {/* Ocultando login por WhatsApp temporariamente */}
+              <div className="flex flex-col gap-3 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
                 <button
                   type="button"
                   onClick={() => setView('REGISTER')}
-                  className="text-center text-[10px] font-black uppercase text-tenant-primary hover:underline mt-2"
+                  className="text-center text-[10px] font-black uppercase text-tenant-primary hover:underline"
                 >
-                  Não tenho conta? Cadastrar
+                  Não tem conta? Cadastrar grátis
                 </button>
                 <button
                   type="button"
@@ -182,74 +145,14 @@ export const Login: React.FC = () => {
             </form>
           )}
 
-          {view === 'PHONE_LOGIN' && (
-            <PhoneLoginView
-              onBack={() => setView('LOGIN')}
-              onSubmit={handlePhoneLogin}
-              isLoading={isLoading}
-            />
-          )}
-
-          {view === 'FORGOT_PASSWORD' && (
-            <InstructionsView
-              onBack={() => setView('LOGIN')}
-              onSubmit={async (email) => {
-                setIsLoading(true);
-                try {
-                  await authService.forgotPassword(email);
-                  addNotification('success', 'Se o e-mail existir, você receberá instruções de recuperação.');
-                  setView('LOGIN');
-                } catch (error: any) {
-                  addNotification('error', error.message || 'Erro ao processar solicitação');
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-              isLoading={isLoading}
-            />
-          )}
-
           {view === 'REGISTER' && (
             <form onSubmit={handleRegister} className="space-y-6 animate-fade-in">
-              <div className="flex items-center gap-2 mb-4">
-                <input
-                  type="checkbox"
-                  id="isShopOwner"
-                  checked={registerData.isShopOwner}
-                  onChange={e => setRegisterData({ ...registerData, isShopOwner: e.target.checked })}
-                  className="w-4 h-4 text-tenant-primary bg-gray-100 border-gray-300 rounded focus:ring-tenant-primary cursor-pointer"
-                />
-                <label htmlFor="isShopOwner" className="text-xs text-gray-600 dark:text-gray-400 font-bold uppercase tracking-widest cursor-pointer">
-                  Quero cadastrar minha barbearia
-                </label>
-              </div>
-
-              {registerData.isShopOwner && (
-                <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700">
-                  <Input
-                    label="Nome da Barbearia"
-                    required
-                    value={registerData.shopName}
-                    onChange={(e) => setRegisterData({ ...registerData, shopName: e.target.value })}
-                    placeholder="Barbearia Prime"
-                    fullWidth
-                  />
-                  <Input
-                    label="Endereço da Barbearia"
-                    required
-                    value={registerData.shopAddress}
-                    onChange={(e) => setRegisterData({ ...registerData, shopAddress: e.target.value })}
-                    placeholder="Rua exemplo, 123"
-                    fullWidth
-                  />
-                </div>
-              )}
               <Input
                 label="Seu Nome Completo"
                 required
                 value={registerData.name}
                 onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                placeholder="João da Silva"
+                placeholder="Ex: João da Silva"
                 fullWidth
               />
               <Input
@@ -267,7 +170,7 @@ export const Login: React.FC = () => {
                 required
                 value={registerData.email}
                 onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                placeholder="jáoao@email.com"
+                placeholder="seu@email.com"
                 fullWidth
               />
               <Input
@@ -282,15 +185,71 @@ export const Login: React.FC = () => {
               <Button type="submit" variant="primary" fullWidth disabled={isLoading}>
                 {isLoading ? 'Criando conta...' : 'Registrar e Acessar'}
               </Button>
+
+              {/* Footer CTA para Barbearias - Lead First Flow */}
+              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl flex items-center gap-4 group cursor-pointer hover:bg-tenant-primary/5 transition-all"
+                  onClick={async () => {
+                    if (!registerData.name || !registerData.email || !registerData.password || registerData.phone.length < 14) {
+                      addNotification('warning', 'Preencha seus dados de cadastro acima primeiro para criar sua barbearia.');
+                      return;
+                    }
+                    setIsLoading(true);
+                    try {
+                      const cleanPhone = registerData.phone.replace(/\D/g, '');
+                      const payload = { ...registerData, phone: cleanPhone };
+                      const response = await authService.register(payload);
+                      await login(payload.email, payload.password);
+                      navigate('/onboarding', { replace: true });
+                    } catch (error: any) {
+                      addNotification('error', error.message || 'Erro ao criar conta');
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  <div className="p-2 bg-tenant-primary/10 rounded-xl text-tenant-primary group-hover:scale-110 transition-transform">
+                    <Building2 size={24} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase text-tenant-primary tracking-widest">Dono de Barbearia?</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Preencha seus dados e clique aqui para cadastrar sua unidade agora e ganhar 7 dias grátis.</p>
+                  </div>
+                </div>
+              </div>
             </form>
           )}
+
+          {view === 'FORGOT_PASSWORD' && (
+            <InstructionsView
+              onBack={() => setView('LOGIN')}
+              onSubmit={async (email) => {
+                setIsLoading(true);
+                try {
+                  await authService.forgotPassword(email);
+                  addNotification('success', 'Instruções de recuperação enviadas para o seu e-mail.');
+                  setView('LOGIN');
+                } catch (error: any) {
+                  addNotification('error', error.message || 'Erro ao processar solicitação');
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              isLoading={isLoading}
+            />
+          )}
         </div>
+      </div>
+
+      {/* Footer Branding */}
+      <div className="mt-8 flex items-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+         <Scissors size={14} className="text-gray-500" />
+         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Powered by Klypbarber</span>
       </div>
     </div>
   );
 };
 
-// Componente auxiliar para a vista de esqueci senha
 const InstructionsView: React.FC<{
   onBack: () => void,
   onSubmit: (email: string) => Promise<void>,
@@ -300,11 +259,9 @@ const InstructionsView: React.FC<{
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 p-4 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/30">
-        <p className="text-sm text-tenant-primary dark:text-white/80 font-medium">
-          Digite seu e-mail abaixo. Se houver uma conta associada, enviaremos as instruções para recuperar sua senha.
-        </p>
-      </div>
+      <p className="text-sm text-gray-500 dark:text-white/60 leading-relaxed">
+        Digite seu e-mail abaixo e enviaremos um link para você redefinir sua senha com segurança.
+      </p>
 
       <Input
         label="Seu E-mail"
@@ -324,70 +281,14 @@ const InstructionsView: React.FC<{
           onClick={() => onSubmit(email)}
           disabled={isLoading || !email}
         >
-          {isLoading ? 'Enviando...' : 'Enviar Instruções'}
+          {isLoading ? 'Enviando...' : 'Recuperar Senha'}
         </Button>
         <button
           type="button"
           onClick={onBack}
-          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary transition-colors"
+          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary"
         >
           Voltar para o Login
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Componente auxiliar para a vista de login por telefone
-const PhoneLoginView: React.FC<{
-  onBack: () => void,
-  onSubmit: (phone: string) => Promise<void>,
-  isLoading: boolean
-}> = ({ onBack, onSubmit, isLoading }) => {
-  const [phone, setPhone] = useState('');
-
-  const formatPhone = (val: string) => {
-    let v = val.replace(/\D/g, '');
-    if (v.length > 11) v = v.slice(0, 11);
-    if (v.length > 7) return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
-    if (v.length > 2) return `(${v.slice(0, 2)}) ${v.slice(2)}`;
-    return v;
-  };
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="bg-tenant-primary/5 dark:bg-tenant-primary/10 p-4 rounded-xl border border-tenant-primary/20 dark:border-tenant-primary/30">
-        <p className="text-sm text-tenant-primary dark:text-white/80 font-medium text-center">
-          Acesse sua conta rapidamente usando seu WhatsApp. Enviaremos um código de acesso.
-        </p>
-      </div>
-
-      <Input
-        label="WhatsApp"
-        type="tel"
-        required
-        value={phone}
-        onChange={(e) => setPhone(formatPhone(e.target.value))}
-        placeholder="(11) 99999-9999"
-        fullWidth
-      />
-
-      <div className="flex flex-col gap-3">
-        <Button
-          type="button"
-          variant="primary"
-          fullWidth
-          onClick={() => onSubmit(phone)}
-          disabled={isLoading || phone.length < 14}
-        >
-          {isLoading ? 'Enviando...' : 'Receber Código'}
-        </Button>
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-center text-[10px] font-black uppercase text-gray-500 hover:text-tenant-primary transition-colors"
-        >
-          Entrar com E-mail e Senha
         </button>
       </div>
     </div>

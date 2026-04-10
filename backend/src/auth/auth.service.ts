@@ -7,11 +7,12 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UserRole, AuthProvider } from '@prisma/client';
+import { UserRole, AuthProvider, SubscriptionStatus } from '@prisma/client';
 import { BarbershopModulesService } from '../barbershop-modules/barbershop-modules.service';
 import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { randomBytes } from 'crypto';
+import { RegisterClientDto } from './dto/register-client.dto';
 import { NotificationChannel, NotificationPriority } from '../notifications/dto/notification.enums';
 
 const BCRYPT_SALT = 12;
@@ -75,6 +76,34 @@ export class AuthService {
 
     return {
       shop,
+      user,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async registerClient(dto: RegisterClientDto) {
+    const exists = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (exists) throw new BadRequestException('E-mail já cadastrado');
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT);
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone,
+        passwordHash,
+        role: UserRole.CLIENT,
+        active: true,
+      },
+    });
+
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+    await this.saveRefreshToken(user.id, refreshToken);
+
+    return {
       user,
       accessToken,
       refreshToken,

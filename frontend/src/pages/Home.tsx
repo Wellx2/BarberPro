@@ -76,20 +76,7 @@ export const Home: React.FC = () => {
         setServices(preview.services || []);
         setProducts(preview.products || []);
         setBarbers(preview.barbers || []);
-
-        // Buscar avaliações públicas dos barbeiros desta loja
-        const barberIds = (preview.barbers || []).map((b: any) => b.id);
-        if (barberIds.length > 0) {
-          try {
-            const reviewsRes = await api.get<any[]>('/reviews');
-            const shopReviews = reviewsRes.data.filter((r: any) => barberIds.includes(r.barberId));
-            setReviews(shopReviews.slice(0, 6));
-          } catch {
-            setReviews([]);
-          }
-        } else {
-          setReviews([]);
-        }
+        setReviews(preview.reviews || []);
       } catch (error) {
         console.error('❌ Home: Erro ao carregar preview:', error);
         setServices([]);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, X, Star, Edit2, AlertCircle, Scissors, User as UserIcon } from 'lucide-react';
+import { Calendar, Clock, X, Star, Edit2, AlertCircle, Scissors, User as UserIcon, Check } from 'lucide-react';
 import { useClientAppointments } from '../../hooks/useAppointments';
 import { appointmentService } from '../../services/appointmentService';
 import { barberService } from '../../services/barberService';
@@ -38,6 +38,9 @@ export const ClientDashboard: React.FC = () => {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loadingBarbers, setLoadingBarbers] = useState(true);
 
+  // 🚀 Estado local para toggles de lembrete (Evita reload e mutação direta)
+  const [reminderState, setReminderState] = useState<Record<string, boolean>>({});
+
   const {
     upcoming,
     past,
@@ -46,13 +49,23 @@ export const ClientDashboard: React.FC = () => {
   } = useClientAppointments(user?.id || null);
 
   React.useEffect(() => {
+    if (upcoming.length > 0) {
+      const newStates: Record<string, boolean> = {};
+      upcoming.forEach(apt => {
+        newStates[apt.id] = apt.reminderEnabled !== false;
+      });
+      setReminderState(prev => ({ ...prev, ...newStates }));
+    }
+  }, [upcoming]);
+
+  React.useEffect(() => {
     const loadBarbers = async () => {
+      if (!shop?.id) return;
+
       try {
         setLoadingBarbers(true);
-        if (user?.shopId) {
-          const data = await barberService.listPublic(user.shopId);
-          setBarbers(data);
-        }
+        const data = await barberService.listPublic(shop.id);
+        setBarbers(data);
       } catch (error) {
         console.error('Erro ao carregar barbeiros:', error);
       } finally {
@@ -60,7 +73,7 @@ export const ClientDashboard: React.FC = () => {
       }
     };
     loadBarbers();
-  }, []);
+  }, [shop?.id]);
 
   // --- Helpers ----------------------------------------------------------------
 
@@ -74,25 +87,22 @@ export const ClientDashboard: React.FC = () => {
   };
 
   const formatDateTime = (dateValue?: any) => {
-    if (!dateValue) return 'Data no informada';
-    if (typeof dateValue === 'object' && !(dateValue instanceof Date) && Object.keys(dateValue || {}).length === 0) {
-      return 'Data no informada';
-    }
-    let parsedDate = new Date(dateValue);
-    if (Number.isNaN(parsedDate.getTime()) && typeof dateValue === 'string') {
-      const match = dateValue.match(/(\d{2})\/(\d{2})\/(\d{4})(?:.*?(\d{2}):(\d{2}))?/);
-      if (match) {
-        const [_, d, m, y, h, min] = match;
-        parsedDate = new Date(Number(y), Number(m) - 1, Number(d), Number(h || '0'), Number(min || '0'));
-      } else if (/^\d+$/.test(dateValue)) {
-        parsedDate = new Date(Number(dateValue));
-      }
-    }
-    if (Number.isNaN(parsedDate.getTime())) return 'Data inválida';
+    if (!dateValue || (typeof dateValue === 'object' && Object.keys(dateValue).length === 0)) return 'Data não informada';
+    
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) return 'Data inválida';
+
+    // 🇧🇷 Forçamos a exibição no fuso de Brasília para garantir consistência
+    // Dica Sênior: Usar Intl.DateTimeFormat com timeZone fixo é a forma mais segura de exibir horários em PWAs brasileiros
     return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    }).format(parsedDate);
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
+    }).format(date);
   };
 
   const formatCurrency = (value: number) =>
@@ -215,7 +225,9 @@ export const ClientDashboard: React.FC = () => {
   // --- Render -------------------------------------------------------------------
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 animate-fade-in">
+
+
       {/* Header with booking button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-gray-200 dark:border-gray-800 gap-4">
         <div>
@@ -248,56 +260,74 @@ export const ClientDashboard: React.FC = () => {
         </div>
 
         {upcoming.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
-              <Calendar className="h-8 w-8 text-gray-400" />
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border border-gray-800 shadow-2xl relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-tenant-primary/10 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-tenant-primary/5 rounded-full -ml-32 -mb-32 blur-3xl"></div>
+
+            <div className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+              <div className="max-w-xl text-center md:text-left">
+                <span className="inline-block px-4 py-1.5 bg-tenant-primary/20 text-tenant-primary text-xs font-black uppercase tracking-widest rounded-full mb-4">Agenda Livre</span>
+                <h3 className="text-3xl font-black text-white mb-4 leading-tight">
+                  Pronto para <span className="text-tenant-primary">Cuidar do Visual?</span>
+                </h3>
+                <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                  Você não tem nenhum horário marcado no momento. Que tal aproveitar para agendar seu próximo serviço agora e garantir seu lugar?
+                </p>
+                <div className="flex justify-center md:justify-start">
+                  <button
+                    onClick={() => navigate(`/${shopSlug}/agendar`)}
+                    className="px-8 py-4 bg-tenant-primary text-white font-black rounded-2xl shadow-lg shadow-tenant-primary/20 hover:scale-105 transition-transform flex items-center gap-3"
+                  >
+                    <Calendar size={20} />
+                    Fazer Agendamento
+                  </button>
+                </div>
+              </div>
+              <div className="w-full md:w-1/3 flex justify-center">
+                <div className="w-48 h-48 rounded-full border-4 border-dashed border-gray-700 flex items-center justify-center p-4 relative">
+                  <div className="absolute inset-0 rounded-full border border-tenant-primary/30 animate-ping opacity-20"></div>
+                  <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center text-tenant-primary/50 relative z-10">
+                    <Calendar size={80} strokeWidth={1} />
+                  </div>
+                </div>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Nenhum agendamento futuro
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-6">
-              Você não tem nenhum horário marcado. Que tal aproveitar para agendar seu próximo serviço agora?
-            </p>
-            <button
-              onClick={() => navigate(`/${shopSlug}/agendar`)}
-              className="px-6 py-2.5 text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-md flex items-center gap-2"
-              style={{ backgroundColor: 'var(--tenant-primary, #f59e0b)' }}
-            >
-              <Calendar size={18} />
-              Fazer Agendamento
-            </button>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-6">
             {upcoming.map((appointment) => (
               <div
                 key={appointment.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow"
+                className="bg-gray-900 border border-gray-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-tenant-primary/50 transition-all duration-300"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-tenant-primary/5 rounded-full blur-3xl -mr-24 -mt-24 group-hover:bg-tenant-primary/10 transition-colors"></div>
+
+                <div className="flex justify-between items-start mb-6 relative z-10">
                   <div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
-                      <Clock size={16} />
-                      <span className="font-medium">{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
+                    <div className="flex items-center gap-2 text-tenant-primary mb-3 bg-tenant-primary/10 px-4 py-1.5 rounded-full w-fit border border-tenant-primary/20">
+                      <Clock size={14} className="animate-pulse" />
+                      <span className="font-black text-xs tracking-widest uppercase">{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <UserIcon size={18} className="text-gray-400" />
+                    <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 text-gray-400">
+                        <UserIcon size={20} />
+                      </div>
                       {(appointment as any).barber?.name}
                     </h3>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(appointment.status)}`}>
+                  <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest border border-current ${getStatusBadge(appointment.status)}`}>
                     {getStatusLabel(appointment.status)}
                   </span>
                 </div>
 
                 {/* Services */}
                 {appointment.services && appointment.services.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Serviços:</p>
+                  <div className="mb-6 relative z-10">
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Serviços Selecionados</p>
                     <div className="flex flex-wrap gap-2">
                       {appointment.services.map((service: any) => (
-                        <span key={service.id} className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600">
-                          {service.service?.name || service.name} - {formatCurrency(service.service?.price ?? service.price ?? 0)}
+                        <span key={service.id} className="px-3 py-1.5 bg-gray-800 text-gray-300 text-xs font-bold rounded-xl border border-gray-700">
+                          {service.service?.name || service.name} <span className="text-gray-500 font-normal ml-1">• {formatCurrency(service.service?.price ?? service.price ?? 0)}</span>
                         </span>
                       ))}
                     </div>
@@ -305,53 +335,64 @@ export const ClientDashboard: React.FC = () => {
                 )}
 
                 {appointment.status === 'SCHEDULED' && (
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 -mx-5 px-5">
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">Lembrete</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {appointment.reminderEnabled !== false ? 'Ativo' : 'Silenciado'}
+                  <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-800/50 relative z-10 transition-all">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-black text-white/90 uppercase tracking-widest flex items-center gap-2">
+                        Lembrete Inteligente
+                        {reminderState[appointment.id] && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-tenant-primary animate-pulse" />
+                        )}
+                      </h4>
+                      <p className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-wider">
+                        {reminderState[appointment.id] ? 'Notificações ativadas • 2h antes' : 'Notificações silenciadas'}
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className="relative inline-flex items-center cursor-pointer group/toggle">
                       <input
                         type="checkbox"
                         className="sr-only peer"
-                        checked={appointment.reminderEnabled !== false}
+                        checked={reminderState[appointment.id] ?? true}
                         onChange={async (e) => {
                           const newVal = e.target.checked;
+                          // 🔥 Atualização Otimista: Muda na hora sem reload!
+                          setReminderState(prev => ({ ...prev, [appointment.id]: newVal }));
+                          
                           try {
-                            // Update API and trigger refresh
                             await api.patch(`/appointments/${appointment.id}`, { reminderEnabled: newVal });
-                            refresh();
                           } catch (err) {
-                            console.error('Erro ao atualizar preferência de lembrete:', err);
+                            console.error('Erro ao atualizar preferência:', err);
+                            // Reverte apenas se falhar
+                            setReminderState(prev => ({ ...prev, [appointment.id]: !newVal }));
                           }
                         }}
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
+                      <div className="w-14 h-7 bg-gray-800/80 peer-focus:outline-none rounded-2xl peer peer-checked:after:translate-x-7 peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all border border-gray-700/50 peer-checked:bg-tenant-primary shadow-inner group-hover/toggle:border-tenant-primary/30"></div>
                     </label>
                   </div>
                 )}
 
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <span className="text-lg font-black text-gray-900 dark:text-white">
-                    {formatCurrency(appointment.totalPrice ?? 0)}
-                  </span>
+                <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-800 relative z-10">
+                  <div>
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Total</p>
+                    <span className="text-3xl font-black text-white">
+                      {formatCurrency(appointment.totalPrice ?? 0)}
+                    </span>
+                  </div>
                   {appointment.status === 'SCHEDULED' && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       {canEdit(appointment) ? (
                         <button
                           onClick={() => openReschedule(appointment)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors text-sm font-bold"
+                          className="flex items-center gap-2 px-5 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl transition-all text-sm font-bold shadow-lg"
                         >
-                          <Edit2 size={16} /> Editar
+                          <Edit2 size={16} /> Reagendar
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-400 italic self-center px-2">Edição indisponível</span>
+                        <span className="text-xs text-orange-500/80 font-bold bg-orange-500/10 px-3 py-2 rounded-lg self-center border border-orange-500/20">Edição bloqueada (&lt; 2h)</span>
                       )}
                       <button
                         onClick={() => setCancelModalId(appointment.id)}
-                        className="px-4 py-2 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-bold"
+                        className="px-5 py-3 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 rounded-xl transition-all text-sm font-bold"
                       >
                         Cancelar
                       </button>
@@ -376,42 +417,54 @@ export const ClientDashboard: React.FC = () => {
         </div>
 
         {past.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-8 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4">
-              <Calendar className="h-8 w-8 text-gray-400" />
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 relative p-8 md:p-12 text-center shadow-lg">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-tenant-primary/5 rounded-full blur-3xl"></div>
+            <div className="relative z-10">
+              <div className="w-20 h-20 mx-auto bg-gray-800/80 rounded-2xl flex items-center justify-center text-gray-500 mb-6 border border-gray-700/50 rotate-3 shadow-inner">
+                <Clock size={36} strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3 tracking-tight">
+                Histórico em Branco
+              </h3>
+              <p className="text-gray-400 max-w-sm mx-auto leading-relaxed">
+                Você ainda não realizou nenhum serviço em nossa barbearia. Seus atendimentos passados aparecerão aqui!
+              </p>
             </div>
-            <p className="text-gray-500 dark:text-gray-400 font-medium">Você ainda não possui um histórico de visitas.</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-5">
             {(showAllPast ? past : past.slice(0, 4)).map((appointment) => (
               <div
                 key={appointment.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 opacity-80 hover:opacity-100 transition-opacity"
+                className="bg-gray-900 border border-gray-800 rounded-3xl p-6 md:p-8 shadow-xl hover:shadow-2xl opacity-90 hover:opacity-100 transition-all duration-300 relative overflow-hidden group"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gray-800/50 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-tenant-primary/5 transition-colors"></div>
+
+                <div className="flex justify-between items-start mb-6 relative z-10">
                   <div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-2">
-                      <Clock size={16} />
-                      <span className="font-medium">{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
+                    <div className="flex items-center gap-2 text-gray-400 mb-3 bg-gray-800 px-4 py-1.5 rounded-full w-fit border border-gray-700">
+                      <Clock size={14} />
+                      <span className="font-black text-xs tracking-widest uppercase">{formatDateTime(appointment.date || appointment.scheduledFor)}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <UserIcon size={18} className="text-gray-400" />
+                    <h3 className="text-xl font-black text-white flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 text-gray-500">
+                        <UserIcon size={16} />
+                      </div>
                       {(appointment as any).barber?.name}
                     </h3>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(appointment.status)}`}>
+                  <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest border border-current shadow-sm ${getStatusBadge(appointment.status)}`}>
                     {getStatusLabel(appointment.status)}
                   </span>
                 </div>
 
                 {appointment.services && appointment.services.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Serviços:</p>
+                  <div className="mb-4 relative z-10">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Serviços</p>
                     <div className="flex flex-wrap gap-2">
                       {appointment.services.map((service: any) => (
-                        <span key={service.id} className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600">
-                          {service.service?.name || service.name} - {formatCurrency(service.service?.price ?? service.price ?? 0)}
+                        <span key={service.id} className="px-3 py-1 bg-gray-800 text-gray-300 text-xs font-bold rounded-lg border border-gray-700">
+                          {service.service?.name || service.name} <span className="text-gray-500 font-normal ml-1">• {formatCurrency(service.service?.price ?? service.price ?? 0)}</span>
                         </span>
                       ))}
                     </div>
@@ -419,35 +472,50 @@ export const ClientDashboard: React.FC = () => {
                 )}
 
                 {appointment.products && appointment.products.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Produtos:</p>
+                  <div className="mb-4 relative z-10">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Produtos</p>
                     <div className="flex flex-wrap gap-2">
                       {appointment.products.map((product: any) => (
-                        <span key={product.id} className="px-2.5 py-1 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600">
-                          {product.name} - {formatCurrency(product.price)}
+                        <span key={product.id} className="px-3 py-1 bg-gray-800 text-gray-300 text-xs font-bold rounded-lg border border-gray-700">
+                          {product.name} <span className="text-gray-500 font-normal ml-1">• {formatCurrency(product.price)}</span>
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                  <span className="text-lg font-black text-gray-900 dark:text-white">
-                    {formatCurrency(appointment.totalPrice ?? 0)}
-                  </span>
+                <div className="mt-6 pt-6 border-t border-gray-800 flex justify-between items-center relative z-10">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total</p>
+                    <span className="text-2xl font-black text-white">
+                      {formatCurrency(appointment.totalPrice ?? 0)}
+                    </span>
+                  </div>
                   {appointment.status === 'COMPLETED' && (
-                    <button
-                      onClick={() => {
-                        setReviewModalId(appointment.id);
-                        setReviewBarberId(appointment.barberId);
-                        setRating(5);
-                        setReviewComment('');
-                      }}
-                      className="px-5 py-2 text-white rounded-lg transition-all font-bold text-sm flex items-center gap-2 shadow-sm hover:shadow-md hover:opacity-90"
-                      style={{ backgroundColor: 'var(--tenant-primary, #f59e0b)' }}
-                    >
-                      <Star size={16} className="fill-current" /> Avaliar
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          const barber = (appointment as any).barber;
+                          const barberId = barber?.id || appointment.barberId;
+                          // Redireciona para o booking com o barbeiro pré-selecionado
+                          navigate(`/book?barberId=${barberId}`);
+                        }}
+                        className="px-5 py-3 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 rounded-xl transition-all font-black text-sm flex items-center gap-2 shadow-sm"
+                      >
+                        <Scissors size={16} className="text-tenant-primary" /> Agendar Novamente
+                      </button>
+                      <button
+                        onClick={() => {
+                          setReviewModalId(appointment.id);
+                          setReviewBarberId((appointment as any).barberId || appointment.barberId);
+                          setRating(5);
+                          setReviewComment('');
+                        }}
+                        className="px-5 py-3 bg-tenant-primary/10 hover:bg-tenant-primary text-tenant-primary hover:text-white border border-tenant-primary/30 rounded-xl transition-all font-black text-sm flex items-center gap-2 shadow-sm"
+                      >
+                        <Star size={16} className="fill-current" /> Avaliar
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -456,7 +524,7 @@ export const ClientDashboard: React.FC = () => {
             {!showAllPast && past.length > 4 && (
               <button
                 onClick={() => setShowAllPast(true)}
-                className="w-full py-4 mt-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-400 font-bold transition-all bg-transparent"
+                className="w-full py-5 mt-4 border border-dashed border-gray-700 hover:border-tenant-primary rounded-2xl text-gray-500 hover:text-tenant-primary font-black uppercase tracking-widest text-xs transition-all bg-gray-900/50 hover:bg-tenant-primary/5"
               >
                 Ver Mais Histórico ({past.length - 4} itens)
               </button>
@@ -464,6 +532,34 @@ export const ClientDashboard: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* Member Get Member Banner for Clients */}
+      {!user?.shopId && user?.role === 'CLIENT' && (
+        <section className="mt-12 mb-6">
+          <div className="overflow-hidden rounded-3xl bg-gray-900 border border-gray-800 shadow-xl relative group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-tenant-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-tenant-primary/10 transition-colors duration-700"></div>
+            <div className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-xl md:text-2xl font-black text-white mb-2">
+                  Conhece uma barbearia incrível?
+                </h3>
+                <p className="text-gray-400 text-sm md:text-base leading-relaxed max-w-2xl">
+                  Indique barbearias para usar o KlypBarber e ganhe serviços gratuitos, descontos ou vantagens exclusivas na sua próxima visita!
+                </p>
+              </div>
+              <div className="flex-shrink-0 flex justify-center md:justify-end">
+                <button
+                  onClick={() => alert('Programa de indicação em breve!')}
+                  className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl border border-gray-700 shadow-md transition-all flex items-center gap-2"
+                >
+                  <Star size={18} className="text-tenant-primary" />
+                  Indicar e Ganhar
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* -- Cancel Modal --------------------------------------------------- */}
       {
@@ -568,7 +664,7 @@ export const ClientDashboard: React.FC = () => {
               <div className="mb-4 p-3 bg-tenant-primary/10 border border-tenant-primary/20 rounded-lg">
                 <p className="text-xs text-tenant-primary flex items-start gap-2">
                   <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                  Você pode editar o horário até <strong>2 horas antes</strong> do agendamento. Para alterar o serviço, fale diretamente com o barbeiro.
+                  Você pode editar o horário até 2 horas antes do agendamento. Para alterar o serviço, fale diretamente com o barbeiro.
                 </p>
               </div>
 

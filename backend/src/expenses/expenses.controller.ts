@@ -8,7 +8,6 @@ import {
   Delete,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -17,6 +16,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TenantGuard } from '../common/guards/tenant.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
 
 /**
@@ -29,13 +29,13 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
-  create(@Req() req, @Body() dto: CreateExpenseDto) {
-    return this.expensesService.create(req.user, dto);
+  create(@CurrentUser() user: any, @Body() dto: CreateExpenseDto) {
+    return this.expensesService.create(user, dto);
   }
 
   @Get()
   findAll(
-    @Req() req,
+    @CurrentUser() user: any,
     @Query('type') type?: string,
     @Query('isPaid') isPaid?: string,
     @Query('startDate') startDate?: string,
@@ -47,27 +47,27 @@ export class ExpensesController {
     if (startDate) filters.startDate = new Date(startDate);
     if (endDate) filters.endDate = new Date(endDate);
 
-    return this.expensesService.findAll(req.user, filters);
+    return this.expensesService.findAll(user, filters);
   }
 
   @Get(':id')
-  findOne(@Req() req, @Param('id') id: string) {
-    return this.expensesService.findOne(req.user, id);
+  findOne(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.expensesService.findOne(user, id);
   }
 
   @Patch(':id')
-  update(@Req() req, @Param('id') id: string, @Body() dto: UpdateExpenseDto) {
-    return this.expensesService.update(req.user, id, dto);
+  update(@CurrentUser() user: any, @Param('id') id: string, @Body() dto: UpdateExpenseDto) {
+    return this.expensesService.update(user, id, dto);
   }
 
   @Patch(':id/pay')
   markAsPaid(
-    @Req() req,
+    @CurrentUser() user: any,
     @Param('id') id: string,
     @Body() body: { paidDate?: string; paymentMethod?: string },
   ) {
     return this.expensesService.markAsPaid(
-      req.user,
+      user,
       id,
       body.paidDate ? new Date(body.paidDate) : undefined,
       body.paymentMethod,
@@ -75,7 +75,7 @@ export class ExpensesController {
   }
 
   @Delete(':id')
-  remove(@Req() req, @Param('id') id: string) {
-    return this.expensesService.remove(req.user, id);
+  remove(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.expensesService.remove(user, id);
   }
 }

@@ -207,23 +207,17 @@ export function useClientAppointments(clientId: string | null) {
         const rawDate = apt.date || apt.scheduledFor;
         if (!rawDate) return null;
 
+        // Se for um objeto Vazio (ERRO comum em serialização)
         if (rawDate && typeof rawDate === 'object' && !((rawDate as any) instanceof Date) && Object.keys(rawDate as any || {}).length === 0) {
           return null;
         }
 
-        let parsed = new Date(rawDate);
+        // Se já for data
+        if ((rawDate as any) instanceof Date) return rawDate;
 
-        if (Number.isNaN(parsed.getTime()) && typeof rawDate === 'string') {
-          const match = rawDate.match(/(\d{2})\/(\d{2})\/(\d{4})(?:.*?(\d{2}):(\d{2}))?/);
-          if (match) {
-            const [_, d, m, y, h, min] = match;
-            parsed = new Date(Number(y), Number(m) - 1, Number(d), Number(h || '0'), Number(min || '0'));
-          } else if (/^\d+$/.test(rawDate)) {
-            parsed = new Date(Number(rawDate));
-          }
-        }
-
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
+        // Tentar parsear
+        const date = new Date(rawDate);
+        return Number.isNaN(date.getTime()) ? null : date;
       };
 
       const statusPriority = (status: string) => {
@@ -233,16 +227,16 @@ export function useClientAppointments(clientId: string | null) {
       };
 
       const sortByTime = (a: Appointment, b: Appointment) => {
-        const da = getAppointmentDate(a)?.getTime() ?? 0;
-        const db = getAppointmentDate(b)?.getTime() ?? 0;
+        const da = (getAppointmentDate(a) as Date | null)?.getTime() ?? 0;
+        const db = (getAppointmentDate(b) as Date | null)?.getTime() ?? 0;
         return da - db;
       };
 
       const sortByStatusThenTime = (a: Appointment, b: Appointment) => {
         const statusDiff = statusPriority(a.status) - statusPriority(b.status);
         if (statusDiff !== 0) return statusDiff;
-        const da = getAppointmentDate(a)?.getTime() ?? 0;
-        const db = getAppointmentDate(b)?.getTime() ?? 0;
+        const da = (getAppointmentDate(a) as Date | null)?.getTime() ?? 0;
+        const db = (getAppointmentDate(b) as Date | null)?.getTime() ?? 0;
         // Para agendados, do mais cedo para o mais tarde (ASC)
         if (a.status === 'SCHEDULED') return da - db;
         // Para concluídos/cancelados, do mais recente para o mais antigo (DESC)

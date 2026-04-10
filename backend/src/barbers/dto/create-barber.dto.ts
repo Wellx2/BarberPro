@@ -39,10 +39,10 @@ export class CreateBarberDto {
   @IsString()
   bio?: string;
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsString({ each: true })
-  specialties: string[];
+  specialties?: string[];
 
   @IsOptional()
   @IsString()
