@@ -33,6 +33,7 @@ import { StockMovements } from './pages/admin/StockMovements';
 import { LoadingSkeletonCompact } from './components/LoadingSkeleton';
 import { ShopLoadError } from './components/ShopLoadError';
 import { OnboardingWizard } from './pages/admin/OnboardingWizard';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Component to handle global background tasks (notifications)
 const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -173,9 +174,13 @@ const App: React.FC = () => {
           <Router>
             <ShopProvider>
               <AppLogic>
-                <Layout>
-                  <AppRoutes />
-                </Layout>
+                <ErrorBoundary>
+                  <Layout>
+                    <ErrorBoundary>
+                      <AppRoutes />
+                    </ErrorBoundary>
+                  </Layout>
+                </ErrorBoundary>
               </AppLogic>
             </ShopProvider>
           </Router>

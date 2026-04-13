@@ -312,8 +312,12 @@ export const ClientDashboard: React.FC = () => {
                       <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 text-gray-400">
                         <UserIcon size={20} />
                       </div>
-                      {(appointment as any).barber?.name}
+                      {user?.name || 'Cliente'}
                     </h3>
+                    <div className="mt-3 ml-[52px] flex items-center gap-2 text-gray-400 text-sm font-medium">
+                      <Scissors size={16} className="text-tenant-primary" />
+                      <span>Barbeiro: <span className="text-white">{(appointment as any).barber?.name || 'Não informado'}</span></span>
+                    </div>
                   </div>
                   <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest border border-current ${getStatusBadge(appointment.status)}`}>
                     {getStatusLabel(appointment.status)}
@@ -450,8 +454,12 @@ export const ClientDashboard: React.FC = () => {
                       <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700 text-gray-500">
                         <UserIcon size={16} />
                       </div>
-                      {(appointment as any).barber?.name}
+                      {user?.name || 'Cliente'}
                     </h3>
+                    <div className="mt-2 ml-[44px] flex items-center gap-1.5 text-gray-400 text-xs font-medium">
+                      <Scissors size={14} className="text-tenant-primary" />
+                      <span>Barbeiro: <span className="text-white">{(appointment as any).barber?.name || 'Não informado'}</span></span>
+                    </div>
                   </div>
                   <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest border border-current shadow-sm ${getStatusBadge(appointment.status)}`}>
                     {getStatusLabel(appointment.status)}

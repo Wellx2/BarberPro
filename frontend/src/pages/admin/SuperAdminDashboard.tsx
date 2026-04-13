@@ -173,17 +173,35 @@ export const SuperAdminDashboard: React.FC = () => {
         setSaving(true);
         try {
             const isNew = editUser.id.startsWith('new-');
+            const password = (editUser as any).password;
+            
             if (isNew) {
+                if (!password || password.length < 6) {
+                    addNotification('error', 'A senha predefinida precisa ter pelo menos 6 caracteres.');
+                    setSaving(false);
+                    return;
+                }
                 await userService.create({
                     name: editUser.name,
                     email: editUser.email || '',
                     role: editUser.role,
                     shopId: editUser.shopId,
-                    password: 'password123'
+                    password: password
                 });
                 addNotification('success', 'Novo gestor criado com sucesso.');
             } else {
-                await userService.update(editUser.id, editUser);
+                const updatePayload = { ...editUser };
+                if (password) {
+                    if (password.length < 6) {
+                        addNotification('error', 'Se for alterar a senha, ela precisa ter pelo menos 6 caracteres.');
+                        setSaving(false);
+                        return;
+                    }
+                    (updatePayload as any).password = password;
+                } else {
+                    delete (updatePayload as any).password;
+                }
+                await userService.update(editUser.id, updatePayload);
                 addNotification('success', 'Perfil de operador atualizado.');
             }
             setEditUser(null);
@@ -779,6 +797,10 @@ export const SuperAdminDashboard: React.FC = () => {
                             <div className="space-y-4">
                                 <Input label="Nome do Operador" required value={editUser.name} onChange={e => setEditUser({ ...editUser, name: e.target.value })} fullWidth />
                                 
+                                <Input label="E-mail de Acesso" type="email" required value={editUser.email || ''} onChange={e => setEditUser({ ...editUser, email: e.target.value })} fullWidth />
+                                
+                                <Input label={editUser.id.startsWith('new-') ? 'Senha de Acesso' : 'Nova Senha (opcional)'} type="password" placeholder={editUser.id.startsWith('new-') ? 'Mínimo 6 caracteres' : 'Deixe em branco para manter a atual'} value={(editUser as any).password || ''} onChange={e => setEditUser({ ...editUser, password: e.target.value } as any)} fullWidth required={editUser.id.startsWith('new-')} />
+
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black uppercase text-gray-400 ml-4 block">Cargo (Nível de Acesso)</label>
                                     <Select value={editUser.role} onChange={e => setEditUser({ ...editUser, role: e.target.value as any })} fullWidth>
