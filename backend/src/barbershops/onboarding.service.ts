@@ -109,7 +109,11 @@ export class BarbershopOnboardingService {
         });
 
         // Inicializa módulos padrão se for o primeiro admin
-        await this.modulesService.initializeDefaultModules(shopId, user.id);
+        try {
+          await this.modulesService.initializeDefaultModules(shopId, user.id);
+        } catch (error) {
+          console.warn('Não foi possível inicializar módulos. Verifique o banco de dados:', error);
+        }
       }
     }
 

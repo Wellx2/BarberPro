@@ -96,8 +96,13 @@ export const SuperAdminDashboard: React.FC = () => {
             if (isNew) {
                 addNotification('info', 'Use o Onboarding Rápido para novas barbearias.');
             } else {
+                const updatePayload = { ...editShop };
+                delete (updatePayload as any).id;
+                delete (updatePayload as any).createdAt;
+                delete (updatePayload as any).updatedAt;
+
                 // 1. Atualizar dados básicos
-                await barbershopService.update(editShop.id, editShop);
+                await barbershopService.update(editShop.id, updatePayload);
                 
                 // 2. Atualizar Assinatura (se for SUPER_ADMIN)
                 if ((editShop as any).subscriptionTier) {
@@ -235,9 +240,9 @@ export const SuperAdminDashboard: React.FC = () => {
             
             addNotification('success', `Entrando na gestão da unidade: ${data.shop.name}`);
             
-            // Redirecionar para o dashboard de admin
+            // Redirecionar para o dashboard de admin da unidade específica
             // Usamos window.location para forçar o recarregamento dos contextos com o novo shopId do token
-            window.location.href = '/admin';
+            window.location.href = '/admin/appointments';
         } catch (error) {
             addNotification('error', 'Erro ao acessar gestão da unidade.');
         }
@@ -310,8 +315,8 @@ export const SuperAdminDashboard: React.FC = () => {
                                 <div className="flex items-start justify-between mb-8">
                                     <div className="flex items-center gap-6">
                                         <div className="relative group/img">
-                                            <img src={s.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200'} className="w-24 h-24 rounded-[35px] object-cover shadow-2xl grayscale group-hover/img:grayscale-0 transition-all duration-500" />
-                                            {s.logoUrl && <img src={s.logoUrl} className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-4 border-white dark:border-gray-800 object-contain bg-white" />}
+                                            <img src={s.image || 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200'} className={`w-24 h-24 rounded-[35px] object-cover shadow-2xl transition-all duration-500 ${(s as any).active === false ? 'grayscale opacity-70 group-hover/img:grayscale-0' : ''}`} />
+                                            {s.logoUrl && <img src={s.logoUrl} className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-4 border-white dark:border-gray-800 object-contain bg-white ${(s as any).active === false ? 'grayscale' : ''}`} />}
                                         </div>
                                         <div>
                                             <h3 className="text-2xl font-black uppercase dark:text-white leading-none">{s.name}</h3>

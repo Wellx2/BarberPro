@@ -95,12 +95,7 @@ class ApiClient {
           statusCode: response.status,
         }));
 
-        console.error('❌ Erro HTTP:', {
-          status: response.status,
-          endpoint,
-          error
-        });
-
+        // Console log removed automatically
         throw error;
       }
 
