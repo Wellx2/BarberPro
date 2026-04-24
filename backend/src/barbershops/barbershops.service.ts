@@ -388,10 +388,19 @@ export class BarbershopsService {
   }
 
   async update(id: string, dto: UpdateBarbershopDto) {
-    // Apenas SUPER_ADMIN pode alterar dados de barbearia
+    const { subscriptionStartDate, subscriptionEndDate, ...rest } = dto;
+
     return this.prisma.barbershop.update({
       where: { id },
-      data: { ...dto },
+      data: {
+        ...rest,
+        ...(subscriptionStartDate !== undefined && {
+          subscriptionStartDate: new Date(subscriptionStartDate),
+        }),
+        ...(subscriptionEndDate !== undefined && {
+          subscriptionEndDate: new Date(subscriptionEndDate),
+        }),
+      },
     });
   }
 

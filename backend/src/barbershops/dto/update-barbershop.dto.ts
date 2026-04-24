@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max, IsArray, IsObject } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsInt, Min, Max, IsArray, IsObject, IsEnum, IsDateString } from 'class-validator';
+import { SubscriptionTier, SubscriptionStatus } from '@prisma/client';
 
 export class UpdateBarbershopDto {
   @IsOptional()
@@ -75,4 +76,48 @@ export class UpdateBarbershopDto {
   @IsOptional()
   @IsObject()
   settings?: any;
+
+  // ===== Redes Sociais =====
+  @IsOptional()
+  @IsString()
+  socialInstagram?: string;
+
+  @IsOptional()
+  @IsString()
+  socialWhatsapp?: string;
+
+  @IsOptional()
+  @IsString()
+  socialGoogleReview?: string;
+
+  // ===== Banner VIP =====
+  @IsOptional()
+  @IsString()
+  vipBannerTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  vipBannerText?: string;
+
+  // ===== Assinatura (SUPER_ADMIN) =====
+  @IsOptional()
+  @IsEnum(SubscriptionTier)
+  subscriptionTier?: SubscriptionTier;
+
+  @IsOptional()
+  @IsEnum(SubscriptionStatus)
+  subscriptionStatus?: SubscriptionStatus;
+
+  @IsOptional()
+  @IsDateString()
+  subscriptionStartDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  subscriptionEndDate?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxTeamMembers?: number;
 }
