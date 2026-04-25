@@ -89,40 +89,65 @@ export const SuperAdminDashboard: React.FC = () => {
         e.preventDefault();
         if (!editShop) return;
 
+        const isNew = (editShop as any).id?.startsWith('new-');
+        if (isNew) {
+            addNotification('info', 'Use o Onboarding Rápido para novas barbearias.');
+            return;
+        }
+
         setSaving(true);
         try {
-            const isNew = editShop.id.startsWith('new-');
-            
-            if (isNew) {
-                addNotification('info', 'Use o Onboarding Rápido para novas barbearias.');
-            } else {
-                const updatePayload = { ...editShop };
-                delete (updatePayload as any).id;
-                delete (updatePayload as any).createdAt;
-                delete (updatePayload as any).updatedAt;
+            // ── 1. Dados Básicos ──────────────────────────────────────────────
+            // Envia APENAS os campos aceitos pelo UpdateBarbershopDto (whitelist explícita)
+            const basicPayload: Record<string, any> = {};
+            const basicFields = ['name', 'slug', 'cnpj', 'phone', 'whatsapp', 'email',
+                'address', 'logo', 'logoUrl', 'bannerUrl', 'primaryColor',
+                'openingTime', 'closingTime', 'intervalMinutes',
+                'loyaltyEnabled', 'subscriptionEnabled',
+                'socialInstagram', 'socialWhatsapp', 'socialGoogleReview',
+                'vipBannerTitle', 'vipBannerText', 'settings'];
 
-                // 1. Atualizar dados básicos
-                await barbershopService.update(editShop.id, updatePayload);
-                
-                // 2. Atualizar Assinatura (se for SUPER_ADMIN)
-                if ((editShop as any).subscriptionTier) {
-                    await barbershopService.updateSubscription(editShop.id, {
-                        subscriptionTier: (editShop as any).subscriptionTier,
-                        maxTeamMembers: (editShop as any).maxTeamMembers || 2
-                    });
+            for (const field of basicFields) {
+                if ((editShop as any)[field] !== undefined) {
+                    basicPayload[field] = (editShop as any)[field];
                 }
-
-                updateShopSettings(editShop);
-                addNotification('success', `Unidade ${editShop.name} atualizada com sucesso!`);
             }
+            // Remove modulesEnabled do settings (vai via endpoint próprio)
+            if (basicPayload.settings?.modulesEnabled) {
+                const { modulesEnabled, ...restSettings } = basicPayload.settings;
+                basicPayload.settings = restSettings;
+            }
+
+            await barbershopService.update(editShop.id, basicPayload);
+
+            // ── 2. Assinatura (plano + limite de membros) ─────────────────────
+            const tier = (editShop as any).subscriptionTier;
+            const maxMembers = (editShop as any).maxTeamMembers;
+            if (tier || maxMembers !== undefined) {
+                await barbershopService.updateSubscription(editShop.id, {
+                    ...(tier && { subscriptionTier: tier }),
+                    ...(maxMembers !== undefined && { maxTeamMembers: maxMembers }),
+                });
+            }
+
+            // ── 3. Módulos / Recursos liberados ───────────────────────────────
+            const modulesEnabled = (editShop as any).modulesEnabled;
+            if (modulesEnabled !== undefined) {
+                await barbershopService.updateModuleSettings(editShop.id, modulesEnabled);
+            }
+
+            updateShopSettings(editShop);
+            addNotification('success', `Unidade ${editShop.name} atualizada com sucesso!`);
             setEditShop(null);
             loadData();
-        } catch (error) {
-            addNotification('error', 'Erro ao salvar configurações da unidade.');
+        } catch (error: any) {
+            const msg = error?.response?.data?.message;
+            addNotification('error', msg || 'Erro ao salvar configurações da unidade.');
         } finally {
             setSaving(false);
         }
     };
+
 
     const onTierChange = (tier: string) => {
         if (!editShop) return;
@@ -335,15 +360,15 @@ export const SuperAdminDashboard: React.FC = () => {
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-3 mb-8">
-                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${s.settings?.modulesEnabled?.products ? 'bg-green-50 border-green-100 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
+                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${(s as any).modulesEnabled?.products ? 'bg-green-50 border-green-100 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
                                         <ShoppingBag size={20} className="mb-2" />
                                         <span className="text-[8px] font-black uppercase tracking-widest">Loja</span>
                                     </div>
-                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${s.settings?.modulesEnabled?.reports ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
+                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${(s as any).modulesEnabled?.reports ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
                                         <PieChart size={20} className="mb-2" />
                                         <span className="text-[8px] font-black uppercase tracking-widest">Dash</span>
                                     </div>
-                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${s.settings?.modulesEnabled?.clientPlans ? 'bg-tenant-primary/5 border-tenant-primary/10 text-tenant-primary' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
+                                    <div className={`p-4 rounded-[25px] flex flex-col items-center justify-center text-center border ${(s as any).modulesEnabled?.clientPlans ? 'bg-tenant-primary/5 border-tenant-primary/10 text-tenant-primary' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
                                         <Layers size={20} className="mb-2" />
                                         <span className="text-[8px] font-black uppercase tracking-widest">Planos</span>
                                     </div>
@@ -747,21 +772,20 @@ export const SuperAdminDashboard: React.FC = () => {
                                             { label: 'Planos de Assinatura', key: 'clientPlans', icon: Layers },
                                             { label: 'Fluxo de Caixa', key: 'cashier', icon: Package }
                                         ].map(feature => {
-                                            const isEnabled = (editShop.settings?.modulesEnabled as any)?.[feature.key];
+                                            // modulesEnabled vem como campo direto do Barbershop no backend
+                                            const modulesEnabled = (editShop as any).modulesEnabled as any;
+                                            const isEnabled = modulesEnabled?.[feature.key];
                                             return (
                                                 <button
                                                     key={feature.key}
                                                     type="button"
-                                                    onClick={() => setEditShop({ 
-                                                        ...editShop, 
-                                                        settings: { 
-                                                            ...editShop.settings, 
-                                                            modulesEnabled: { 
-                                                                ...editShop.settings?.modulesEnabled, 
-                                                                [feature.key]: !isEnabled 
-                                                            } 
-                                                        } 
-                                                    })}
+                                                    onClick={() => setEditShop({
+                                                        ...editShop,
+                                                        modulesEnabled: {
+                                                            ...modulesEnabled,
+                                                            [feature.key]: !isEnabled
+                                                        }
+                                                    } as any)}
                                                     className={`p-5 rounded-3xl border-2 transition-all flex items-center justify-between group ${isEnabled ? 'border-tenant-primary bg-tenant-primary/5/50 dark:bg-tenant-primary/10' : 'border-gray-50 dark:border-gray-750 grayscale opacity-60'}`}
                                                 >
                                                     <div className="flex items-center gap-4">
@@ -773,6 +797,7 @@ export const SuperAdminDashboard: React.FC = () => {
                                             )
                                         })}
                                     </div>
+
                                 </div>
                             </div>
 
