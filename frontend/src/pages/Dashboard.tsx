@@ -49,7 +49,9 @@ export const Dashboard: React.FC = () => {
       case UserRole.CLIENT: return <ClientDashboard />;
       case UserRole.BARBER: return <BarberDashboard />;
       case UserRole.ADMIN: return <AdminDashboard onViewVisitor={() => setViewAsClient(!viewAsClient)} isVisitorMode={viewAsClient} />;
-      case UserRole.SUPER_ADMIN: return <SuperAdminDashboard />;
+      case UserRole.SUPER_ADMIN: 
+        if (user.shopId) return <AdminDashboard onViewVisitor={() => setViewAsClient(!viewAsClient)} isVisitorMode={viewAsClient} />;
+        return <SuperAdminDashboard />;
       default: return <Navigate to="/" replace />;
     }
   };

@@ -13,6 +13,7 @@ import { Button, Card, Input, Select } from '../../components/ui';
 import { barbershopService, QuickSetupData } from '../../services/barbershopService';
 import { userService } from '../../services/userService';
 import { onboardingService } from '../../services/onboardingService';
+import { authService } from '../../services/authService';
 
 // Helper local para o ícone Rocket se não estiver no lucide
 const RocketIcon = ({ size, className }: { size?: number, className?: string }) => (
@@ -279,15 +280,23 @@ export const SuperAdminDashboard: React.FC = () => {
             const data = await barbershopService.switch(shopId);
             
             // Salvar novos tokens e dados do usuário (com o novo shopId)
-            localStorage.setItem('@KlypBarber:token', data.accessToken);
-            localStorage.setItem('@KlypBarber:refreshToken', data.refreshToken);
-            localStorage.setItem('@KlypBarber:user', JSON.stringify(data.user));
+            localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('barber_user', JSON.stringify(data.user));
+            
+            // Carregar módulos habilitados da nova barbearia
+            try {
+                await authService.fetchEnabledModules(data.user.shopId);
+            } catch (e) {
+                console.warn('Erro ao carregar módulos na troca:', e);
+            }
             
             addNotification('success', `Entrando na gestão da unidade: ${data.shop.name}`);
             
-            // Redirecionar para o dashboard de admin da unidade específica
+            // Redirecionar para o dashboard principal
             // Usamos window.location para forçar o recarregamento dos contextos com o novo shopId do token
-            window.location.href = '/admin/appointments';
+            window.location.href = '/dashboard';
         } catch (error) {
             addNotification('error', 'Erro ao acessar gestão da unidade.');
         }
