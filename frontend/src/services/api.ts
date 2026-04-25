@@ -51,7 +51,8 @@ class ApiClient {
 
       if (!response.ok) {
         // Tentar refresh token se receber 401 e retry estiver habilitado
-        if (response.status === 401 && retry && !endpoint.includes('/auth/')) {
+        const isAuthRoute = endpoint.includes('/auth/login') || endpoint.includes('/auth/register') || endpoint.includes('/auth/refresh');
+        if (response.status === 401 && retry && !isAuthRoute) {
           const refreshToken = localStorage.getItem('refreshToken');
 
           if (refreshToken) {

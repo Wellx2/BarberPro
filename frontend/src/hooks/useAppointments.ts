@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { appointmentService, AppointmentFilters } from '../services/appointmentService';
 import { Appointment } from '../types';
-import { useToast } from '../components/feedback';
+import { useToast } from '../components/feedback/ToastContext';
 
 interface UseAppointmentsReturn {
   appointments: Appointment[];

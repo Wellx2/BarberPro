@@ -47,6 +47,7 @@ coverage/
 # Temp files
 *.tmp
 *.temp
+tmp_*.ts
 .cache/
 modified_utf8.txt
 out_modified.txt

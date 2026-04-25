@@ -4,6 +4,8 @@ import App from './App';
 import './styles/globals.css';
 import './styles/patterns.css';
 
+import { ToastProvider } from './components/feedback/ToastContext';
+
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
@@ -12,6 +14,8 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </React.StrictMode>
 );

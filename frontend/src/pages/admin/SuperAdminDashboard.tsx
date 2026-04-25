@@ -220,26 +220,46 @@ export const SuperAdminDashboard: React.FC = () => {
                 });
                 addNotification('success', 'Novo gestor criado com sucesso.');
             } else {
-                const updatePayload = { ...editUser };
+                // Clean payload for update (whitelist fields)
+                const updatePayload: any = {
+                    name: editUser.name,
+                    email: editUser.email,
+                    role: editUser.role,
+                    shopId: editUser.shopId,
+                    active: editUser.active
+                };
+                
                 if (password) {
                     if (password.length < 6) {
                         addNotification('error', 'Se for alterar a senha, ela precisa ter pelo menos 6 caracteres.');
                         setSaving(false);
                         return;
                     }
-                    (updatePayload as any).password = password;
-                } else {
-                    delete (updatePayload as any).password;
+                    updatePayload.password = password;
                 }
+                
                 await userService.update(editUser.id, updatePayload);
                 addNotification('success', 'Perfil de operador atualizado.');
             }
             setEditUser(null);
             loadData();
-        } catch (error) {
-            addNotification('error', 'Erro ao salvar usuário.');
+        } catch (error: any) {
+            const msg = error?.response?.data?.message;
+            addNotification('error', Array.isArray(msg) ? msg[0] : msg || 'Erro ao salvar usuário.');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDeleteUser = async (id: string, name: string) => {
+        if (!window.confirm(`Deseja realmente REMOVER PERMANENTEMENTE o acesso de ${name}?`)) return;
+        
+        try {
+            await userService.hardDelete(id);
+            addNotification('success', 'Operador removido do sistema.');
+            loadData();
+        } catch (error) {
+            addNotification('error', 'Erro ao remover operador.');
         }
     };
 
@@ -546,7 +566,10 @@ export const SuperAdminDashboard: React.FC = () => {
                                             {u.shopId ? shops.find(s => s.id === u.shopId)?.name : 'Acesso Global'}
                                         </td>
                                         <td className="p-6 text-center">
-                                            <button onClick={() => setEditUser(u)} className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-tenant-primary rounded-xl transition-all"><Edit3 size={18} /></button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button onClick={() => setEditUser(u)} className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-tenant-primary rounded-xl transition-all" title="Editar"><Edit3 size={18} /></button>
+                                                <button onClick={() => handleDeleteUser(u.id, u.name)} className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-400 hover:text-red-500 rounded-xl transition-all" title="Remover"><Trash2 size={18} /></button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

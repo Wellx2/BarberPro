@@ -356,15 +356,41 @@ export class AuthService {
 
     if (!user) throw new NotFoundException('Usuário não encontrado');
 
-    const updateData: any = {
-      name: dto.name,
-      email: dto.email,
-      phone: dto.phone,
-    };
+    // Apenas incluir no updateData os campos explicitamente fornecidos no DTO
+    const updateData: any = {};
+
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+
+    // Tratar e-mail separadamente: só incluir se mudou de fato
+    if (dto.email !== undefined && dto.email !== user.email) {
+      // Verificar se o novo e-mail já pertence a outro usuário
+      const emailConflict = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+      if (emailConflict && emailConflict.id !== userId) {
+        throw new BadRequestException('Este e-mail já está em uso por outro usuário');
+      }
+      updateData.email = dto.email;
+    }
 
     // Se estiver alterando a senha
     if (dto.password) {
       updateData.passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT);
+    }
+
+    // Se não há nada para atualizar, retornar o usuário atual sem chamar o banco
+    if (Object.keys(updateData).length === 0) {
+      return {
+        message: 'Nenhuma alteração detectada',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+        },
+      };
     }
 
     const updatedUser = await this.prisma.user.update({

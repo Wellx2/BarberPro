@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider, useNotification } from './context/NotificationContext';
 import { ShopProvider, useShop } from './context/ShopContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastContainer } from './components/feedback/ToastContainer';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
@@ -170,22 +171,23 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <NotificationProvider>
-        <AuthProvider>
-          <Router>
-            <ShopProvider>
-              <AppLogic>
-                <ErrorBoundary>
-                  <Layout>
-                    <ErrorBoundary>
-                      <AppRoutes />
-                    </ErrorBoundary>
-                  </Layout>
-                </ErrorBoundary>
-              </AppLogic>
-            </ShopProvider>
-          </Router>
-        </AuthProvider>
+          <AuthProvider>
+            <Router>
+              <ShopProvider>
+                <AppLogic>
+                  <ErrorBoundary>
+                    <Layout>
+                      <ErrorBoundary>
+                        <AppRoutes />
+                      </ErrorBoundary>
+                    </Layout>
+                  </ErrorBoundary>
+                </AppLogic>
+              </ShopProvider>
+            </Router>
+          </AuthProvider>
       </NotificationProvider>
+      <ToastContainer />
     </ThemeProvider>
   );
 };
