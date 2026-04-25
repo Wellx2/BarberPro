@@ -22,20 +22,23 @@ import { Supplies } from './Supplies';
 import AdminAppointmentHistory from './AdminAppointmentHistory';
 import { BarberScheduleView } from '../../components/admin/BarberScheduleView';
 
-const getTabs = (hasBarberId: boolean) => {
+const getTabs = (hasBarberId: boolean, shop: any) => {
+  const { features } = shop.subscription || {};
+  const modules = shop.settings?.modulesEnabled || {};
+
   const baseTabs = [
-    { id: 'FINANCIAL', label: 'Financeiro', icon: DollarSign, short: 'Grana' },
-    { id: 'CASHIER', label: 'Caixa Operacional', icon: Calculator, short: 'Caixa' },
-    { id: 'BARBERS', label: 'Equipe', icon: Users, short: 'Equipe' },
-    { id: 'SERVICES', label: 'Serviços', icon: Scissors, short: 'Serviços' },
-    { id: 'PRODUCTS', label: 'Produtos', icon: ShoppingBag, short: 'Itens' },
-    { id: 'STOCK', label: 'Estoque', icon: Package, short: 'Estoque' },
-    { id: 'SUPPLIES', label: 'Insumos', icon: Layers, short: 'Insumos' },
-    { id: 'HISTORY', label: 'Histórico', icon: Clock, short: 'Agenda' },
-    { id: 'PLANS', label: 'Planos', icon: Info, short: 'Planos' },
-    { id: 'SUBSCRIPTION', label: 'Assinatura', icon: ShieldCheck, short: 'Assinatura' },
-    { id: 'SETTINGS', label: 'Configurações', icon: Settings, short: 'Config' },
-  ];
+    { id: 'FINANCIAL', label: 'Financeiro', icon: DollarSign, short: 'Grana', enabled: features?.hasFinancialDashboard && modules?.financial },
+    { id: 'CASHIER', label: 'Caixa Operacional', icon: Calculator, short: 'Caixa', enabled: features?.hasCashier && modules?.cashier },
+    { id: 'BARBERS', label: 'Equipe', icon: Users, short: 'Equipe', enabled: true },
+    { id: 'SERVICES', label: 'Serviços', icon: Scissors, short: 'Serviços', enabled: true },
+    { id: 'PRODUCTS', label: 'Produtos', icon: ShoppingBag, short: 'Itens', enabled: features?.hasProducts && modules?.products },
+    { id: 'STOCK', label: 'Estoque', icon: Package, short: 'Estoque', enabled: features?.hasInventory && modules?.products },
+    { id: 'SUPPLIES', label: 'Insumos', icon: Layers, short: 'Insumos', enabled: features?.hasInventory && modules?.financial },
+    { id: 'HISTORY', label: 'Histórico', icon: Clock, short: 'Agenda', enabled: true },
+    { id: 'PLANS', label: 'Planos', icon: Info, short: 'Planos', enabled: modules?.clientPlans },
+    { id: 'SUBSCRIPTION', label: 'Assinatura', icon: ShieldCheck, short: 'Assinatura', enabled: true },
+    { id: 'SETTINGS', label: 'Configurações', icon: Settings, short: 'Config', enabled: true },
+  ].filter(t => t.enabled !== false);
 
   if (hasBarberId) {
     return [
@@ -53,7 +56,7 @@ export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   
   const hasBarberId = !!user?.barberId;
-  const TABS = getTabs(hasBarberId);
+  const TABS = getTabs(hasBarberId, currentShop);
   const MOBILE_PRIMARY = TABS.slice(0, 4);
   const MOBILE_OVERFLOW = TABS.slice(4);
 
@@ -189,7 +192,7 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Mobile Overflow Menu */}
         {showMobileMenu && (
-          <div className="fixed inset-0 z-40 lg:hidden pointer-events-nãone">
+          <div className="fixed inset-0 z-40 lg:hidden pointer-events-none">
             <div className="absolute inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm pointer-events-auto" onClick={() => setShowMobileMenu(false)} />
             <div className="absolute bottom-20 left-4 right-4 bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-300 border border-gray-100 dark:border-gray-800 pointer-events-auto">
               <div className="grid grid-cols-3 gap-4">

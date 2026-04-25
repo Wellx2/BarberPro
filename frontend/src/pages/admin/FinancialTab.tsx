@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, DollarSign, BarChart3, PieChart, Eye, EyeOff, 
-  ArrowUpRight, ChevronDown
+  ArrowUpRight, ChevronDown, Loader2
 } from 'lucide-react';
 import { 
   PieChart as RechartsPie, Pie, Cell, 
@@ -90,9 +90,16 @@ export const FinancialTab: React.FC = () => {
 
   if (loadingAnalytics) {
     return (
-      <div className="text-center py-20">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-tenant-primary border-t-transparent"></div>
-        <p className="mt-4 text-gray-500 font-bold uppercase tracking-widest">Carregando inteligência financeira...</p>
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-6 p-8">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-tenant-primary/20 rounded-full animate-ping" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={32} className="animate-spin text-tenant-primary" />
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-gray-500 font-black uppercase text-xs tracking-widest animate-pulse">Carregando inteligência financeira...</p>
+        </div>
       </div>
     );
   }

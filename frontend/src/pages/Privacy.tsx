@@ -9,7 +9,7 @@ export const Privacy: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Política de Privacidade</h1>
 
-        <div className="prose prose-amber max-w-nãone text-gray-600 space-y-6">
+        <div className="prose prose-amber max-w-none text-gray-600 space-y-6">
           <p>
             No {shop.name}, a sua privacidade é uma prioridade. Esta Política de Privacidade descreve de forma transparente como coletamos, usamos, armazenamos e protegemos suas informações pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
           </p>

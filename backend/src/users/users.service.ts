@@ -37,7 +37,7 @@ export class UsersService {
     return user;
   }
 
-  async findAll(requester: any, role?: UserRole) {
+  async findAll(requester: any, role?: UserRole, includeInactive: boolean = false) {
     const where: any = {};
     if (requester.role === UserRole.ADMIN) {
       where.shopId = requester.shopId;
@@ -45,6 +45,12 @@ export class UsersService {
     if (role) {
       where.role = role;
     }
+    
+    // Por padrão, não mostrar usuários inativos (removidos via soft-delete)
+    if (!includeInactive) {
+      where.active = true;
+    }
+    
     return this.prisma.user.findMany({
       where,
       orderBy: { name: 'asc' },
@@ -95,6 +101,22 @@ export class UsersService {
 
   async hardDelete(id: string) {
     // Apenas SUPER_ADMIN
+    // Para evitar erro 500 (FK constraint), precisamos limpar referências em tabelas que usam o User
+    // Algumas tabelas como UserShopAccess já têm onDelete: Cascade no schema.prisma
+    
+    // Limpar referências opcionais
+    await this.prisma.barber.updateMany({
+      where: { userId: id },
+      data: { userId: null }
+    });
+    
+    await this.prisma.client.updateMany({
+      where: { userId: id },
+      data: { userId: null }
+    });
+
+    // Referências obrigatórias (como Appointment.createdBy) impedirão o delete se existirem dados.
+    // Nesses casos, o ideal é o Soft Delete. Se o Hard Delete falhar aqui, o erro será capturado pelo filter.
     return this.prisma.user.delete({ where: { id } });
   }
 }

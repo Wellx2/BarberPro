@@ -1,14 +1,65 @@
 
 # Connect to Supabase via connectio.txt
 *.txt
+*.log
+
+# Environment Files
+.env
+.env.local
+.env.production
+.env.staging
+.env.*
+!.env.example
+!.env.*.example
+
+# Node Dependencies
+node_modules/
+package-lock.json
+
+# Build & Cache
+dist/
+build/
+.cache/
+.vercel
+.next/
+out/
+
+# Development Utilities & Temp Files
 backend/check_db.js
+backend/check-db.js
+backend/check-services.js
+backend/create-db.js
 backend/inspect-dates.ts
+backend/modified_utf8.txt
+backend/out_modified.txt
+backend/out_untracked.txt
+backend/untracked_utf8.txt
+backend/vercel-deploy-output*.txt
 backend/test-*.js
 backend/test-*.ts
+backend/test-*.html
 backend/tmp_*.js
 backend/tmp_*.ts
+backend/prisma/reset-password.ts
+backend/prisma/list-users.ts
+
 frontend/test-*.js
 frontend/test-*.ts
 frontend/test-*.json
+frontend/test-out*.json
+frontend/test-payload.ts
+frontend/diff*.txt
 
-backend/prisma/reset-password.ts
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+prisma/migrations/**/migration_lock.toml

@@ -40,7 +40,7 @@ export const ToastContainer: React.FC = () => {
 
   return (
     <div
-      className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-nãone"
+      className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none"
       style={{ maxWidth: 'calc(100vw - 2rem)' }}
     >
       {toasts.map((toast) => (

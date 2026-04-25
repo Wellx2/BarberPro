@@ -206,7 +206,7 @@ export const BarberProfile: React.FC = () => {
                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">Experiência</div>
                         </div>
                         <div className="p-8 text-center group">
-                            <div className="text-3xl font-black text-white leading-nãone truncate px-2">{barber.unit || 'Klypbarber'}</div>
+                            <div className="text-3xl font-black text-white leading-none truncate px-2">{barber.unit || 'Klypbarber'}</div>
                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">Unidade Sede</div>
                         </div>
                     </div>

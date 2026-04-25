@@ -134,7 +134,7 @@ export function StockMovements() {
   return (
     <Container size="xl" className="py-8 space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <Flex direction="column" gap="nãone">
+        <Flex direction="column" gap="none">
           <h1 className="text-3xl font-black uppercase">Movimentação de Estoque</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">Gerencie entrada, saída e ajustes de estoque</p>
         </Flex>
@@ -155,7 +155,7 @@ export function StockMovements() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
-              className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-nãone focus:border-blue-500"
+              className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-none focus:border-blue-500"
             >
               <option value="ALL">Todos os tipos</option>
               <option value="IN">Entrada</option>
@@ -195,7 +195,7 @@ export function StockMovements() {
                   </Flex>
 
                   <Flex gap="md" className="items-center">
-                    <Flex direction="column" gap="nãone" className="text-right">
+                    <Flex direction="column" gap="none" className="text-right">
                       <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(movement.type)}`}>
                         {getTypeIcon(movement.type)}
                         {getTypeName(movement.type)}
@@ -233,7 +233,7 @@ export function StockMovements() {
               <select
                 value={form.productId}
                 onChange={(e) => setForm({ ...form, productId: e.target.value })}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-nãone focus:border-blue-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-none focus:border-blue-500"
                 disabled={loadingProducts}
               >
                 <option value="">{loadingProducts ? 'Carregando...' : 'Selecione um produto'}</option>
@@ -257,7 +257,7 @@ export function StockMovements() {
               <select
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value as any })}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-nãone focus:border-blue-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-none focus:border-blue-500"
               >
                 <option value="IN">Entrada</option>
                 <option value="OUT">Saída</option>
@@ -279,7 +279,7 @@ export function StockMovements() {
                 onChange={(e) => setForm({ ...form, reason: e.target.value })}
                 placeholder="Descreva o motivo da movimentação..."
                 rows={3}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-nãone focus:border-blue-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors focus:outline-none focus:border-blue-500"
               />
             </div>
           </Grid>

@@ -49,12 +49,12 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
         <>
             {showSearch && (
                 <div className="max-w-md mx-auto mb-16 relative">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-nãone">
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
                         type="text"
-                        className="block w-full pl-12 pr-6 py-4 border-nãone rounded-[25px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-[#f59e0b] focus:ring-tenant-primary shadow-lg transition-all font-medium"
+                        className="block w-full pl-12 pr-6 py-4 border-none rounded-[25px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-[#f59e0b] focus:ring-tenant-primary shadow-lg transition-all font-medium"
                         placeholder="O que você procura hoje?"
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}

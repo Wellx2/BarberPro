@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Plus, User, Scissors, DollarSign, X } from 'lucide-react';
 import { useAppointments } from '../../hooks/useAppointments';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Button } from '../../components/ui';
 
 export default function Appointments() {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -40,7 +42,14 @@ export default function Appointments() {
   };
 
   const handleComplete = async (id: string) => {
-    if (window.confirm('Marcar este agendamento como concluído?')) {
+    const isConfirmed = await confirm({
+      title: 'Concluir Agendamento',
+      message: 'Deseja marcar este agendamento como concluído? Isso registrará a baixa no sistema.',
+      confirmLabel: 'Concluir Agora',
+      type: 'info'
+    });
+    
+    if (isConfirmed) {
       await markAsCompleted(id);
     }
   };
@@ -292,7 +301,7 @@ export default function Appointments() {
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Ex: Cliente solicitou reagendamento"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 h-24 resize-nãone bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 h-24 resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               autoFocus
             />
             <div className="flex justify-end gap-2">

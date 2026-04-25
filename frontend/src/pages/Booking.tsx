@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { Calendar as CalendarIcon, Clock, Check, User, AlertCircle, ChevronLeft, Scissors, ChevronDown, Search } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Check, User, AlertCircle, ChevronLeft, Scissors, ChevronDown, Search, Plus, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { Appointment, Service, Barber, BlockedPeriod } from '../types';
@@ -67,6 +67,9 @@ export const Booking: React.FC = () => {
   const [showAllServices, setShowAllServices] = useState(false); // 🔥 Otimização MVP: Mostrar poucos por padrão
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [isAddingClient, setIsAddingClient] = useState(false);
+  const [newClientData, setNewClientData] = useState({ name: '', phone: '' });
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
 
   // Calcular duração total dos serviços selecionados
   const totalDuration = selectedServices.reduce((total, serviceId) => {
@@ -362,6 +365,36 @@ export const Booking: React.FC = () => {
       addNotification('error', errorMessage, 'Erro no Agendamento');
     }
   };
+  
+  const handleCreateClient = async () => {
+    if (!newClientData.name.trim()) {
+      addNotification('error', 'Nome do cliente é obrigatório');
+      return;
+    }
+
+    try {
+      setIsCreatingClient(true);
+      const newClient = await clientService.create({
+        name: newClientData.name,
+        phone: newClientData.phone,
+        shopId: shop.id
+      });
+
+      setAllClients(prev => [...prev, newClient]);
+      setSelectedClient(newClient.id);
+      setIsAddingClient(false);
+      setNewClientData({ name: '', phone: '' });
+      addNotification('success', 'Cliente cadastrado com sucesso!');
+      
+      // Avançar para o próximo passo automaticamente após criar e selecionar
+      setStep(3);
+    } catch (error: any) {
+      console.error('Erro ao criar cliente:', error);
+      addNotification('error', error.response?.data?.message || 'Erro ao cadastrar cliente');
+    } finally {
+      setIsCreatingClient(false);
+    }
+  };
 
   const visibleServices = showAllServices ? activeServices : activeServices.slice(0, 3);
 
@@ -508,34 +541,105 @@ export const Booking: React.FC = () => {
                 placeholder="Buscar cliente por nome..."
                 value={clientSearchQuery}
                 onChange={(e) => setClientSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-[24px] border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-tenant-primary outline-nãone transition-all"
+                className="w-full pl-12 pr-4 py-4 rounded-[24px] border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-tenant-primary outline-none transition-all"
               />
             </div>
 
             {/* Clients grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto">
-              {allClients
-                .filter(c => c.active && c.name.toLowerCase().includes(clientSearchQuery.toLowerCase()))
-                .map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedClient(c.id)}
-                    className={`p-6 rounded-[30px] border-2 transition-all group ${selectedClient === c.id ? 'border-tenant-primary bg-tenant-primary/10' : 'border-gray-200 dark:border-gray-700 hover:border-tenant-primary/30'}`}
-                  >
-                    <div className="w-16 h-16 rounded-[22px] mx-auto mb-3 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-400 group-hover:bg-tenant-primary group-hover:text-white transition-all">
-                      <User size={28} />
-                    </div>
-                    <p className="font-black uppercase text-[10px] tracking-wider dark:text-white leading-tight truncate">{c.name}</p>
-                    {c.phone && <p className="text-[9px] text-gray-400 mt-1">{c.phone}</p>}
-                  </button>
-                ))
-              }
-            </div>
+            {!isAddingClient ? (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto">
+                  {allClients
+                    .filter(c => c.active && c.name.toLowerCase().includes(clientSearchQuery.toLowerCase()))
+                    .map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => setSelectedClient(c.id)}
+                        className={`p-6 rounded-[30px] border-2 transition-all group ${selectedClient === c.id ? 'border-tenant-primary bg-tenant-primary/10' : 'border-gray-200 dark:border-gray-700 hover:border-tenant-primary/30'}`}
+                      >
+                        <div className="w-16 h-16 rounded-[22px] mx-auto mb-3 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-400 group-hover:bg-tenant-primary group-hover:text-white transition-all">
+                          <User size={28} />
+                        </div>
+                        <p className="font-black uppercase text-[10px] tracking-wider dark:text-white leading-tight truncate">{c.name}</p>
+                        {c.phone && <p className="text-[9px] text-gray-400 mt-1">{c.phone}</p>}
+                      </button>
+                    ))
+                  }
+                </div>
 
-            {allClients.length === 0 && (
-              <div className="text-center py-12 text-gray-400">
-                <User size={48} className="mx-auto mb-4 opacity-30" />
-                <p className="font-bold uppercase text-xs tracking-widest">Nenhum cliente cadastrado</p>
+                {allClients.filter(c => c.active && c.name.toLowerCase().includes(clientSearchQuery.toLowerCase())).length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                    <User size={48} className="mx-auto mb-4 opacity-30" />
+                    <p className="font-bold uppercase text-xs tracking-widest">
+                      {clientSearchQuery ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                    </p>
+                    <button 
+                      onClick={() => setIsAddingClient(true)}
+                      className="mt-4 text-tenant-primary font-black uppercase text-[10px] tracking-widest flex items-center gap-2 mx-auto hover:opacity-80 transition-opacity"
+                    >
+                      <Plus size={16} /> Cadastrar Novo Cliente
+                    </button>
+                  </div>
+                )}
+                
+                {allClients.length > 0 && !isAddingClient && (
+                  <div className="mt-6 flex justify-center">
+                    <button 
+                      onClick={() => setIsAddingClient(true)}
+                      className="text-gray-400 font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:text-tenant-primary transition-colors"
+                    >
+                      <UserPlus size={16} /> Ou Cadastrar Novo Cliente
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="max-w-md mx-auto bg-gray-50 dark:bg-gray-900/50 p-8 rounded-[40px] border-2 border-dashed border-gray-200 dark:border-gray-700 animate-fade-in">
+                <div className="text-center mb-6">
+                  <UserPlus size={32} className="mx-auto mb-2 text-tenant-primary" />
+                  <h3 className="font-black uppercase text-sm dark:text-white tracking-tight">Novo Cliente</h3>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Nome do Cliente</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: João Silva"
+                      value={newClientData.name}
+                      onChange={(e) => setNewClientData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-6 py-4 rounded-[22px] bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 focus:border-tenant-primary outline-none transition-all text-sm dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Telefone (WhatsApp)</label>
+                    <input 
+                      type="tel" 
+                      placeholder="(00) 00000-0000"
+                      value={newClientData.phone}
+                      onChange={(e) => setNewClientData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-6 py-4 rounded-[22px] bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 focus:border-tenant-primary outline-none transition-all text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="pt-4 flex gap-3">
+                    <button 
+                      onClick={() => setIsAddingClient(false)}
+                      className="flex-1 py-4 rounded-[20px] font-black uppercase text-[10px] tracking-widest text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handleCreateClient}
+                      disabled={isCreatingClient || !newClientData.name.trim()}
+                      className="flex-1 bg-tenant-primary text-white py-4 rounded-[20px] font-black uppercase text-[10px] tracking-widest shadow-lg shadow-tenant-primary/20 disabled:opacity-30 flex items-center justify-center gap-2"
+                    >
+                      {isCreatingClient ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <>Salvar e Continuar</>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -562,12 +666,12 @@ export const Booking: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
               <button onClick={() => setSelectedBarber('any')} className={`p-8 rounded-[35px] border-2 transition-all group ${selectedBarber === 'any' ? 'border-tenant-primary bg-tenant-primary/10' : 'border-gray-50 dark:border-gray-700 hover:border-tenant-primary/30'}`}>
                 <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-[28px] mx-auto mb-4 flex items-center justify-center text-gray-400 group-hover:bg-tenant-primary group-hover:text-white transition-all"><User size={32} /></div>
-                <p className="font-black uppercase text-[10px] tracking-widest dark:text-white leading-nãone">Qualquer um</p>
+                <p className="font-black uppercase text-[10px] tracking-widest dark:text-white leading-none">Qualquer um</p>
               </button>
               {shopBarbers.map(b => (
                 <button key={b.id} onClick={() => setSelectedBarber(b.id)} className={`p-8 rounded-[35px] border-2 transition-all group ${selectedBarber === b.id ? 'border-tenant-primary bg-tenant-primary/10' : 'border-gray-50 dark:border-gray-700 hover:border-tenant-primary/30'}`}>
                   <img src={b.avatar || b.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(b.name) + '&background=f59e0b&color=fff'} className="w-20 h-20 rounded-[28px] mx-auto mb-4 object-cover shadow-xl border-4 border-white dark:border-gray-700 group-hover:scale-105 transition-transform" />
-                  <p className="font-black uppercase text-[10px] tracking-widest dark:text-white leading-nãone truncate">{b.name.split(' ')[0]}</p>
+                  <p className="font-black uppercase text-[10px] tracking-widest dark:text-white leading-none truncate">{b.name.split(' ')[0]}</p>
                 </button>
               ))}
             </div>
@@ -585,7 +689,7 @@ export const Booking: React.FC = () => {
               {shopBarbers.map(b => (
                 <button key={b.id} onClick={() => setSelectedBarber(b.id)} className={`p-8 rounded-[35px] border-2 transition-all group ${selectedBarber === b.id ? 'border-tenant-primary bg-tenant-primary/10' : 'border-gray-50 dark:border-gray-700 hover:border-tenant-primary/30'}`}>
                   <img src={b.avatar || b.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(b.name) + '&background=f59e0b&color=fff'} className="w-20 h-20 rounded-[28px] mx-auto mb-4 object-cover shadow-xl border-4 border-white dark:border-gray-700 group-hover:scale-105 transition-transform" />
-                  <p className="font-black uppercase text-[10px] tracking-widest dark:text-white leading-nãone truncate">{b.name.split(' ')[0]}</p>
+                  <p className="font-black uppercase text-[10px] tracking-widest dark:text-white leading-none truncate">{b.name.split(' ')[0]}</p>
                 </button>
               ))}
             </div>
@@ -598,7 +702,7 @@ export const Booking: React.FC = () => {
           <div className="p-8 md:p-12 animate-fade-in bg-[#111827]">
             <div className="text-center mb-10">
               <h4 className="text-[10px] font-black uppercase text-tenant-primary tracking-[0.3em] mb-2">Horários Para</h4>
-              <h2 className="text-3xl font-black text-white uppercase tracking-tight leading-nãone">
+              <h2 className="text-3xl font-black text-white uppercase tracking-tight leading-none">
                 {selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'numeric' }).toUpperCase() : 'Selecione uma data'}
               </h2>
               {totalDuration > 0 && (
@@ -757,7 +861,7 @@ export const Booking: React.FC = () => {
                         checked={reminderEnabled}
                         onChange={(e) => setReminderEnabled(e.target.checked)}
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-nãone rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tenant-primary"></div>
                     </label>
                   </div>
                 </div>

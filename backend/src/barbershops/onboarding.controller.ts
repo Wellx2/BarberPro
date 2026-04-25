@@ -14,8 +14,9 @@ import { BarbershopOnboardingService } from './onboarding.service';
 import { BarbershopOnboardingDto } from './dto/barbershop-onboarding.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('onboarding')
 @Controller('onboarding')
@@ -34,7 +35,7 @@ export class BarbershopOnboardingController {
 
   @Get('requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @Roles(UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Listar solicitações pendentes (Apenas Super Admin)' })
   async listPendingRequests() {
     return this.onboardingService.listPendingRequests();
@@ -42,7 +43,7 @@ export class BarbershopOnboardingController {
 
   @Patch('approve/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Aprovar e ativar barbearia (Apenas Super Admin)' })
   async approveOnboarding(@Param('id') id: string) {
@@ -51,7 +52,7 @@ export class BarbershopOnboardingController {
 
   @Patch('reject/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN')
+  @Roles(UserRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Rejeitar solicitação (Apenas Super Admin)' })
   async rejectOnboarding(@Param('id') id: string) {

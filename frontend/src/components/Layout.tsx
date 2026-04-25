@@ -38,8 +38,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   // Helper paths
   const getShopPath = (path: string) => `/${shopSlug}${path}`;
 
-  const showPlans = shop.settings.modulesEnabled?.clientPlans !== false;
-  const showProducts = shop.settings.modulesEnabled?.products !== false;
+  const showPlans = shop.settings.modulesEnabled?.clientPlans !== false && shop.subscription?.features?.hasAppointments !== false;
+  const showProducts = shop.settings.modulesEnabled?.products !== false && shop.subscription?.features?.hasProducts !== false;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 flex flex-col pb-20 md:pb-0">

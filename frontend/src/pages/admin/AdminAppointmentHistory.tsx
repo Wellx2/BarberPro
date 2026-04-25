@@ -297,13 +297,13 @@ export const AdminAppointmentHistory: React.FC = () => {
                         placeholder="Cliente ou barbeiro..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-tenant-primary focus:outline-nãone"
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-tenant-primary focus:outline-none"
                     />
                 </div>
                 <select
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-tenant-primary focus:outline-nãone"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-tenant-primary focus:outline-none"
                 >
                     <option value="">Todos os Status</option>
                     <option value="SCHEDULED">Agendado</option>
@@ -314,7 +314,7 @@ export const AdminAppointmentHistory: React.FC = () => {
                 <select
                     value={barberFilter}
                     onChange={e => setBarberFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-tenant-primary focus:outline-nãone"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-tenant-primary focus:outline-none"
                 >
                     <option value="">Todos os Barbeiros</option>
                     {barbers.map(([id, name]) => (
@@ -363,7 +363,7 @@ export const AdminAppointmentHistory: React.FC = () => {
                                     {/* Date/time pill */}
                                     <div className="shrink-0 flex flex-col items-center justify-center w-14 h-14 bg-tenant-primary/5 dark:bg-tenant-primary/10 rounded-xl border border-tenant-primary/10 dark:border-tenant-primary/30">
                                         <Clock className="w-3 h-3 text-tenant-primary mb-0.5" />
-                                        <span className="text-sm font-black text-tenant-primary dark:text-tenant-primary/80 leading-nãone">
+                                        <span className="text-sm font-black text-tenant-primary dark:text-tenant-primary/80 leading-none">
                                             {d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '--:--'}
                                         </span>
                                         <span className="text-[8px] text-tenant-primary dark:text-tenant-primary font-bold">

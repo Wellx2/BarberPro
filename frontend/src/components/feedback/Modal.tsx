@@ -99,7 +99,7 @@ export const Modal: React.FC<ModalProps> = ({
                   text-gray-400 hover:text-gray-600 hover:bg-gray-100
                   dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700
                   transition-all duration-200
-                  focus:outline-nãone focus:ring-2 focus:ring-tenant-primary
+                  focus:outline-none focus:ring-2 focus:ring-tenant-primary
                   touch-manipulation
                 "
                 aria-label="Fechar modal"

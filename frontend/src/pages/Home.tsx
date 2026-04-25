@@ -464,8 +464,8 @@ export const Home: React.FC = () => {
             ) : reviews.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
                 {reviews.map((review: any) => (
-                  <div key={review.id} className="bg-white dark:bg-gray-800 rounded-[35px] p-8 shadow-xl shadow-gray-200/50 dark:shadow-nãone border border-gray-100 dark:border-gray-700 relative flex flex-col justify-between group hover:-translate-y-2 transition-transform duration-300">
-                    <div className="absolute top-8 right-8 text-gray-200 dark:text-gray-700 pointer-events-nãone">
+                  <div key={review.id} className="bg-white dark:bg-gray-800 rounded-[35px] p-8 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700 relative flex flex-col justify-between group hover:-translate-y-2 transition-transform duration-300">
+                    <div className="absolute top-8 right-8 text-gray-200 dark:text-gray-700 pointer-events-none">
                       <MessageSquare size={48} className="rotate-12 opacity-50" />
                     </div>
 
@@ -492,7 +492,7 @@ export const Home: React.FC = () => {
                         {(review.client?.name || 'C').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-black uppercase tracking-tight text-gray-900 dark:text-white leading-nãone mb-1">
+                        <p className="font-black uppercase tracking-tight text-gray-900 dark:text-white leading-none mb-1">
                           {review.client?.name || 'Cliente da Loja'}
                         </p>
                         {review.barber && (

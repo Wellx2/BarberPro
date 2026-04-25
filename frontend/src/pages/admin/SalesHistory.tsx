@@ -105,7 +105,7 @@ export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <X size={20} />
           </button>
           <div>
-            <h2 className="text-3xl font-black uppercase tracking-tighter dark:text-white leading-nãone">Histórico de Vendas</h2>
+            <h2 className="text-3xl font-black uppercase tracking-tighter dark:text-white leading-none">Histórico de Vendas</h2>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">Controle de atendimentos e produtos vendidos</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <input
             type="text"
             placeholder="Buscar por cliente ou ID..."
-            className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-tenant-primary focus:outline-nãone transition-colors !pl-12 !py-3 !rounded-2xl"
+            className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-tenant-primary focus:outline-none transition-colors !pl-12 !py-3 !rounded-2xl"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -222,12 +222,12 @@ export const SalesHistory: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <History size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase text-tenant-primary tracking-widest leading-nãone mb-1">Resumo do Período</p>
+            <p className="text-[10px] font-black uppercase text-tenant-primary tracking-widest leading-none mb-1">Resumo do Período</p>
             <p className="text-sm font-bold opacity-60">Total bruto calculado dos filtros aplicados</p>
           </div>
         </div>
         <div className="text-right">
-          <span className="text-4xl font-black text-white tracking-tighter leading-nãone">
+          <span className="text-4xl font-black text-white tracking-tighter leading-none">
             R$ {filteredSales.reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}
           </span>
         </div>

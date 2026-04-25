@@ -42,4 +42,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   globalPushEnabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  currentPassword?: string;
 }

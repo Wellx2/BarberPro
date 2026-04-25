@@ -59,7 +59,7 @@ export class BarbershopOnboardingService {
   async listPendingRequests() {
     return this.prisma.barbershop.findMany({
       where: {
-        subscriptionStatus: SubscriptionStatus.PENDING,
+        subscriptionStatus: 'PENDING',
         active: false,
       },
       include: {

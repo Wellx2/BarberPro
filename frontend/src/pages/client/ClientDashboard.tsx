@@ -683,7 +683,7 @@ export const ClientDashboard: React.FC = () => {
                   value={rescheduleDate}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setRescheduleDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary focus:outline-nãone"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-tenant-primary focus:outline-none"
                 />
               </div>
 

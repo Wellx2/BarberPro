@@ -126,7 +126,7 @@ export const Explore: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-[30px] shadow-sm mb-10 border border-gray-100 dark:border-gray-700">
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1 relative">
-                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-nãone">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Search className="h-5 w-5 text-gray-400" />
                             </div>
                             <input
@@ -134,7 +134,7 @@ export const Explore: React.FC = () => {
                                 placeholder="Buscar estabelecimento ou endereço..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-nãone rounded-2xl focus:ring-2 focus:ring-tenant-primary text-gray-900 dark:text-white dark:placeholder-gray-500 font-medium"
+                                className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl focus:ring-2 focus:ring-tenant-primary text-gray-900 dark:text-white dark:placeholder-gray-500 font-medium"
                             />
                         </div>
                         <div className="flex gap-3">

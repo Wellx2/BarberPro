@@ -10,7 +10,8 @@ export const SubscriptionTab: React.FC = () => {
 
     // Helper para design dos planos
     const getTierDesign = (currentTier: string) => {
-        switch (currentTier) {
+        const normalizedTier = currentTier?.toUpperCase() || 'BASIC';
+        switch (normalizedTier) {
             case 'BASIC': return { name: 'KlypBarber BASIC', color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200', icon: Shield,  desc: 'Essencial para barbeiros independentes', maxStaff: 2 };
             case 'PLUS': return { name: 'KlypBarber PLUS', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', icon: Zap,      desc: 'Perfeito para pequenas equipes', maxStaff: 6 };
             case 'PRO': return { name: 'KlypBarber PRO', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: ShieldCheck, desc: 'Para barbearias em expansão de marca', maxStaff: 20 };

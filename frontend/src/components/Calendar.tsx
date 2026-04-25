@@ -96,7 +96,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, 
     }
 
     return (
-        <div className="select-nãone bg-white dark:bg-gray-800 rounded-xl transition-colors duration-300 p-4"> {/* Adicionado p-4 para evitar cortes nas bordas */}
+        <div className="select-none bg-white dark:bg-gray-800 rounded-xl transition-colors duration-300 p-4"> {/* Adicionado p-4 para evitar cortes nas bordas */}
             <div className="flex items-center justify-between mb-6 px-2"> {/* Aumentado mb-4 para mb-6 */}
                 <button onClick={handlePrevMonth} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400 transition-colors"><ChevronLeft size={20} /></button>
                 <span className="font-bold text-gray-900 dark:text-white text-lg capitalize">{viewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>

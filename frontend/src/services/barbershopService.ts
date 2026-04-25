@@ -42,6 +42,14 @@ export interface Barbershop {
     };
   };
   subscriptionTier?: string;
+  modulesEnabled?: {
+    clientPlans?: boolean;
+    products?: boolean;
+    reviews?: boolean;
+    cashier?: boolean;
+    financial?: boolean;
+    reports?: boolean;
+  };
   maxTeamMembers?: number;
 }
 

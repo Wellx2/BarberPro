@@ -23,7 +23,7 @@ import { useNotification } from '../context/NotificationContext';
 import { api } from '../services/api';
 
 export const UserProfile: React.FC = () => {
-  const { user, updateUserProfile } = useAuth();
+  const { user, updateUserProfile, logout } = useAuth();
   const { addNotification } = useNotification();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +145,7 @@ export const UserProfile: React.FC = () => {
 
     if (formData.newPassword) {
       profileData.password = formData.newPassword;
+      profileData.currentPassword = formData.currentPassword;
     }
 
     updateUserProfile(profileData)
@@ -198,7 +199,6 @@ export const UserProfile: React.FC = () => {
           </button>
           <button
             onClick={() => {
-              const { logout } = require('../context/AuthContext');
               logout();
               navigate('/');
             }}
@@ -222,7 +222,7 @@ export const UserProfile: React.FC = () => {
                   {displayAvatar ? (
                     <img
                       src={displayAvatar}
-                      alt={user.name}
+                      alt={user?.name || 'Avatar'}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -251,9 +251,8 @@ export const UserProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Edit Button */}
             <div className="absolute top-4 right-4">
-              {!isEditing ? (
+              {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
                   className="bg-white/90 hover:bg-white text-gray-900 px-4 py-2 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2"
@@ -261,24 +260,6 @@ export const UserProfile: React.FC = () => {
                   <User size={18} />
                   Editar Perfil
                 </button>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCancel}
-                    className="bg-white/90 hover:bg-white text-gray-900 px-4 py-2 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2"
-                  >
-                    <X size={18} />
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className={`bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <Save size={18} />
-                    {isSaving ? 'Salvando...' : 'Salvar'}
-                  </button>
-                </div>
               )}
             </div>
           </div>
@@ -460,13 +441,13 @@ export const UserProfile: React.FC = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Tipo de Conta:</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{roleLabels[user.role]}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{user ? roleLabels[user.role] : ''}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">ID Público:</span>
-                  <span className="font-mono text-gray-900 dark:text-white">#{user.id.split('-')[0].toUpperCase()}</span>
+                  <span className="font-mono text-gray-900 dark:text-white">#{user?.id?.split('-')[0].toUpperCase() || '---'}</span>
                 </div>
-                {user.shopId && (
+                {user?.shopId && (
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">ID Barbearia:</span>
                     <span className="font-mono text-gray-900 dark:text-white">#{user.shopId.split('-')[0].toUpperCase()}</span>
@@ -520,6 +501,31 @@ export const UserProfile: React.FC = () => {
                 Você pode alterar individualmente por agendamento no seu painel de clientes.
               </p>
             </div>
+
+            {/* Ações de Edição (Botões no final) */}
+            {isEditing && (
+              <div className="flex gap-4 mt-10 pt-8 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleCancel}
+                  className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white py-4 rounded-2xl font-black uppercase tracking-[0.1em] shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <X size={20} />
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`flex-1 bg-tenant-primary hover:bg-tenant-primary/90 text-white py-4 rounded-2xl font-black uppercase tracking-[0.1em] shadow-lg shadow-tenant-primary/20 transition-all flex items-center justify-center gap-2 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isSaving ? (
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  ) : (
+                    <Save size={20} />
+                  )}
+                  {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

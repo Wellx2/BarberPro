@@ -4,10 +4,12 @@ import { Card, Button, Input } from '../../components/ui';
 import { Modal } from '../../components/feedback';
 import { planService } from '../../services/planService';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Plan } from '../../types';
 
 export const PlansTab: React.FC = () => {
   const { addNotification } = useNotification();
+  const { confirm } = useConfirm();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -93,7 +95,7 @@ export const PlansTab: React.FC = () => {
       const plan = plans.find(p => p.id === id);
       if (!plan) return;
       await planService.update(id, { active: !plan.active });
-      setPlans(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p));
+      setPlans(prev => prev.map(p => p.id === id ? { ...p, active: !plan.active } : p));
       addNotification('success', 'Status atualizado!');
     } catch (error) {
       addNotification('error', 'Erro ao atualizar status');
@@ -101,7 +103,14 @@ export const PlansTab: React.FC = () => {
   };
 
   const handleDeletePlan = async (id: string, name: string) => {
-    if (!window.confirm(`Tem certeza que deseja remover o plano ${name}?`)) return;
+    const isConfirmed = await confirm({
+      title: 'Remover Plano',
+      message: `Tem certeza que deseja remover o plano "${name}"? Esta ação não poderá ser desfeita.`,
+      confirmLabel: 'Remover Plano',
+      type: 'danger'
+    });
+    
+    if (!isConfirmed) return;
     try {
       await planService.delete(id);
       setPlans(prev => prev.filter(p => p.id !== id));

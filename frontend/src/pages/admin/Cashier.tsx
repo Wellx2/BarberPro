@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import {
   getDailyCashierAnalytics,
   processInvoicePayment,
@@ -15,7 +16,7 @@ import {
   Banknote, CreditCard, QrCode, X, Check, Clock, Calendar as CalendarIcon,
   AlertCircle, ChevronRight, Search, History, DollarSign, TrendingUp,
   Users, Scissors, ShoppingBag, Eye, EyeOff, Printer, BrainCircuit,
-  Target, HeartPulse, Plus, Minus, Percent
+  Target, HeartPulse, Plus, Minus, Percent, Loader2
 } from 'lucide-react';
 import { SalesHistory } from './SalesHistory';
 import { Card } from '../../components/ui';
@@ -106,6 +107,7 @@ interface SplitEntry {
 export const Cashier: React.FC = () => {
   const { shop } = useShop();
   const { addNotification } = useNotification();
+  const { confirm } = useConfirm();
 
   // Data state
   const [dailyAnalytics, setDailyAnalytics] = useState<DailyCashierAnalytics | null>(null);
@@ -276,6 +278,23 @@ export const Cashier: React.FC = () => {
   }
 
   // ─── Main render ───────────────────────────────────────────────────────────
+  if (loadingAnalytics || !dailyAnalytics) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 p-8">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-tenant-primary/20 rounded-full animate-ping" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={40} className="animate-spin text-tenant-primary" />
+          </div>
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-xl font-black uppercase tracking-widest text-gray-900 dark:text-white">Carregando Caixa</h3>
+          <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">Sincronizando transações do dia...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
 
@@ -453,8 +472,15 @@ export const Cashier: React.FC = () => {
               <History size={18} /> Histórico
             </button>
             <button
-              onClick={() => {
-                if (window.confirm('Deseja realmente FECHAR O CAIXA de hoje? Isso gerará o relatório final consolidado.')) {
+              onClick={async () => {
+                const isConfirmed = await confirm({
+                  title: 'Fechar Caixa Diário',
+                  message: 'Deseja realmente FECHAR O CAIXA de hoje? Isso gerará o relatório final consolidado e você não poderá realizar novas vendas para esta data.',
+                  confirmLabel: 'Sim, Fechar Caixa',
+                  type: 'warning'
+                });
+                
+                if (isConfirmed) {
                   const printWindow = window.open('', '_blank');
                   if (printWindow) {
                     const content = `

@@ -230,6 +230,8 @@ export class BarbershopsService {
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
+        subscriptionTier: true,
+        modulesEnabled: true,
         heroSettings: {
           select: {
             title: true,
@@ -270,6 +272,8 @@ export class BarbershopsService {
         logoUrl: true,
         bannerUrl: true,
         primaryColor: true,
+        subscriptionTier: true,
+        modulesEnabled: true,
         heroSettings: {
           select: {
             title: true,

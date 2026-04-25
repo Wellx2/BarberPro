@@ -5,6 +5,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider, useNotification } from './context/NotificationContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import { ShopProvider, useShop } from './context/ShopContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastContainer } from './components/feedback/ToastContainer';
@@ -171,6 +172,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <NotificationProvider>
+        <ConfirmProvider>
           <AuthProvider>
             <Router>
               <ShopProvider>
@@ -186,6 +188,7 @@ const App: React.FC = () => {
               </ShopProvider>
             </Router>
           </AuthProvider>
+        </ConfirmProvider>
       </NotificationProvider>
       <ToastContainer />
     </ThemeProvider>

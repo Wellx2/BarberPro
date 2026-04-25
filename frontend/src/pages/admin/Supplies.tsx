@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Package, Plus, Search, Filter, Edit3, Trash2,
     AlertCircle, ChevronRight, ArrowUpRight, ArrowDownRight,
-    MoreVertical, History, Info, Layers
+    MoreVertical, History, Info, Layers, Loader2
 } from 'lucide-react';
 import {
     SupplyItem,
@@ -19,12 +19,14 @@ import {
 } from '../../services/expenseService';
 import { Check, DollarSign } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Button, Card, Input, Select } from '../../components/ui';
 import { Modal, Alert } from '../../components/feedback';
 import { Grid } from '../../components/layout/Grid';
 
 export const Supplies: React.FC = () => {
     const { addNotification } = useNotification();
+    const { confirm } = useConfirm();
     const [items, setItems] = useState<SupplyItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -141,7 +143,14 @@ export const Supplies: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Tem certeza que deseja remover este insumo?')) return;
+        const isConfirmed = await confirm({
+            title: 'Remover Insumo',
+            message: 'Tem certeza que deseja remover este insumo do estoque? Esta ação não poderá ser desfeita.',
+            confirmLabel: 'Remover Insumo',
+            type: 'danger'
+        });
+        
+        if (!isConfirmed) return;
         try {
             await supplyItemService.remove(id);
             addNotification('success', 'Insumo removido');
@@ -223,6 +232,15 @@ export const Supplies: React.FC = () => {
     };
 
     const lowStockItems = items.filter(i => i.isLowStock);
+
+    if (loading || loadingExpenses) {
+        return (
+            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+                <Loader2 size={40} className="animate-spin text-tenant-primary" />
+                <p className="text-gray-500 font-bold animate-pulse uppercase text-xs tracking-widest">Carregando suprimentos e custos...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

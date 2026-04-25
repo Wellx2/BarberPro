@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Shop, User, UserRole } from '../../types';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { useShop } from '../../context/ShopContext';
 import { Button, Card, Input, Select } from '../../components/ui';
 import { barbershopService, QuickSetupData } from '../../services/barbershopService';
@@ -22,6 +23,7 @@ const RocketIcon = ({ size, className }: { size?: number, className?: string }) 
 
 export const SuperAdminDashboard: React.FC = () => {
     const { addNotification } = useNotification();
+    const { confirm } = useConfirm();
     const { updateShopSettings } = useShop();
     
     const [shops, setShops] = useState<Shop[]>([]);
@@ -253,13 +255,27 @@ export const SuperAdminDashboard: React.FC = () => {
     };
 
     const handleDeleteUser = async (id: string, name: string) => {
-        if (!window.confirm(`Deseja realmente REMOVER PERMANENTEMENTE o acesso de ${name}?`)) return;
+        const isConfirmed = await confirm({
+            title: 'Remover Operador',
+            message: `Tem certeza que deseja remover o acesso de "${name}"? O usuário perderá o acesso ao sistema imediatamente, mas seus registros históricos serão preservados.`,
+            confirmLabel: 'Remover Agora',
+            type: 'danger'
+        });
         
+        if (isConfirmed) {
+            confirmDelete(id);
+        }
+    };
+
+    const confirmDelete = async (id: string) => {
         try {
-            await userService.hardDelete(id);
-            addNotification('success', 'Operador removido do sistema.');
+            // Usamos soft-delete (remove) por padrão para não quebrar integridade de dados (agendamentos, etc)
+            // O backend agora filtra automaticamente usuários inativos na listagem
+            await userService.remove(id);
+            addNotification('success', 'Acesso do operador desativado com sucesso.');
             loadData();
-        } catch (error) {
+        } catch (error: any) {
+            // Se o soft-delete falhar ou se quisermos tentar o hard-delete em caso de erro específico
             addNotification('error', 'Erro ao remover operador.');
         }
     };
@@ -279,11 +295,23 @@ export const SuperAdminDashboard: React.FC = () => {
         try {
             const data = await barbershopService.switch(shopId);
             
-            // Salvar novos tokens e dados do usuário (com o novo shopId)
+            // Recuperar usuário atual para preservar campos não retornados no switch (como avatar)
+            const currentUserStr = localStorage.getItem('barber_user') || localStorage.getItem('user');
+            const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {};
+            
+            const updatedUser = {
+                ...currentUser,
+                ...data.user,
+                shopId: data.user.shopId,
+                role: data.user.role
+            };
+            
             localStorage.setItem('accessToken', data.accessToken);
             localStorage.setItem('refreshToken', data.refreshToken);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            localStorage.setItem('barber_user', JSON.stringify(data.user));
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            localStorage.setItem('barber_user', JSON.stringify(updatedUser));
+            localStorage.removeItem('shops'); // Forçar recarregamento para pegar plano/módulos atualizados
+            localStorage.setItem('selected_shop_id', shopId); // Garantir que o ID da loja selecionada seja o novo
             
             // Carregar módulos habilitados da nova barbearia
             try {
@@ -497,7 +525,13 @@ export const SuperAdminDashboard: React.FC = () => {
                                                 <div className="flex justify-center gap-3">
                                                     <button 
                                                         onClick={async () => {
-                                                            if (!window.confirm('Confirmar ativação e liberação de acesso?')) return;
+                                                            const isConfirmed = await confirm({
+                                                                title: 'Aprovar Solicitação',
+                                                                message: 'Confirmar ativação e liberação de acesso para esta unidade? O proprietário receberá o e-mail de boas-vindas.',
+                                                                confirmLabel: 'Sim, Ativar Agora',
+                                                                type: 'info'
+                                                            });
+                                                            if (!isConfirmed) return;
                                                             try {
                                                                 await onboardingService.approveRequest(req.id);
                                                                 addNotification('success', 'Barbearia ativada com sucesso!');
@@ -512,7 +546,13 @@ export const SuperAdminDashboard: React.FC = () => {
                                                     </button>
                                                     <button 
                                                         onClick={async () => {
-                                                            if (!window.confirm('Inativar esta solicitação definitivamente?')) return;
+                                                            const isConfirmed = await confirm({
+                                                                title: 'Inativar Solicitação',
+                                                                message: 'Deseja realmente inativar esta solicitação definitivamente? Esta ação não excluirá os dados, mas ocultará a requisição.',
+                                                                confirmLabel: 'Inativar',
+                                                                type: 'warning'
+                                                            });
+                                                            if (!isConfirmed) return;
                                                             try {
                                                                 await onboardingService.rejectRequest(req.id);
                                                                 addNotification('info', 'Solicitação inativada.');

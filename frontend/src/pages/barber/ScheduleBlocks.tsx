@@ -4,6 +4,7 @@ import { useShop } from '../../context/ShopContext';
 import { BlockedPeriod } from '../../types';
 import { Plus, X, Lock, Calendar, Clock } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Button, Card, Input, Select } from '../../components/ui';
 import { Container } from '../../components/layout/Container';
 import { Grid } from '../../components/layout/Grid';
@@ -13,6 +14,7 @@ export const ScheduleBlocks: React.FC = () => {
   const { user } = useAuth();
   const { shop } = useShop();
   const { addNotification } = useNotification();
+  const { confirm } = useConfirm();
 
   const [blocks, setBlocks] = useState<BlockedPeriod[]>(() =>
     JSON.parse(localStorage.getItem('blocked_periods') || '[]')
@@ -85,8 +87,15 @@ export const ScheduleBlocks: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (blockId: string) => {
-    if (!window.confirm('Tem certeza que deseja remover este bloqueio?')) return;
+  const handleDelete = async (blockId: string) => {
+    const isConfirmed = await confirm({
+      title: 'Remover Bloqueio',
+      message: 'Tem certeza que deseja remover este bloqueio de horário? Ele voltará a ficar disponível para agendamentos.',
+      confirmLabel: 'Remover Bloqueio',
+      type: 'danger'
+    });
+    
+    if (!isConfirmed) return;
     const updated = blocks.filter(b => b.id !== blockId);
     setBlocks(updated);
     localStorage.setItem('blocked_periods', JSON.stringify(updated));

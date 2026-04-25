@@ -363,21 +363,39 @@ export class AuthService {
     if (dto.phone !== undefined) updateData.phone = dto.phone;
 
     // Tratar e-mail separadamente: só incluir se mudou de fato
-    if (dto.email !== undefined && dto.email !== user.email) {
-      // Verificar se o novo e-mail já pertence a outro usuário
-      const emailConflict = await this.prisma.user.findUnique({
-        where: { email: dto.email },
-      });
-      if (emailConflict && emailConflict.id !== userId) {
-        throw new BadRequestException('Este e-mail já está em uso por outro usuário');
+    if (dto.email !== undefined) {
+      const newEmail = dto.email.trim().toLowerCase();
+      const currentEmail = (user.email || '').trim().toLowerCase();
+
+      if (newEmail !== currentEmail) {
+        // Verificar se o novo e-mail já pertence a outro usuário
+        const emailConflict = await this.prisma.user.findUnique({
+          where: { email: newEmail },
+        });
+        if (emailConflict && emailConflict.id !== userId) {
+          throw new BadRequestException('Este e-mail já está em uso por outro usuário');
+        }
+        updateData.email = newEmail;
       }
-      updateData.email = dto.email;
     }
 
     // Se estiver alterando a senha
     if (dto.password) {
+      // Validar senha atual por segurança
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Você deve informar a senha atual para criar uma nova senha');
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+      if (!isCurrentPasswordValid) {
+        throw new BadRequestException('A senha atual informada está incorreta');
+      }
+
       updateData.passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT);
     }
+
+    // Garantir que currentPassword não vá para o Prisma
+    delete updateData.currentPassword;
 
     // Se não há nada para atualizar, retornar o usuário atual sem chamar o banco
     if (Object.keys(updateData).length === 0) {

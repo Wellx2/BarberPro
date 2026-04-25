@@ -306,7 +306,7 @@ export const ServicesTab: React.FC = () => {
               <textarea
                 value={serviceForm.description}
                 onChange={e => setServiceForm({ ...serviceForm, description: e.target.value })}
-                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 outline-nãone focus:border-tenant-primary transition-colors min-h-[100px]"
+                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 outline-none focus:border-tenant-primary transition-colors min-h-[100px]"
                 placeholder="Descreva o que está incluso no serviço..."
               />
             </div>

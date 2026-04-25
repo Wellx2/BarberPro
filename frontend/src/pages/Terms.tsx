@@ -10,7 +10,7 @@ export const Terms: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Termos de Uso</h1>
         <p className="text-gray-500 mb-8">Última atualização: {new Date().toLocaleDateString()}</p>
 
-        <div className="prose prose-amber max-w-nãone text-gray-600 space-y-6">
+        <div className="prose prose-amber max-w-none text-gray-600 space-y-6">
           <p>
             Bem-vindo ao {shop.name}. Ao acessar ou usar nosso sistema de agendamento (incluindo o aplicativo PWA) e serviços associados (doravante, a "Plataforma"), você concorda em cumprir e estar vinculado aos seguintes termos e condições. Caso discorde de qualquer parte destes termos, você não deve utilizar a Plataforma.
           </p>

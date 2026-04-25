@@ -52,38 +52,38 @@ const convertBarbershopToShop = (barbershop: Barbershop): Shop => {
     } : undefined,
     settings: {
       showBarbers: true,
-      subscriptionEnabled: barbershop.settings?.subscriptionEnabled ?? true, // ✅ Default true para mostrar planos
+      subscriptionEnabled: barbershop.settings?.subscriptionEnabled ?? true,
       allowPayOnLocation: true,
       modulesEnabled: {
-        clientPlans: barbershop.settings?.modulesEnabled?.clientPlans ?? barbershop.settings?.subscriptionEnabled ?? true,
-        products: barbershop.settings?.modulesEnabled?.products ?? true,
-        reviews: barbershop.settings?.modulesEnabled?.reviews ?? true,
-        cashier: barbershop.settings?.modulesEnabled?.cashier ?? true,
-        financial: barbershop.settings?.modulesEnabled?.financial ?? true,
-        reports: barbershop.settings?.modulesEnabled?.reports ?? true
+        clientPlans: barbershop.modulesEnabled?.clientPlans ?? barbershop.settings?.modulesEnabled?.clientPlans ?? (barbershop.subscriptionTier?.toUpperCase() !== 'BASIC'),
+        products: (barbershop.subscriptionTier?.toUpperCase() !== 'BASIC') && (barbershop.modulesEnabled?.products ?? barbershop.settings?.modulesEnabled?.products ?? true),
+        reviews: barbershop.modulesEnabled?.reviews ?? barbershop.settings?.modulesEnabled?.reviews ?? true,
+        cashier: (barbershop.subscriptionTier?.toUpperCase() !== 'BASIC') && (barbershop.modulesEnabled?.cashier ?? barbershop.settings?.modulesEnabled?.cashier ?? true),
+        financial: (barbershop.subscriptionTier?.toUpperCase() !== 'BASIC') && (barbershop.modulesEnabled?.financial ?? barbershop.settings?.modulesEnabled?.financial ?? true),
+        reports: (barbershop.subscriptionTier?.toUpperCase() !== 'BASIC') && (barbershop.modulesEnabled?.reports ?? barbershop.settings?.modulesEnabled?.reports ?? true)
       }
     },
     subscription: {
-      tier: (barbershop.subscriptionTier as any) || 'BASIC',
+      tier: (barbershop.subscriptionTier?.toUpperCase() as any) || 'BASIC',
       status: 'ACTIVE',
       startDate: new Date().toISOString(),
       endDate: new Date().toISOString(),
       features: {
-        maxTeamMembers: barbershop.maxTeamMembers || 2,
+        maxTeamMembers: barbershop.maxTeamMembers || (barbershop.subscriptionTier?.toUpperCase() === 'BASIC' ? 2 : (barbershop.subscriptionTier?.toUpperCase() === 'PLUS' ? 6 : 20)),
         hasAppointments: true,
-        hasCashier: true,
-        hasFinancialDashboard: true,
-        hasCommissionReports: true,
+        hasCashier: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC',
+        hasFinancialDashboard: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC',
+        hasCommissionReports: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC',
         commissionReportPeriods: ['WEEKLY', 'BIWEEKLY', 'MONTHLY'],
-        hasProducts: true,
-        hasInventory: true,
-        hasProductReports: true,
-        hasAdvancedReports: true,
-        hasAIAnalysis: barbershop.subscriptionTier === 'PRO' || barbershop.subscriptionTier === 'MASTER',
-        hasPrioritySupport: barbershop.subscriptionTier === 'PRO' || barbershop.subscriptionTier === 'MASTER',
-        hasConfigurationSupport: barbershop.subscriptionTier === 'MASTER',
-        hasAuditLogs: barbershop.subscriptionTier !== 'BASIC' && !!barbershop.subscriptionTier,
-        hasWhiteLabel: barbershop.subscriptionTier !== 'BASIC' && !!barbershop.subscriptionTier,
+        hasProducts: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC',
+        hasInventory: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC',
+        hasProductReports: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC',
+        hasAdvancedReports: ['PRO', 'MASTER'].includes(barbershop.subscriptionTier?.toUpperCase() as any),
+        hasAIAnalysis: ['PRO', 'MASTER'].includes(barbershop.subscriptionTier?.toUpperCase() as any),
+        hasPrioritySupport: ['PRO', 'MASTER'].includes(barbershop.subscriptionTier?.toUpperCase() as any),
+        hasConfigurationSupport: barbershop.subscriptionTier?.toUpperCase() === 'MASTER',
+        hasAuditLogs: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC' && !!barbershop.subscriptionTier,
+        hasWhiteLabel: barbershop.subscriptionTier?.toUpperCase() !== 'BASIC' && !!barbershop.subscriptionTier,
       }
     }
   };
@@ -239,7 +239,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const pathParts = pathname.split('/').filter(p => p !== '');
     // Ignore internal system routes and static files at root level
     const systemRoutes = [
-      'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 
+      'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'profile', 'settings', 'superadmin',
       'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico'
     ];
     const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) && !pathParts[0].includes('.') ? pathParts[0] : null;
@@ -343,7 +343,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Ignore internal system routes and static files at root level
     const systemRoutes = [
-      'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 
+      'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'profile', 'settings', 'superadmin',
       'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico'
     ];
     

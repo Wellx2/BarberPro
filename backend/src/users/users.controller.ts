@@ -33,8 +33,12 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  async findAll(@CurrentUser() user: any, @Query('role') role?: UserRole) {
-    return this.usersService.findAll(user, role);
+  async findAll(
+    @CurrentUser() user: any, 
+    @Query('role') role?: UserRole,
+    @Query('includeInactive') includeInactive?: string
+  ) {
+    return this.usersService.findAll(user, role, includeInactive === 'true');
   }
 
   @Get(':id')
