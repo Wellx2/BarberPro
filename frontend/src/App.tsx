@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 // Fix: Import HashRouter from react-router-dom and core components from react-router to resolve export errors in some environments
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -36,6 +35,8 @@ import { LoadingSkeletonCompact } from './components/LoadingSkeleton';
 import { ShopLoadError } from './components/ShopLoadError';
 import { OnboardingWizard } from './pages/admin/OnboardingWizard';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { LandingPage } from './pages/LandingPage';
+import { ReferralProgram } from './pages/admin/ReferralProgram';
 
 // Component to handle global background tasks (notifications)
 const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -178,11 +179,8 @@ const App: React.FC = () => {
               <ShopProvider>
                 <AppLogic>
                   <ErrorBoundary>
-                    <Layout>
-                      <ErrorBoundary>
-                        <AppRoutes />
-                      </ErrorBoundary>
-                    </Layout>
+                  <ErrorBoundary>
+                    <AppRoutes />
                   </ErrorBoundary>
                 </AppLogic>
               </ShopProvider>
@@ -204,94 +202,109 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Rotas Globais / Estáticas */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/explore" element={<Explore />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
+      {/* Standalone Landing Page (Marketing) */}
+      <Route path="/" element={<LandingPage />} />
 
-      {/* Rota de redirecionamento para o slug da loja atual se acessar rotas sem prefixo */}
-      <Route path="/services" element={<Navigate to={`/${shopSlug}/servicos`} replace />} />
-      <Route path="/products" element={<Navigate to={`/${shopSlug}/produtos`} replace />} />
-      <Route path="/plans" element={<Navigate to={`/${shopSlug}/planos`} replace />} />
-      <Route path="/book" element={<Navigate to={`/${shopSlug}/agendar`} replace />} />
-      <Route path="/servicos" element={<Navigate to={`/${shopSlug}/servicos`} replace />} />
-      <Route path="/produtos" element={<Navigate to={`/${shopSlug}/produtos`} replace />} />
-      <Route path="/planos" element={<Navigate to={`/${shopSlug}/planos`} replace />} />
-      <Route path="/agendar" element={<Navigate to={`/${shopSlug}/agendar`} replace />} />
+      {/* Main Application Routes wrapped in Layout */}
+      <Route path="*" element={
+        <Layout>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
-      {/* Rotas de Loja (Dinamicas com Slug) */}
-      <Route path="/:shopSlug">
-        <Route index element={<Home />} />
-        <Route path="servicos" element={<Services />} />
-        <Route path="produtos" element={<Products />} />
-        <Route path="planos" element={<Plans />} />
-        <Route path="agendar" element={
-          <ProtectedRoute>
-            <Booking />
-          </ProtectedRoute>
-        } />
-      </Route>
+            {/* Redirects for compatibility */}
+            <Route path="/services" element={<Navigate to={`/${shopSlug}/servicos`} replace />} />
+            <Route path="/products" element={<Navigate to={`/${shopSlug}/produtos`} replace />} />
+            <Route path="/plans" element={<Navigate to={`/${shopSlug}/planos`} replace />} />
+            <Route path="/book" element={<Navigate to={`/${shopSlug}/agendar`} replace />} />
+            <Route path="/servicos" element={<Navigate to={`/${shopSlug}/servicos`} replace />} />
+            <Route path="/produtos" element={<Navigate to={`/${shopSlug}/produtos`} replace />} />
+            <Route path="/planos" element={<Navigate to={`/${shopSlug}/planos`} replace />} />
+            <Route path="/agendar" element={<Navigate to={`/${shopSlug}/agendar`} replace />} />
 
-      {/* Aliases em Inglês para compatibilidade ou se preferir */}
-      <Route path="/:shopSlug/services" element={<Navigate to="../servicos" replace />} />
-      <Route path="/:shopSlug/products" element={<Navigate to="../produtos" replace />} />
-      <Route path="/:shopSlug/plans" element={<Navigate to="../planos" replace />} />
-      <Route path="/:shopSlug/book" element={<Navigate to="../agendar" replace />} />
+            {/* Dynamic Shop Routes */}
+            <Route path="/:shopSlug">
+              <Route index element={<Home />} />
+              <Route path="servicos" element={<Services />} />
+              <Route path="produtos" element={<Products />} />
+              <Route path="planos" element={<Plans />} />
+              <Route path="agendar" element={
+                <ProtectedRoute>
+                  <Booking />
+                </ProtectedRoute>
+              } />
+            </Route>
 
-      {/* Rotas Protegidas de Usuário (Podem ser globais) */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <UserProfile />
-        </ProtectedRoute>
-      } />
-      <Route path="/onboarding" element={
-        <ProtectedRoute allowedRoles={[UserRole.CLIENT, UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-          <OnboardingWizard />
-        </ProtectedRoute>
-      } />
+            {/* English Aliases */}
+            <Route path="/:shopSlug/services" element={<Navigate to="../servicos" replace />} />
+            <Route path="/:shopSlug/products" element={<Navigate to="../produtos" replace />} />
+            <Route path="/:shopSlug/plans" element={<Navigate to="../planos" replace />} />
+            <Route path="/:shopSlug/book" element={<Navigate to="../agendar" replace />} />
 
-      {/* Rotas de Admin */}
-      <Route path="/admin/appointments" element={
-        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-          <Appointments />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/history" element={
-        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-          <AdminAppointmentHistory />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/super" element={
-        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-          <SuperAdminDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/cashier" element={
-        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-          <Cashier />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin/stock" element={
-        <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
-          <StockMovements />
-        </ProtectedRoute>
-      } />
+            {/* User Dashboard & Profile */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/barber-profile/:id" element={<BarberProfile />} />
 
-      {/* Profile Público de Barbeiro */}
-      <Route path="/barber/:id" element={<BarberProfile />} />
+            {/* Admin Dashboard & Management */}
+            <Route path="/admin">
+              <Route index element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.BARBER]}>
+                  <Appointments />
+                </ProtectedRoute>
+              } />
+              <Route path="history" element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                  <AdminAppointmentHistory />
+                </ProtectedRoute>
+              } />
+              <Route path="cashier" element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.BARBER]}>
+                  <Cashier />
+                </ProtectedRoute>
+              } />
+              <Route path="stock" element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                  <StockMovements />
+                </ProtectedRoute>
+              } />
+              <Route path="onboarding" element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                  <OnboardingWizard />
+                </ProtectedRoute>
+              } />
+              <Route path="referral" element={
+                <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.SUPER_ADMIN]}>
+                  <ReferralProgram />
+                </ProtectedRoute>
+              } />
+            </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Super Admin Panel */}
+            <Route path="/super-admin" element={
+              <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                <SuperAdminDashboard />
+              </ProtectedRoute>
+            } />
+
+            {/* 404 Fallback to Landing Page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Layout>
+      } />
     </Routes>
   );
 };

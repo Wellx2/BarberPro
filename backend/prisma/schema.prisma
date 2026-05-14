@@ -67,6 +67,7 @@ model Barbershop {
   supplyItems            SupplyItem[]
   usersWithAccess        UserShopAccess[]
   users                  User[]
+  referralOrigin         Referral?                 @relation("ShopReferral")
 
   @@map("barbershops")
 }
@@ -100,6 +101,7 @@ model User {
   shopAccess          UserShopAccess[]
   plan                Plan?                  @relation(fields: [planId], references: [id])
   shop                Barbershop?            @relation(fields: [shopId], references: [id])
+  referralsMade       Referral[]             @relation("UserReferrals")
 
   @@unique([provider, providerId])
   @@map("users")
@@ -996,4 +998,29 @@ enum SupplyUnitType {
   LITERS
   KG
   METERS
+}
+
+model Referral {
+  id              String         @id @default(uuid())
+  referrerId      String         
+  referredShopId  String?        @unique
+  status          ReferralStatus @default(PENDING)
+  rewardAmount    Float?         
+  planId          String?        
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  referrer        User           @relation("UserReferrals", fields: [referrerId], references: [id])
+  referredShop    Barbershop?    @relation("ShopReferral", fields: [referredShopId], references: [id])
+
+  @@index([referrerId])
+  @@index([status])
+  @@map("referrals")
+}
+
+enum ReferralStatus {
+  PENDING
+  CONVERTED
+  PAID
+  CANCELLED
 }

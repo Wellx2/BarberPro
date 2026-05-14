@@ -10,7 +10,8 @@ import {
   Shield,
   Scissors,
   CalendarDays,
-  LayoutDashboard
+  LayoutDashboard,
+  Gift
 } from 'lucide-react';
 import { UserRole } from '../types';
 
@@ -195,21 +196,38 @@ export const UserMenu: React.FC<UserMenuProps> = ({ className = '' }) => {
 
             {/* Configurações - apenas para ADMIN/SUPER_ADMIN */}
             {(user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) && (
-              <button
-                onClick={() => {
-                  navigate('/dashboard');
-                  setIsOpen(false);
-                }}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-700 transition-colors text-left group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-gray-700 group-hover:bg-tenant-primary flex items-center justify-center transition-colors">
-                  <Settings size={18} className="text-gray-300 group-hover:text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">Configurações</p>
-                  <p className="text-xs text-gray-400">Painel administrativo</p>
-                </div>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigate('/admin/referral');
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-700 transition-colors text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gray-700 group-hover:bg-tenant-primary flex items-center justify-center transition-colors">
+                    <Gift size={18} className="text-gray-300 group-hover:text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">Indique e Ganhe</p>
+                    <p className="text-xs text-gray-400">Recompensas por indicação</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    navigate('/dashboard');
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-700 transition-colors text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gray-700 group-hover:bg-tenant-primary flex items-center justify-center transition-colors">
+                    <Settings size={18} className="text-gray-300 group-hover:text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">Configurações</p>
+                    <p className="text-xs text-gray-400">Painel administrativo</p>
+                  </div>
+                </button>
+              </>
             )}
           </div>
 
