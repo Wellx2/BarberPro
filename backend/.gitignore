@@ -82,5 +82,13 @@ export_users*
 # Unignore docs as they contain important project guides
 !docs/
 
+# Merge conflict artifacts and AI-generated duplicates
+*.resolved
+"# Code Citations.md"
+prisma/list-users.ts
+test-frontend-simulation.html
+test-prisma.ts
+untracked_utf8.txt
+
 .vercel
 .env*.local

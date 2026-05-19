@@ -68,10 +68,21 @@ desktop.ini
 .vite/
 *.tsbuildinfo
 
-# Documentation
-docs/
+# Documentation - block AI-generated legacy/temp docs
+docs/legacy_notes/
 *.resolved
 brain/
+QA_CHECKLIST*.md
+
+# PDFs and financial documents - NEVER commit (boletos, contracts, invoices)
+*.pdf
+*.docx
+*.xlsx
+
+# Numbered duplicate docs (AI artifacts like 2task.md, 3Barber...)
+/docs/2*.md
+/docs/3*.md
+/[0-9]*.md
 
 # Playwright
 /test-results/
