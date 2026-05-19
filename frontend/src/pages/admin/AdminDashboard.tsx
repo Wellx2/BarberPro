@@ -60,9 +60,40 @@ export const AdminDashboard: React.FC = () => {
   const MOBILE_PRIMARY = TABS.slice(0, 4);
   const MOBILE_OVERFLOW = TABS.slice(4);
 
-  const [activeTab, setActiveTab] = useState(hasBarberId ? 'MY_SCHEDULE' : 'FINANCIAL');
+  // Selecionar a primeira aba disponível como padrão se não for barbeiro
+  const defaultTab = hasBarberId ? 'MY_SCHEDULE' : (TABS.length > 0 ? TABS[0].id : 'SETTINGS');
+
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showShopSelector, setShowShopSelector] = useState(false);
+
+  // Validar se a aba ativa ainda está disponível (caso mude o plano em runtime)
+  React.useEffect(() => {
+    const isTabEnabled = TABS.some(t => t.id === activeTab) || activeTab === 'MY_SCHEDULE';
+    if (!isTabEnabled) {
+      const fallbackTab = hasBarberId ? 'MY_SCHEDULE' : TABS[0]?.id;
+      if (fallbackTab && fallbackTab !== activeTab) {
+        setActiveTab(fallbackTab);
+      }
+    }
+  }, [activeTab, TABS, hasBarberId]);
+
+  const renderTabById = (id: string) => {
+    switch (id) {
+      case 'FINANCIAL': return <FinancialTab />;
+      case 'CASHIER': return <Cashier />;
+      case 'BARBERS': return <TeamTab />;
+      case 'SERVICES': return <ServicesTab />;
+      case 'PRODUCTS': return <ProductsTab />;
+      case 'STOCK': return <StockTab />;
+      case 'SUPPLIES': return <Supplies />;
+      case 'HISTORY': return <AdminAppointmentHistory />;
+      case 'PLANS': return <PlansTab />;
+      case 'SUBSCRIPTION': return <SubscriptionTab />;
+      case 'SETTINGS': return <SettingsTab />;
+      default: return <SettingsTab />;
+    }
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -78,7 +109,9 @@ export const AdminDashboard: React.FC = () => {
       case 'PLANS': return <PlansTab />;
       case 'SUBSCRIPTION': return <SubscriptionTab />;
       case 'SETTINGS': return <SettingsTab />;
-      default: return hasBarberId ? <BarberScheduleView barberId={user?.barberId || ''} userName={user?.name || ''} /> : <FinancialTab />;
+      default: return hasBarberId 
+        ? <BarberScheduleView barberId={user?.barberId || ''} userName={user?.name || ''} /> 
+        : (TABS.length > 0 ? renderTabById(TABS[0].id) : <SettingsTab />);
     }
   };
 

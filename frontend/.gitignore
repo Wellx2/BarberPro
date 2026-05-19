@@ -79,3 +79,16 @@ brain/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Reference/draft files (may contain test data or copied credentials)
+*_Reference.html
+*_reference.html
+draft-*.html
+test-post.*
+
+# One-off debug scripts
+scripts/check-*.ts
+scripts/find-*.ts
+scripts/debug-*.ts
+tmp_*.ts
+tmp_*.js

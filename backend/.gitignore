@@ -44,10 +44,11 @@ prisma/migrations/**/migration_lock.toml
 coverage/
 .nyc_output/
 
-# Temp files
+# Temp files & one-off debug scripts (NEVER commit these)
 *.tmp
 *.temp
 tmp_*.ts
+tmp_*.js
 .cache/
 modified_utf8.txt
 out_modified.txt
@@ -56,6 +57,26 @@ untracked_utf8.txt
 test-frontend-simulation.html
 test-prisma.ts
 test-*.ps1
+
+# One-off investigation/debug scripts in scripts/ folder
+# These contain hardcoded IDs and queries that expose DB structure
+scripts/check-*.ts
+scripts/find-*.ts
+scripts/final-*.ts
+scripts/tmp-*.ts
+scripts/debug-*.ts
+
+# Reference/draft HTML files (may contain copied credentials or test data)
+*_Reference.html
+*_reference.html
+draft-*.html
+
+# Other sensitive patterns
+*.decoded
+*.dump
+*.sql.bak
+db_export*
+export_users*
 
 # Documentation
 # Unignore docs as they contain important project guides

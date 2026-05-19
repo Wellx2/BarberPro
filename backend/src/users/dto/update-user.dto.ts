@@ -36,6 +36,10 @@ export class UpdateUserDto {
   password?: string;
 
   @IsOptional()
+  @IsUUID()
+  barberId?: string;
+
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
 

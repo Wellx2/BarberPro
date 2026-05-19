@@ -40,11 +40,11 @@ export const LandingPage: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="hidden sm:block text-sm font-bold text-gray-300 hover:text-orange-500 transition-colors">
+            <Link to="/login" className="hidden sm:block text-sm font-bold text-gray-300 hover:text-orange-500 transition-colors">
               Acessar Painel
             </Link>
             <Link 
-              to="/explore" 
+              to="/login?action=signup" 
               className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-500/20 transition-all active:scale-95"
             >
               Começar Agora
@@ -77,30 +77,30 @@ export const LandingPage: React.FC = () => {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link 
-                  to="/explore" 
+                  to="/login?action=signup" 
                   className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-xl shadow-orange-500/20"
                 >
-                  Lotar Minha Agenda <ArrowRight size={22} strokeWidth={3} />
+                  Quero Aumentar Meus Lucros <ArrowRight size={22} strokeWidth={3} />
                 </Link>
-                <a href="#como-funciona" className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
+                <a href="#solucao" className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
                   <Play size={20} fill="currentColor" /> Entender a Mágica
                 </a>
               </div>
               
               <div className="mt-12 flex flex-col sm:flex-row items-center gap-4 lg:gap-6 justify-center lg:justify-start border-t border-white/10 pt-8">
                 <div className="flex -space-x-3">
-                  <img src="https://i.pravatar.cc/100?img=11" alt="Barber" className="w-12 h-12 rounded-full border-2 border-[#050505] object-cover" />
-                  <img src="https://i.pravatar.cc/100?img=12" alt="Barber" className="w-12 h-12 rounded-full border-2 border-[#050505] object-cover" />
-                  <img src="https://i.pravatar.cc/100?img=13" alt="Barber" className="w-12 h-12 rounded-full border-2 border-[#050505] object-cover" />
-                  <div className="w-12 h-12 rounded-full border-2 border-[#050505] bg-orange-500 flex items-center justify-center text-xs font-black">
-                    +500
+                  <div className="w-12 h-12 rounded-full border-2 border-[#050505] bg-gray-800 flex items-center justify-center text-gray-400">
+                    <Scissors size={20} />
+                  </div>
+                  <div className="w-12 h-12 rounded-full border-2 border-[#050505] bg-orange-500 flex items-center justify-center text-xs font-black text-white">
+                    PRO
                   </div>
                 </div>
                 <div className="text-sm text-gray-400 text-center sm:text-left">
                   <div className="flex text-orange-400 mb-1 justify-center sm:justify-start">
                     <Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" />
                   </div>
-                  <span className="text-white font-bold">Mais de 500 barbearias</span> já aumentaram seu faturamento.
+                  <span className="text-white font-bold">Sistema premium</span> validado por profissionais exigentes.
                 </div>
               </div>
             </div>
@@ -354,7 +354,7 @@ export const LandingPage: React.FC = () => {
                 <p className="text-sm text-orange-400 font-bold mb-8">Menos do que o valor de 2 cortes de cabelo. Você recupera esse investimento resgatando 1 único cliente.</p>
                 
                 <Link 
-                  to="/explore" 
+                  to="/login?action=signup&plan=pro" 
                   className="block w-full sm:w-auto sm:inline-block bg-orange-500 text-white px-12 py-5 rounded-xl font-black text-xl hover:bg-orange-400 hover:scale-[1.02] transition-all shadow-xl shadow-orange-500/20"
                 >
                   QUERO ASSINAR AGORA
@@ -419,7 +419,7 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-5xl md:text-7xl font-black mb-8 text-white tracking-tight">O Tempo Está Passando.</h2>
             <p className="text-2xl text-white/90 mb-12 font-medium">Cada dia sem o Klyp Barber é um cliente que foi cortar em outra barbearia e você não sabe.</p>
             <Link 
-              to="/explore" 
+              to="/login?action=signup&trial=7days" 
               className="inline-flex items-center justify-center bg-black text-white px-12 py-6 rounded-2xl font-black text-2xl hover:bg-gray-900 hover:scale-105 transition-all shadow-2xl"
             >
               TESTAR GRÁTIS AGORA <ArrowRight className="ml-2" size={28} />
@@ -439,7 +439,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex gap-8">
             <Link to="/terms" className="hover:text-white transition-colors">Termos de Uso</Link>
             <Link to="/privacy" className="hover:text-white transition-colors">Políticas de Privacidade</Link>
-            <a href="#" className="hover:text-white transition-colors">Suporte WhatsApp</a>
+            <a href="https://wa.me/5511999999999?text=Olá,%20tenho%20interesse%20no%20Klyp%20Barber!" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Suporte WhatsApp</a>
           </div>
           <p>&copy; {new Date().getFullYear()} Klyp Barber. Todos os direitos reservados.</p>
         </div>

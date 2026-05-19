@@ -12,6 +12,7 @@ export interface CreateUserData {
 
 export interface UpdateUserData extends Partial<CreateUserData> {
   active?: boolean;
+  barberId?: string;
 }
 
 export const userService = {

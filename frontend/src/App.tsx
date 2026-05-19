@@ -179,7 +179,6 @@ const App: React.FC = () => {
               <ShopProvider>
                 <AppLogic>
                   <ErrorBoundary>
-                  <ErrorBoundary>
                     <AppRoutes />
                   </ErrorBoundary>
                 </AppLogic>

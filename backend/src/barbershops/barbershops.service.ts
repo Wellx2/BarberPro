@@ -740,20 +740,20 @@ export class BarbershopsService {
   private getFeaturesByTier(tier: SubscriptionTier) {
     const baseFeatures = {
       hasAppointments: true,
-      hasCashier: true,
+      hasCashier: false,
       maxTeamMembers: 2,
-      hasFinancialDashboard: true,
-      hasCommissionReports: true,
-      commissionReportPeriods: ['WEEKLY', 'BIWEEKLY', 'MONTHLY'],
-      hasProducts: true,
-      hasInventory: true,
-      hasProductReports: true,
-      hasAdvancedReports: true,
+      hasFinancialDashboard: false,
+      hasCommissionReports: false,
+      commissionReportPeriods: ['MONTHLY'],
+      hasProducts: false,
+      hasInventory: false,
+      hasProductReports: false,
+      hasAdvancedReports: false,
       hasAIAnalysis: false,
       hasPrioritySupport: false,
       hasConfigurationSupport: false,
-      hasAuditLogs: false, // Bloqueado no BASIC
-      hasWhiteLabel: false, // Bloqueado no BASIC
+      hasAuditLogs: false,
+      hasWhiteLabel: false,
     };
 
     switch (tier as any) {
@@ -763,6 +763,11 @@ export class BarbershopsService {
       case 'PLUS':
         return {
           ...baseFeatures,
+          hasCashier: true,
+          hasFinancialDashboard: true,
+          hasCommissionReports: true,
+          hasProducts: true,
+          hasInventory: true,
           maxTeamMembers: 6,
           hasAuditLogs: true,
           hasWhiteLabel: true,
@@ -771,6 +776,13 @@ export class BarbershopsService {
       case 'PRO':
         return {
           ...baseFeatures,
+          hasCashier: true,
+          hasFinancialDashboard: true,
+          hasCommissionReports: true,
+          hasProducts: true,
+          hasInventory: true,
+          hasProductReports: true,
+          hasAdvancedReports: true,
           maxTeamMembers: 20,
           hasAIAnalysis: true,
           hasPrioritySupport: true,
@@ -781,6 +793,13 @@ export class BarbershopsService {
       case 'MASTER':
         return {
           ...baseFeatures,
+          hasCashier: true,
+          hasFinancialDashboard: true,
+          hasCommissionReports: true,
+          hasProducts: true,
+          hasInventory: true,
+          hasProductReports: true,
+          hasAdvancedReports: true,
           maxTeamMembers: 999, // Ilimitado
           hasAIAnalysis: true,
           hasPrioritySupport: true,

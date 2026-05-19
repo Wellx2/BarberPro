@@ -324,25 +324,19 @@ export const TeamTab: React.FC = () => {
                       <span className="text-xs font-bold">Trancar</span>
                     </button>
 
-                    {/* Botão Vinculação Híbrida - Apenas para ADMIN e se o barbeiro não for vinculado a outro */}
-                    {member.role === TeamMemberRole.BARBER && user?.barberId !== member.id && (
-                      <button
-                        onClick={() => handleLinkToMe(member.id)}
-                        disabled={isLinking}
-                        className="w-full mt-2 p-2.5 bg-tenant-primary/10 hover:bg-tenant-primary text-tenant-primary hover:text-white rounded-xl transition-all flex items-center justify-center gap-2 group shadow-sm"
-                        title="Vincular este barbeiro ao meu perfil de Administrador"
-                      >
-                        <UserCheck size={16} className="group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-black uppercase tracking-widest">Este Barbeiro sou eu</span>
-                      </button>
-                    )}
-
-                    {user?.barberId === member.id && (
-                      <div className="w-full mt-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl flex items-center justify-center gap-2">
-                        <UserCheck size={16} className="text-green-600" />
-                        <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Vinculado a você</span>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => handleLinkToMe(member.id)}
+                      disabled={isLinking}
+                      className={`flex-1 min-w-[80px] p-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                        user?.barberId === member.id
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 border border-green-200'
+                          : 'bg-tenant-primary/10 hover:bg-tenant-primary text-tenant-primary hover:text-white'
+                      }`}
+                      title="Vincular este barbeiro ao meu perfil de Administrador"
+                    >
+                      <UserCheck size={14} />
+                      <span className="text-xs font-bold">{user?.barberId === member.id ? 'Meu Perfil' : 'Sou Eu'}</span>
+                    </button>
 
                     <button
                       onClick={() => handleDeleteTeamMember(member.id, member.name)}
