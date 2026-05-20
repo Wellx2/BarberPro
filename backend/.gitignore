@@ -49,6 +49,7 @@ coverage/
 *.temp
 tmp_*.ts
 tmp_*.js
+scratch_*
 .cache/
 modified_utf8.txt
 out_modified.txt
@@ -84,7 +85,7 @@ export_users*
 
 # Merge conflict artifacts and AI-generated duplicates
 *.resolved
-"# Code Citations.md"
+\#\ Code\ Citations.md
 prisma/list-users.ts
 test-frontend-simulation.html
 test-prisma.ts

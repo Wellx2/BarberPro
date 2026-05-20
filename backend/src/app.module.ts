@@ -35,6 +35,8 @@ import { AgendaLocksModule } from './agenda-locks/agenda-locks.module';
 import { SupplyItemsModule } from './supply-items/supply-items.module';
 // Módulo de Auditoria (Logs)
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
+// Módulo de Pagamentos (Mercado Pago)
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -92,6 +94,9 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 
     // Auditoria Geral de Sistema 
     AuditLogsModule,
+
+    // Pagamentos
+    PaymentsModule,
   ],
   providers: [
     {
