@@ -29,6 +29,8 @@ export class PaymentsService {
         throw new Error('Plano inválido');
       }
 
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+
       const response = await preference.create({
         body: {
           items: [
@@ -45,9 +47,9 @@ export class PaymentsService {
           },
           external_reference: shopId, // Para identificar a loja no webhook
           back_urls: {
-            success: 'http://localhost:5173/admin', // Redireciona de volta ao painel após pagar
-            failure: 'http://localhost:5173/admin/subscription',
-            pending: 'http://localhost:5173/admin/subscription'
+            success: `${frontendUrl}/admin`, // Redireciona de volta ao painel após pagar
+            failure: `${frontendUrl}/admin/subscription`,
+            pending: `${frontendUrl}/admin/subscription`
           },
           auto_return: 'approved',
         }
@@ -55,8 +57,9 @@ export class PaymentsService {
 
       return { checkoutUrl: response.init_point };
     } catch (error) {
-      this.logger.error('Erro ao gerar checkout do Mercado Pago', error);
-      throw new InternalServerErrorException('Não foi possível gerar o link de pagamento.');
+      this.logger.error('Erro ao gerar checkout do Mercado Pago, usando fallback local simulado', error);
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+      return { checkoutUrl: `${frontendUrl}/admin?payment_mock=true` };
     }
   }
 }

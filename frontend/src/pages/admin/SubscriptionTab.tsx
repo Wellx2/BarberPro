@@ -1,12 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useShop } from '../../context/ShopContext';
-import { Shield, Zap, ShieldCheck, Rocket, CheckCircle2, Lock, Users, Activity } from 'lucide-react';
+import { paymentService } from '../../services/paymentService';
+import { Shield, Zap, ShieldCheck, Rocket, CheckCircle2, Lock, Users, Activity, Loader2 } from 'lucide-react';
 
 export const SubscriptionTab: React.FC = () => {
     const { shop } = useShop();
     const sub = shop.subscription;
     const tier = sub?.tier || 'BASIC';
     const features = sub?.features;
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleUpgrade = async () => {
+        try {
+            setIsLoading(true);
+            // Vamos sugerir o próximo plano (Ex: se é BASIC, vai para PLUS; se PLUS, vai para PRO)
+            let targetPlan = 'plus';
+            if (tier === 'PLUS') targetPlan = 'pro';
+            
+            if (tier === 'PRO') {
+                window.open('https://wa.me/5511916390528?text=Ol%C3%A1%2C%20gostaria%20de%20fazer%20o%20upgrade%20para%20o%20plano%20MASTER%20no%20KlypBarber!', '_blank');
+                return;
+            }
+
+            const { checkoutUrl } = await paymentService.generateCheckoutLink(targetPlan);
+            if (checkoutUrl) {
+                window.location.href = checkoutUrl;
+            }
+        } catch (error) {
+            console.error('Erro ao gerar checkout:', error);
+            alert('Não foi possível iniciar o pagamento no momento. Tente novamente mais tarde.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Helper para design dos planos
     const getTierDesign = (currentTier: string) => {
@@ -53,8 +80,12 @@ export const SubscriptionTab: React.FC = () => {
                             <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">Profissionais (Time)</p>
                         </div>
                         {tier !== 'MASTER' && (
-                            <button className="w-full mt-2 px-6 py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-transform hover:scale-105 active:scale-95 shadow-xl">
-                                Solicitar Upgrade ✨
+                            <button 
+                                onClick={handleUpgrade}
+                                disabled={isLoading}
+                                className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-transform hover:scale-105 active:scale-95 shadow-xl disabled:opacity-70 disabled:scale-100"
+                            >
+                                {isLoading ? <Loader2 className="animate-spin" size={16} /> : (tier === 'PRO' ? 'Falar com Consultor ✨' : 'Fazer Upgrade ✨')}
                             </button>
                         )}
                     </div>
@@ -131,7 +162,21 @@ export const SubscriptionTab: React.FC = () => {
             
             <div className="mt-8 text-center p-6 bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dúvidas sobre sua fatura ou Upgrade?</p>
-                <button className="mt-2 text-tenant-primary font-black uppercase text-sm hover:underline">Falar com Consultor KlypBarber</button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2">
+                    <button 
+                        onClick={() => window.open('https://wa.me/5511999999999?text=Ol%C3%A1%2C%20tenho%20d%C3%BAvidas%20sobre%20a%20minha%20assinatura%20do%20Klyp%20Barber!', '_blank')}
+                        className="text-tenant-primary font-black uppercase text-sm hover:underline"
+                    >
+                        Falar com Consultor KlypBarber
+                    </button>
+                    <span className="hidden sm:inline text-gray-300">|</span>
+                    <Link 
+                        to="/" 
+                        className="text-gray-500 dark:text-gray-400 font-black uppercase text-sm hover:underline"
+                    >
+                        Ver Recursos & Planos do Klyp Barber
+                    </Link>
+                </div>
             </div>
         </div>
     );

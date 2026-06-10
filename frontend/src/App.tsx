@@ -37,6 +37,7 @@ import { OnboardingWizard } from './pages/admin/OnboardingWizard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LandingPage } from './pages/LandingPage';
 import { ReferralProgram } from './pages/admin/ReferralProgram';
+import { Checkout } from './pages/Checkout';
 
 // Component to handle global background tasks (notifications)
 const AppLogic: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -203,6 +204,7 @@ const AppRoutes: React.FC = () => {
     <Routes>
       {/* Standalone Landing Page (Marketing) */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/checkout" element={<Checkout />} />
 
       {/* Main Application Routes wrapped in Layout */}
       <Route path="*" element={

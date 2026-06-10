@@ -73,7 +73,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-      }
+      },
+      preserveSymlinks: true
     },
     build: {
       sourcemap: false,

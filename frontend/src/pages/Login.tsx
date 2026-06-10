@@ -242,10 +242,13 @@ export const Login: React.FC = () => {
       </div>
 
       {/* Footer Branding */}
-      <div className="mt-8 flex items-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-         <Scissors size={14} className="text-gray-500" />
-         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Powered by Klypbarber</span>
-      </div>
+      <Link 
+        to="/" 
+        className="mt-8 flex items-center gap-2 opacity-50 hover:opacity-100 transition-all duration-500 cursor-pointer"
+      >
+         <Scissors size={14} className="text-tenant-primary" />
+         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Powered by Klyp Barber</span>
+      </Link>
     </div>
   );
 };

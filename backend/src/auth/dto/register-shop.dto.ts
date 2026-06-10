@@ -25,4 +25,8 @@ export class RegisterShopDto {
   @IsNotEmpty()
   @IsString()
   phone: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
 }

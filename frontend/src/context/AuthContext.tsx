@@ -16,6 +16,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (data: any) => Promise<void>;
   validateSession: () => Promise<void>;
+  loginWithUserData: (userData: any, accessToken: string, refreshToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -209,6 +210,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithUserData = (userData: any, accessToken: string, refreshToken: string) => {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
+    const mappedUser: User = {
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone || '',
+      role: userData.role as UserRole,
+      shopId: userData.shopId,
+      avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random`,
+      favorites: [],
+      credits: 0,
+      loyaltyStamps: 0
+    };
+
+    setUser(mappedUser);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -222,7 +243,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateUserProfile,
       forgotPassword,
       resetPassword,
-      validateSession
+      validateSession,
+      loginWithUserData
     }}>
       {children}
     </AuthContext.Provider>

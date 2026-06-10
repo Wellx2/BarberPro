@@ -31,7 +31,7 @@ export const clientService = {
    * Criar novo cliente
    * POST /api/clients
    */
-  async create(data: { name: string; phone: string; shopId: string }): Promise<Client> {
+  async create(data: { name: string; phone: string }): Promise<Client> {
     const response = await api.post<Client>('/clients', data);
     return response.data;
   },

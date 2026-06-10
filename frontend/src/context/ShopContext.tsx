@@ -240,7 +240,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Ignore internal system routes and static files at root level
     const systemRoutes = [
       'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'profile', 'settings', 'superadmin',
-      'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico'
+      'super-admin', 'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico',
+      'checkout', 'dashboard', 'barber-profile', 'services', 'products', 'plans', 'book', 'servicos', 'produtos', 'planos', 'agendar'
     ];
     const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) && !pathParts[0].includes('.') ? pathParts[0] : null;
 
@@ -344,7 +345,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Ignore internal system routes and static files at root level
     const systemRoutes = [
       'login', 'explore', 'terms', 'privacy', 'contact', 'admin', 'profile', 'settings', 'superadmin',
-      'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico'
+      'super-admin', 'reset-password', 'auth', 'manifest.webmanifest', 'manifest.json', 'sw.js', 'favicon.ico',
+      'checkout', 'dashboard', 'barber-profile', 'services', 'products', 'plans', 'book', 'servicos', 'produtos', 'planos', 'agendar'
     ];
     
     const potentialSlug = pathParts.length > 0 && !systemRoutes.includes(pathParts[0]) && !pathParts[0].includes('.') ? pathParts[0] : null;

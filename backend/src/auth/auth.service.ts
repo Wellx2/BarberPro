@@ -39,12 +39,32 @@ export class AuthService {
       if (exists) throw new BadRequestException('Barbearia já cadastrada');
     }
 
+    // Gera slug amigável e único
+    let baseSlug = dto.shopName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+    let slug = baseSlug;
+    let count = 1;
+    while (true) {
+      const exists = await this.prisma.barbershop.findFirst({
+        where: { slug },
+      });
+      if (!exists) break;
+      slug = `${baseSlug}${count}`;
+      count++;
+    }
+
     // Cria barbearia
     const shop = await this.prisma.barbershop.create({
       data: {
         name: dto.shopName,
         cnpj: dto.cnpj,
         phone: dto.phone,
+        address: dto.address,
+        slug,
         openingTime: '09:00',
         closingTime: '20:00',
         intervalMinutes: 30,

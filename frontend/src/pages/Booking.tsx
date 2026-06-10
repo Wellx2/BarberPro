@@ -372,12 +372,17 @@ export const Booking: React.FC = () => {
       return;
     }
 
+    const cleanPhone = newClientData.phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+      addNotification('error', 'Telefone inválido. Use DDD + número (ex: 11999999999)');
+      return;
+    }
+
     try {
       setIsCreatingClient(true);
       const newClient = await clientService.create({
         name: newClientData.name,
-        phone: newClientData.phone,
-        shopId: shop.id
+        phone: cleanPhone,
       });
 
       setAllClients(prev => [...prev, newClient]);

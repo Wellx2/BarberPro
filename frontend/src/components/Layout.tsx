@@ -156,7 +156,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <Link to="/privacy" className="hover:text-white">Privacidade</Link>
             <Link to="/contact" className="hover:text-white">Contato</Link>
           </div>
-          <p className="text-xs opacity-50">&copy; 2025 Klypbarber System. Todos os direitos reservados.</p>
+          <p className="text-xs opacity-50 mb-2">&copy; {new Date().getFullYear()} {shop.name}. Todos os direitos reservados.</p>
+          <p className="text-xs opacity-60">
+            Tecnologia por <Link to="/" className="text-tenant-primary hover:underline font-bold">Klyp Barber</Link> &mdash; Quer um sistema para sua barbearia? <Link to="/" className="text-white hover:underline font-bold">Conheça nossos planos</Link>
+          </p>
         </div>
       </footer>
 

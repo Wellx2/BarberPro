@@ -9,18 +9,43 @@ import axios from 'axios';
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
+  private testTransporter: nodemailer.Transporter | null = null;
 
   constructor(private readonly prisma: PrismaService) {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: Number(process.env.MAIL_PORT) || 587,
-      secure: process.env.MAIL_PORT === '465', // usa true apenas para 465
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
+    if (process.env.MAIL_HOST) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.MAIL_HOST,
+        port: Number(process.env.MAIL_PORT) || 587,
+        secure: process.env.MAIL_PORT === '465',
+        auth: {
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASS,
+        },
+      });
+    }
+  }
+
+  private async getTransporter() {
+    if (this.transporter) {
+      return this.transporter;
+    }
+
+    if (!this.testTransporter) {
+      this.logger.warn('Variáveis de e-mail não configuradas. Criando conta de teste no Ethereal Email...');
+      const testAccount = await nodemailer.createTestAccount();
+      this.testTransporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+      this.logger.log(`[EMAIL TESTE] Conta criada: ${testAccount.user}`);
+    }
+    return this.testTransporter;
   }
 
   async create(dto: CreateNotificationDto) {
@@ -119,7 +144,8 @@ export class NotificationsService {
         return;
       }
 
-      await this.transporter.sendMail({
+      const transporter = await this.getTransporter();
+      const info = await transporter.sendMail({
         from: process.env.MAIL_FROM || 'noreply@klypbarber.com',
         to: user.email,
         subject: dto.title,
@@ -127,6 +153,10 @@ export class NotificationsService {
         html: `<p>${dto.message.replace(/\n/g, '<br>')}</p>`,
       });
       this.logger.log(`[EMAIL] Enviado com sucesso para ${user.email}`);
+      
+      if (!process.env.MAIL_HOST) {
+        this.logger.log(`[EMAIL TESTE] URL para visualizar o e-mail: ${nodemailer.getTestMessageUrl(info)}`);
+      }
     } catch (error) {
       this.logger.error(`[EMAIL] Erro ao enviar email para ${dto.recipientId}:`, error);
     }

@@ -43,12 +43,12 @@ export const LandingPage: React.FC = () => {
             <Link to="/login" className="hidden sm:block text-sm font-bold text-gray-300 hover:text-orange-500 transition-colors">
               Acessar Painel
             </Link>
-            <Link 
-              to="/login?action=signup" 
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-500/20 transition-all active:scale-95"
+            <a 
+              href="#planos" 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-500/20 transition-all active:scale-95 text-center"
             >
               Começar Agora
-            </Link>
+            </a>
           </div>
         </div>
       </header>
@@ -76,12 +76,12 @@ export const LandingPage: React.FC = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link 
-                  to="/login?action=signup" 
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-xl shadow-orange-500/20"
+                <a 
+                  href="#planos" 
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-xl shadow-orange-500/20 text-center"
                 >
                   Quero Aumentar Meus Lucros <ArrowRight size={22} strokeWidth={3} />
-                </Link>
+                </a>
                 <a href="#solucao" className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
                   <Play size={20} fill="currentColor" /> Entender a Mágica
                 </a>
@@ -343,22 +343,88 @@ export const LandingPage: React.FC = () => {
                 ))}
               </div>
 
-              <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-8 text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-red-500"></div>
-                <p className="text-gray-400 mb-2 uppercase tracking-widest font-bold text-sm">Valor Total dos Módulos: <span className="line-through text-red-400">R$ 538/mês</span></p>
-                <p className="text-lg text-white mb-2">Mas hoje, seu investimento é de apenas:</p>
-                <div className="flex justify-center items-end gap-2 mb-6">
-                  <span className="text-5xl md:text-7xl font-black text-white">R$ 89</span>
-                  <span className="text-xl text-gray-400 font-bold mb-2">/mês</span>
+              <div id="planos" className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* PLAN 1: PLUS */}
+                <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/20 transition-all text-left">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Klyp Barber PLUS</h3>
+                    <p className="text-xs text-gray-500 mb-6 font-medium">Perfeito para equipes pequenas que estão começando a crescer.</p>
+                    <div className="flex items-baseline gap-1 mb-6">
+                      <span className="text-4xl font-black text-white">R$ 79</span>
+                      <span className="text-sm text-gray-400">/mês</span>
+                    </div>
+                    <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Até 6 barbeiros ativos</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Agendamento Online 24/7</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Controle de Caixa & Vendas</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Produtos & Controle de Estoque</li>
+                    </ul>
+                  </div>
+                  <Link 
+                    to="/checkout?plan=plus" 
+                    className="block w-full text-center bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold text-sm transition-all"
+                  >
+                    Começar com Plus
+                  </Link>
                 </div>
-                <p className="text-sm text-orange-400 font-bold mb-8">Menos do que o valor de 2 cortes de cabelo. Você recupera esse investimento resgatando 1 único cliente.</p>
-                
-                <Link 
-                  to="/login?action=signup&plan=pro" 
-                  className="block w-full sm:w-auto sm:inline-block bg-orange-500 text-white px-12 py-5 rounded-xl font-black text-xl hover:bg-orange-400 hover:scale-[1.02] transition-all shadow-xl shadow-orange-500/20"
-                >
-                  QUERO ASSINAR AGORA
-                </Link>
+
+                {/* PLAN 2: PRO (Featured/Promotional) */}
+                <div className="bg-black border-2 border-orange-500 rounded-3xl p-8 flex flex-col justify-between relative shadow-2xl shadow-orange-500/10 scale-105 z-10 text-left">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap">
+                    Super Promoção (40% OFF)
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2 text-orange-500 flex items-center gap-2 mt-2">
+                      Klyp Barber PRO
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-6 font-medium">O plano mais completo para escalar o faturamento da sua barbearia.</p>
+                    <div className="mb-6">
+                      <p className="text-xs text-gray-500 line-through">De R$ 125,00/mês</p>
+                      <div className="flex items-baseline gap-1 whitespace-nowrap">
+                        <span className="text-4xl md:text-5xl font-black text-white">R$ 89</span>
+                        <span className="text-sm text-gray-400">/mês</span>
+                      </div>
+                      <p className="text-[10px] text-orange-400 font-bold mt-1">Preço promocional válido por tempo limitado!</p>
+                    </div>
+                    <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Até 20 barbeiros ativos</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Inteligência Preditiva (Anti-Churn)</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Caixa & Relatórios Financeiros PRO</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Painel de Comissões Automatizado</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Suporte Prioritário por WhatsApp</li>
+                    </ul>
+                  </div>
+                  <Link 
+                    to="/checkout?plan=pro" 
+                    className="block w-full text-center bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-black text-sm transition-all shadow-lg shadow-orange-500/20 hover:scale-[1.02]"
+                  >
+                    Garantir Promoção Pro
+                  </Link>
+                </div>
+
+                {/* PLAN 3: MASTER */}
+                <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/20 transition-all text-left">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Klyp Barber MASTER</h3>
+                    <p className="text-xs text-gray-500 mb-6 font-medium">Para redes, franquias ou grandes barbearias que exigem o máximo.</p>
+                    <div className="flex items-baseline gap-1 mb-6">
+                      <span className="text-4xl font-black text-white">R$ 149</span>
+                      <span className="text-sm text-gray-400">/mês</span>
+                    </div>
+                    <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Barbeiros ativos ilimitados</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Custom Branding (Logotipo próprio)</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Gerente de Conta Dedicado</li>
+                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Suporte VIP 24h & Migração de dados</li>
+                    </ul>
+                  </div>
+                  <Link 
+                    to="/checkout?plan=master" 
+                    className="block w-full text-center bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold text-sm transition-all"
+                  >
+                    Começar com Master
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -418,12 +484,12 @@ export const LandingPage: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center relative z-10">
             <h2 className="text-5xl md:text-7xl font-black mb-8 text-white tracking-tight">O Tempo Está Passando.</h2>
             <p className="text-2xl text-white/90 mb-12 font-medium">Cada dia sem o Klyp Barber é um cliente que foi cortar em outra barbearia e você não sabe.</p>
-            <Link 
-              to="/login?action=signup&trial=7days" 
-              className="inline-flex items-center justify-center bg-black text-white px-12 py-6 rounded-2xl font-black text-2xl hover:bg-gray-900 hover:scale-105 transition-all shadow-2xl"
+            <a 
+              href="#planos" 
+              className="inline-flex items-center justify-center bg-black text-white px-12 py-6 rounded-2xl font-black text-2xl hover:bg-gray-900 hover:scale-105 transition-all shadow-2xl text-center"
             >
               TESTAR GRÁTIS AGORA <ArrowRight className="ml-2" size={28} />
-            </Link>
+            </a>
             <p className="mt-8 text-sm text-black/60 font-black uppercase tracking-widest bg-white/20 inline-block px-4 py-1 rounded-full">Garantia de 7 dias ou seu dinheiro de volta</p>
           </div>
         </section>
