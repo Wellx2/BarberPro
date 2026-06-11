@@ -31,29 +31,36 @@ export class PaymentsService {
 
       const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
 
-      const response = await preference.create({
-        body: {
-          items: [
-            {
-              id: planId,
-              title: selectedPlan.title,
-              quantity: 1,
-              unit_price: selectedPlan.price,
-              currency_id: 'BRL',
-            }
-          ],
-          payer: {
-            email: email,
-          },
-          external_reference: shopId, // Para identificar a loja no webhook
-          back_urls: {
-            success: `${frontendUrl}/admin`, // Redireciona de volta ao painel após pagar
-            failure: `${frontendUrl}/admin/subscription`,
-            pending: `${frontendUrl}/admin/subscription`
-          },
-          auto_return: 'approved',
-        }
-      });
+      // auto_return só funciona com URLs HTTPS em produção — omitir em localhost
+      const isHttps = frontendUrl.startsWith('https://');
+
+      const preferenceBody: any = {
+        items: [
+          {
+            id: planId,
+            title: selectedPlan.title,
+            quantity: 1,
+            unit_price: selectedPlan.price,
+            currency_id: 'BRL',
+          }
+        ],
+        payer: {
+          email: email,
+        },
+        external_reference: shopId, // Para identificar a loja no webhook
+        back_urls: {
+          success: `${frontendUrl}/admin`,
+          failure: `${frontendUrl}/admin/subscription`,
+          pending: `${frontendUrl}/admin/subscription`,
+        },
+      };
+
+      // Só adiciona auto_return se a URL for HTTPS (produção)
+      if (isHttps) {
+        preferenceBody.auto_return = 'approved';
+      }
+
+      const response = await preference.create({ body: preferenceBody });
 
       return { checkoutUrl: response.init_point };
     } catch (error) {
