@@ -312,7 +312,7 @@ export const LandingPage: React.FC = () => {
         </section>
 
         {/* THE OFFER - Hormozi Value Stack */}
-        <section id="oferta" className="py-24 bg-gradient-to-b from-[#050505] to-gray-900 border-t border-white/5">
+        <section id="oferta" className="py-24 bg-gradient-to-b from-[#050505] to-gray-900 border-t border-white/5 scroll-mt-20">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-6xl font-black mb-6">A Oferta <span className="text-orange-500">Irrecusável</span></h2>
@@ -346,7 +346,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* ── Cards de Planos — fora do card interno, usa todo max-w-6xl ── */}
-            <div id="planos" className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+            <div id="planos" className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch scroll-mt-28">
               {/* PLAN 1: PLUS */}
               <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/30 transition-all text-left">
                 <div>
@@ -490,7 +490,11 @@ export const LandingPage: React.FC = () => {
             >
               TESTAR GRÁTIS AGORA <ArrowRight className="ml-2" size={28} />
             </a>
-            <p className="mt-8 text-sm text-black/60 font-black uppercase tracking-widest bg-white/20 inline-block px-4 py-1 rounded-full">Garantia de 7 dias ou seu dinheiro de volta</p>
+            <div className="mt-10">
+              <p className="text-sm text-black/70 font-black uppercase tracking-widest bg-white/20 inline-block px-6 py-2 rounded-full">
+                🛡️ Garantia de 7 dias ou seu dinheiro de volta
+              </p>
+            </div>
           </div>
         </section>
       </main>
