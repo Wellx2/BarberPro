@@ -313,7 +313,7 @@ export const LandingPage: React.FC = () => {
 
         {/* THE OFFER - Hormozi Value Stack */}
         <section id="oferta" className="py-24 bg-gradient-to-b from-[#050505] to-gray-900 border-t border-white/5">
-          <div className="max-w-4xl mx-auto px-6">
+          <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-6xl font-black mb-6">A Oferta <span className="text-orange-500">Irrecusável</span></h2>
               <p className="text-xl text-gray-400">Veja o que você leva ao assinar o Klyp Barber hoje:</p>
@@ -343,88 +343,88 @@ export const LandingPage: React.FC = () => {
                 ))}
               </div>
 
-              <div id="planos" className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* PLAN 1: PLUS */}
-                <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/20 transition-all text-left">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Klyp Barber PLUS</h3>
-                    <p className="text-xs text-gray-500 mb-6 font-medium">Perfeito para equipes pequenas que estão começando a crescer.</p>
-                    <div className="flex items-baseline gap-1 mb-6">
-                      <span className="text-4xl font-black text-white">R$ 79</span>
-                      <span className="text-sm text-gray-400">/mês</span>
-                    </div>
-                    <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Até 6 barbeiros ativos</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Agendamento Online 24/7</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Controle de Caixa & Vendas</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Produtos & Controle de Estoque</li>
-                    </ul>
-                  </div>
-                  <Link 
-                    to="/checkout?plan=plus" 
-                    className="block w-full text-center bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold text-sm transition-all"
-                  >
-                    Começar com Plus
-                  </Link>
-                </div>
+            </div>
 
-                {/* PLAN 2: PRO (Featured/Promotional) */}
-                <div className="bg-black border-2 border-orange-500 rounded-3xl p-8 flex flex-col justify-between relative shadow-2xl shadow-orange-500/10 scale-105 z-10 text-left">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap">
-                    Super Promoção (40% OFF)
+            {/* ── Cards de Planos — fora do card interno, usa todo max-w-6xl ── */}
+            <div id="planos" className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+              {/* PLAN 1: PLUS */}
+              <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/30 transition-all text-left">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Klyp Barber PLUS</h3>
+                  <p className="text-sm text-gray-500 mb-6 font-medium">Perfeito para equipes pequenas que estão começando a crescer.</p>
+                  <div className="flex items-baseline gap-1 mb-6">
+                    <span className="text-5xl font-black text-white">R$ 79</span>
+                    <span className="text-base text-gray-400">/mês</span>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold mb-2 text-orange-500 flex items-center gap-2 mt-2">
-                      Klyp Barber PRO
-                    </h3>
-                    <p className="text-xs text-gray-500 mb-6 font-medium">O plano mais completo para escalar o faturamento da sua barbearia.</p>
-                    <div className="mb-6">
-                      <p className="text-xs text-gray-500 line-through">De R$ 125,00/mês</p>
-                      <div className="flex items-baseline gap-1 whitespace-nowrap">
-                        <span className="text-4xl md:text-5xl font-black text-white">R$ 89</span>
-                        <span className="text-sm text-gray-400">/mês</span>
-                      </div>
-                      <p className="text-[10px] text-orange-400 font-bold mt-1">Preço promocional válido por tempo limitado!</p>
-                    </div>
-                    <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Até 20 barbeiros ativos</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Inteligência Preditiva (Anti-Churn)</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Caixa & Relatórios Financeiros PRO</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Painel de Comissões Automatizado</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Suporte Prioritário por WhatsApp</li>
-                    </ul>
-                  </div>
-                  <Link 
-                    to="/checkout?plan=pro" 
-                    className="block w-full text-center bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-black text-sm transition-all shadow-lg shadow-orange-500/20 hover:scale-[1.02]"
-                  >
-                    Garantir Promoção Pro
-                  </Link>
+                  <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Até 6 barbeiros ativos</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Agendamento Online 24/7</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Controle de Caixa & Vendas</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Produtos & Controle de Estoque</li>
+                  </ul>
                 </div>
+                <Link
+                  to="/checkout?plan=plus"
+                  className="block w-full text-center bg-white/5 hover:bg-white/10 text-white py-3.5 rounded-xl font-bold text-sm transition-all"
+                >
+                  Começar com Plus
+                </Link>
+              </div>
 
-                {/* PLAN 3: MASTER */}
-                <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/20 transition-all text-left">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Klyp Barber MASTER</h3>
-                    <p className="text-xs text-gray-500 mb-6 font-medium">Para redes, franquias ou grandes barbearias que exigem o máximo.</p>
-                    <div className="flex items-baseline gap-1 mb-6">
-                      <span className="text-4xl font-black text-white">R$ 149</span>
-                      <span className="text-sm text-gray-400">/mês</span>
-                    </div>
-                    <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Barbeiros ativos ilimitados</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Custom Branding (Logotipo próprio)</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Gerente de Conta Dedicado</li>
-                      <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Suporte VIP 24h & Migração de dados</li>
-                    </ul>
-                  </div>
-                  <Link 
-                    to="/checkout?plan=master" 
-                    className="block w-full text-center bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold text-sm transition-all"
-                  >
-                    Começar com Master
-                  </Link>
+              {/* PLAN 2: PRO — destaque sem scale que espreme */}
+              <div className="bg-black border-2 border-orange-500 rounded-3xl p-8 flex flex-col justify-between relative shadow-2xl shadow-orange-500/20 z-10 text-left ring-1 ring-orange-500/20">
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-black uppercase tracking-widest px-5 py-2 rounded-full shadow-lg whitespace-nowrap">
+                  ⚡ Super Promoção (40% OFF)
                 </div>
+                <div className="mt-4">
+                  <h3 className="text-2xl font-bold mb-2 text-orange-400">Klyp Barber PRO</h3>
+                  <p className="text-sm text-gray-400 mb-6 font-medium">O plano mais completo para escalar o faturamento da sua barbearia.</p>
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 line-through">De R$ 125,00/mês</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-5xl font-black text-white">R$ 89</span>
+                      <span className="text-base text-gray-400">/mês</span>
+                    </div>
+                    <p className="text-xs text-orange-400 font-bold mt-1">Preço promocional válido por tempo limitado!</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Até 20 barbeiros ativos</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Inteligência Preditiva (Anti-Churn)</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Caixa & Relatórios Financeiros PRO</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Painel de Comissões Automatizado</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Suporte Prioritário por WhatsApp</li>
+                  </ul>
+                </div>
+                <Link
+                  to="/checkout?plan=pro"
+                  className="block w-full text-center bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-black text-sm transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50"
+                >
+                  Garantir Promoção Pro
+                </Link>
+              </div>
+
+              {/* PLAN 3: MASTER */}
+              <div className="bg-[#0b0b0b] border border-white/10 rounded-3xl p-8 flex flex-col justify-between hover:border-orange-500/30 transition-all text-left">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Klyp Barber MASTER</h3>
+                  <p className="text-sm text-gray-500 mb-6 font-medium">Para redes, franquias ou grandes barbearias que exigem o máximo.</p>
+                  <div className="flex items-baseline gap-1 mb-6">
+                    <span className="text-5xl font-black text-white">R$ 149</span>
+                    <span className="text-base text-gray-400">/mês</span>
+                  </div>
+                  <ul className="space-y-3 mb-8 text-sm text-gray-300 font-medium">
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Barbeiros ativos ilimitados</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Custom Branding (Logotipo próprio)</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Gerente de Conta Dedicado</li>
+                    <li className="flex items-center gap-2"><Check className="text-orange-500 w-4 h-4 shrink-0" /> Suporte VIP 24h & Migração de dados</li>
+                  </ul>
+                </div>
+                <Link
+                  to="/checkout?plan=master"
+                  className="block w-full text-center bg-white/5 hover:bg-white/10 text-white py-3.5 rounded-xl font-bold text-sm transition-all"
+                >
+                  Começar com Master
+                </Link>
               </div>
             </div>
           </div>
